@@ -118,9 +118,11 @@ open-album-cartridge/
 
 ## Where this is going
 
-v0.1 proves the format. The roadmap builds outward from there: burning to 8cm
-DVD-RW, a Raspberry Pi player, a writer dock, and eventually a cartridge shell.
-See the [Roadmap](./documentation/roadmap.md) for the full picture.
+v0.1 proves the format. **v0.2 Write and Play** is next: build a burn-ready disc
+image, write a package to physical 8cm DVD-RW, and play it back from the CLI. From
+there the roadmap reaches a Raspberry Pi player, a writer dock, and eventually a
+cartridge shell. See the [Roadmap](./documentation/roadmap.md) for the full
+picture.
 
 ## Contributing
 

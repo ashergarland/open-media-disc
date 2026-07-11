@@ -46,6 +46,7 @@ format is proven.
 
 | Milestone | Goal | Status |
 | --- | --- | --- |
+| Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | In progress |
 | OMD Studio (alpha) | Desktop app wrapping the core: package, label, burn | Planned |
 | Multi-language SDKs | Shared conformance fixtures across TS (later Rust) | Planned |
 | Writer Dock | Device: erase, burn, verify, eject 8cm DVD-RW | Planned |
@@ -63,15 +64,16 @@ DVD-Audio/Blu-ray authoring, marketplace features, and streaming integration.
 
 - **Done:** the software format and its tooling (spec, SDK, CLI, docs, tests).
   The "album folder in, verified package out" loop works today.
-- **Not yet started:** everything that touches media and hardware (burning discs,
-  playing them on a device, and the cartridge shell), plus the desktop Studio app
-  and additional-language SDKs.
+- **In progress (v0.2):** the host-side media loop: building a burn-ready disc
+  image, writing a package to 8cm DVD-RW, and playing it back from the CLI.
+- **Not yet started:** dedicated hardware (a writer dock, a Pi player, the
+  cartridge shell), the desktop Studio app, and additional-language SDKs.
 
-The immediate next step is choosing which milestone to tackle next: OMD Studio
-alpha, multi-language SDKs, a burn or media-loop research spike, or a
-documentation and public-launch pass. The
-[`next-steps`](../.github/prompts/next-steps.prompt.md) prompt walks through that
-decision.
+The immediate next step is the **v0.2 Write and Play** milestone: build a
+burn-ready UDF disc image, write a package to physical 8cm DVD-RW through a
+cross-platform `BurnBackend` (Windows IMAPI2 first), and add real host playback to
+`omd play`. See the [Roadmap](./roadmap.md#next-milestone-v02-write-and-play) for
+the goal and exit criteria.
 
 ## Keep this page current
 
