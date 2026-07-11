@@ -1,0 +1,46 @@
+{
+  "omdFormat": "OMD-FLAC-DATA",
+  "omdVersion": "0.1.0",
+  "discId": "OMD-000001",
+  "mediaType": "8cm DVD-RW",
+  "filesystemTarget": "UDF",
+  "artist": "OMD Test Ensemble",
+  "album": "Fixtures Vol. 1",
+  "releaseYear": 2026,
+  "audioCodec": "FLAC",
+  "trackCount": 3,
+  "totalDurationSeconds": 87,
+  "totalSizeBytes": 2066,
+  "coverArt": "COVER.jpg",
+  "tracks": [
+    {
+      "number": 1,
+      "title": "Silent Intro",
+      "filename": "AUDIO/01 - Silent Intro.flac",
+      "durationSeconds": 12,
+      "sizeBytes": 431,
+      "sha256": "1e83a141f688db4b14ded938f54bfc9523e109c87202f03b5d9a89f55ddd3cc1"
+    },
+    {
+      "number": 2,
+      "title": "Test Tone Alpha",
+      "filename": "AUDIO/02 - Test Tone Alpha.flac",
+      "durationSeconds": 30,
+      "sizeBytes": 690,
+      "sha256": "3b362ddca414463a8f0d8c44d6814c195a9211d28a49179681a2a4fa12220e46"
+    },
+    {
+      "number": 3,
+      "title": "Test Tone Beta",
+      "filename": "AUDIO/03 - Test Tone Beta.flac",
+      "durationSeconds": 45,
+      "sizeBytes": 945,
+      "sha256": "a09b58f198bdee5ef88514630a873b34bce4614c98b42e82d3cda1890d6b040e"
+    }
+  ],
+  "createdAt": "2026-07-08T00:00:00.000Z",
+  "generator": {
+    "name": "OMD example generator",
+    "version": "0.1.0"
+  }
+}

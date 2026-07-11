@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://open-album-cartridge.org/schema/OMD_MANIFEST_SCHEMA.json",
+  "title": "OMD Manifest",
+  "description": "Manifest schema for an Open Media Disc (OMD) FLAC data package, format version 0.1.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "omdFormat",
+    "omdVersion",
+    "discId",
+    "mediaType",
+    "filesystemTarget",
+    "artist",
+    "album",
+    "audioCodec",
+    "trackCount",
+    "totalDurationSeconds",
+    "totalSizeBytes",
+    "tracks",
+    "createdAt",
+    "generator"
+  ],
+  "properties": {
+    "omdFormat": {
+      "description": "Identifier of the OMD data format.",
+      "const": "OMD-FLAC-DATA"
+    },
+    "omdVersion": {
+      "description": "Semantic version of the OMD format contract.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "discId": {
+      "description": "Stable local identifier for the physical disc, e.g. OMD-000001.",
+      "type": "string",
+      "pattern": "^OMD-\\d{6,}$"
+    },
+    "mediaType": {
+      "description": "Target physical medium.",
+      "type": "string",
+      "minLength": 1
+    },
+    "filesystemTarget": {
+      "description": "Intended optical filesystem for the burned disc.",
+      "type": "string",
+      "enum": ["UDF", "ISO9660", "ISO9660+UDF"]
+    },
+    "artist": {
+      "type": "string",
+      "minLength": 1
+    },
+    "album": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseYear": {
+      "type": "integer",
+      "minimum": 1900,
+      "maximum": 2200
+    },
+    "audioCodec": {
+      "const": "FLAC"
+    },
+    "trackCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "totalDurationSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "totalSizeBytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "coverArt": {
+      "description": "Relative path to cover art at the package root, if present.",
+      "type": "string",
+      "minLength": 1
+    },
+    "booklet": {
+      "description": "Relative path to an optional booklet PDF at the package root.",
+      "type": "string",
+      "minLength": 1
+    },
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["number", "title", "filename", "sizeBytes", "sha256"],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "filename": {
+            "description": "Relative path from the package root, always inside AUDIO/.",
+            "type": "string",
+            "pattern": "^AUDIO/.+\\.flac$"
+          },
+          "durationSeconds": {
+            "type": "number",
+            "minimum": 0
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "createdAt": {
+      "description": "ISO-8601 UTC timestamp when the package was generated.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
