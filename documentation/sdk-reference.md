@@ -106,6 +106,46 @@ Types: `BuildDiscImageOptions`, `BuildDiscImageResult`, `DiscImageBackend`,
 
 ---
 
+## Burn API
+
+### `burnImage(options): Promise<BurnImageResult>`
+
+Write a burn-ready image to a disc through a `BurnBackend`, then verify the
+result. Blanks a non-blank rewritable disc first (unless disabled) and reads the
+burned disc back to check it against `CHECKSUMS.sha256`. A failed verification is
+reported (`verified: false`), not thrown.
+
+```ts
+const result = await burnImage({
+  imagePath: './build/OMD-000001.img',
+  drive: { mountPath: 'E:\\' },
+  backend: myBurnBackend, // a BurnBackend; the Windows backend arrives next
+  blank: true,            // blank a non-blank RW first (default true)
+  verify: true,           // verify the burned disc (default true)
+});
+// result: { imagePath, drive, blanked, verified, verification?, backend }
+```
+
+### `verifyDisc(mountPath, options?): Promise<PackageValidationResult>`
+
+Verify a mounted disc by validating it as an OMD package (integrity against
+`CHECKSUMS.sha256` and the per-track `sha256`). Returns the same result shape as
+`validatePackage`.
+
+```ts
+const check = await verifyDisc('E:\\');
+if (!check.valid) console.error(check.errors);
+```
+
+`BurnBackend` is the injectable seam: `{ name, isAvailable(), listDrives(),
+isBlank(drive), blank(drive), writeImage(request) }`. A `BurnDrive` carries the
+`mountPath` where the disc is read for verification.
+
+Types: `BurnImageOptions`, `BurnImageResult`, `BurnBackend`, `BurnDrive`,
+`BurnImageRequest`.
+
+---
+
 ## Manifest API
 
 | Function | Signature | Purpose |

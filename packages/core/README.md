@@ -47,6 +47,8 @@ console.log(info.artist, info.album, info.trackCount);
 | `validatePackage()` | Validate a package directory against the OMD rules. |
 | `inspectPackage()` | Return an album and track summary from a package. |
 | `buildDiscImage()` | Build a burn-ready UDF disc image from a package (Windows). |
+| `burnImage()` | Write an image to a disc and verify it (needs a burn backend). |
+| `verifyDisc()` | Verify a mounted disc against its `CHECKSUMS.sha256`. |
 | `createManifest()` | Build a schema-valid manifest from track metadata. |
 | `parseManifest()` | Parse manifest JSON text into an object. |
 | `validateManifest()` | Validate an object against the manifest schema. |

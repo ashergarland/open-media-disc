@@ -1,0 +1,141 @@
+import { appendFile, readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  burnImage,
+  createPackage,
+  verifyDisc,
+  type BurnBackend,
+  type BurnImageRequest,
+} from '../src/index.js';
+import { makeSourceAlbum, useTempDir } from './helpers/fixtures.js';
+
+/** Build a small valid OMD package under `root` and return its directory. */
+async function buildTestPackage(root: string, discId = 'OMD-000200'): Promise<string> {
+  const sourceDir = path.join(root, 'src-album');
+  const outDir = path.join(root, discId);
+  await makeSourceAlbum(sourceDir, {
+    artist: 'Test Artist',
+    album: 'Test Album',
+    tracks: [
+      { number: 1, title: 'One', seconds: 5 },
+      { number: 2, title: 'Two', seconds: 5 },
+    ],
+    cover: true,
+  });
+  await createPackage({ sourceDir, outDir, discId });
+  return outDir;
+}
+
+/** Corrupt the first audio track so its checksum no longer matches. */
+async function corruptFirstTrack(packageDir: string): Promise<void> {
+  const audioDir = path.join(packageDir, 'AUDIO');
+  const [first] = await readdir(audioDir);
+  await appendFile(path.join(audioDir, first!), Buffer.from('corruption'));
+}
+
+/** A burn backend that records calls and never touches hardware. */
+function makeFakeBurnBackend(opts?: { available?: boolean; blank?: boolean }): {
+  backend: BurnBackend;
+  calls: { blank: number; write: BurnImageRequest[] };
+} {
+  const available = opts?.available ?? true;
+  const blank = opts?.blank ?? false;
+  const calls = { blank: 0, write: [] as BurnImageRequest[] };
+  const backend: BurnBackend = {
+    name: 'FakeBurner',
+    isAvailable: async () => available,
+    listDrives: async () => [{ mountPath: 'X:\\', id: 'fake' }],
+    isBlank: async () => blank,
+    blank: async () => {
+      calls.blank += 1;
+    },
+    writeImage: async (request) => {
+      calls.write.push(request);
+    },
+  };
+  return { backend, calls };
+}
+
+describe('verifyDisc', () => {
+  const tmp = useTempDir();
+
+  it('passes for a valid package tree', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const result = await verifyDisc(pkg);
+    expect(result.valid).toBe(true);
+  });
+
+  it('fails when a file does not match its checksum', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    await corruptFirstTrack(pkg);
+
+    const result = await verifyDisc(pkg);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.code === 'CHECKSUM_MISMATCH')).toBe(true);
+  });
+});
+
+describe('burnImage', () => {
+  const tmp = useTempDir();
+
+  it('blanks a non-blank disc, writes the image, and verifies', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend, calls } = makeFakeBurnBackend({ blank: false });
+
+    const result = await burnImage({
+      imagePath: path.join(tmp.path(), 'disc.img'),
+      drive: { mountPath: pkg },
+      backend,
+    });
+
+    expect(calls.blank).toBe(1);
+    expect(calls.write).toHaveLength(1);
+    expect(result.blanked).toBe(true);
+    expect(result.verified).toBe(true);
+    expect(result.backend).toBe('FakeBurner');
+  });
+
+  it('skips blanking when the disc is already blank', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend, calls } = makeFakeBurnBackend({ blank: true });
+
+    const result = await burnImage({
+      imagePath: path.join(tmp.path(), 'disc.img'),
+      drive: { mountPath: pkg },
+      backend,
+    });
+
+    expect(calls.blank).toBe(0);
+    expect(result.blanked).toBe(false);
+    expect(result.verified).toBe(true);
+  });
+
+  it('reports verification failure without throwing', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    await corruptFirstTrack(pkg);
+    const { backend } = makeFakeBurnBackend();
+
+    const result = await burnImage({
+      imagePath: path.join(tmp.path(), 'disc.img'),
+      drive: { mountPath: pkg },
+      backend,
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.verification?.errors.some((e) => e.code === 'CHECKSUM_MISMATCH')).toBe(true);
+  });
+
+  it('throws when the backend is unavailable', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend } = makeFakeBurnBackend({ available: false });
+
+    await expect(
+      burnImage({
+        imagePath: path.join(tmp.path(), 'disc.img'),
+        drive: { mountPath: pkg },
+        backend,
+      }),
+    ).rejects.toThrow(/not available/i);
+  });
+});
