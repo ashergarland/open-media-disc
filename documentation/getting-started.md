@@ -88,14 +88,15 @@ pnpm omd checksum "./build/OMD-000001"           # verify against CHECKSUMS.sha2
 pnpm omd checksum "./build/OMD-000001" --write   # (re)generate CHECKSUMS.sha256
 ```
 
-## 5. Preview playback (stub)
+## 5. Play a package
 
 ```bash
 pnpm omd play "./build/OMD-000001"
 ```
 
-`omd play` lists tracks in manifest order but does **not** output audio in v0.1.
-Audio playback belongs in a dedicated player app or the OMD Pi Player hardware.
+`omd play` plays the album in manifest order using an installed player (`mpv`,
+then `ffplay`; override with `--player` or `OMD_PLAYER`). Without either player it
+prints the track list as a preview. It also plays a mounted disc.
 
 ## 6. Build a disc image (Windows)
 

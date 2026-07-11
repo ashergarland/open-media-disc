@@ -46,6 +46,7 @@ console.log(info.artist, info.album, info.trackCount);
 | `createPackage()` | Build a full OMD package from an album folder. |
 | `validatePackage()` | Validate a package directory against the OMD rules. |
 | `inspectPackage()` | Return an album and track summary from a package. |
+| `playlistPaths()` | Ordered absolute track paths for playback. |
 | `buildDiscImage()` | Build a burn-ready UDF disc image from a package (Windows). |
 | `burnImage()` | Write an image to a disc and verify it (needs a burn backend). |
 | `burnPackage()` | Burn a package or image to a disc and verify (Windows). |

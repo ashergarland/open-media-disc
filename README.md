@@ -59,7 +59,7 @@ OMD-000001/
 | `omd checksum <package>` | Recompute and check `CHECKSUMS.sha256`. |
 | `omd image <package> --out <img>` | Build a burn-ready UDF disc image (Windows). |
 | `omd burn <package\|image> [--drive]` | Burn to an 8cm DVD-RW and verify (Windows). |
-| `omd play <package>` | Preview playback order (audio output is a v0.1 stub). |
+| `omd play <package>` | Play the album with mpv/ffplay (preview if neither). |
 
 Full details in the [CLI Reference](./documentation/cli-reference.md).
 

@@ -73,6 +73,15 @@ const info = await inspectPackage('./build/OMD-000001');
 console.log(info.artist, info.album, info.trackCount, info.totalDurationSeconds);
 ```
 
+### `playlistPaths(packageDir): Promise<string[]>`
+
+Return the package's audio track paths in playback (manifest `number`) order, as
+absolute paths. Works for a package folder or a mounted disc.
+
+```ts
+const tracks = await playlistPaths('./build/OMD-000001');
+```
+
 ---
 
 ## Disc image API

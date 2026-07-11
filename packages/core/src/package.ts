@@ -510,7 +510,7 @@ export interface PackageInspection {
 
 /**
  * Read an OMD package's manifest and return a summary. Throws if the manifest
- * is missing or invalid — use {@link validatePackage} for graceful diagnostics.
+ * is missing or invalid; use {@link validatePackage} for graceful diagnostics.
  */
 export async function inspectPackage(packageDir: string): Promise<PackageInspection> {
   const manifestPath = path.join(packageDir, MANIFEST_FILENAME);
@@ -532,4 +532,15 @@ export async function inspectPackage(packageDir: string): Promise<PackageInspect
     tracks: manifest.tracks,
     manifest,
   };
+}
+
+/**
+ * Return the package's audio track paths in playback (manifest `number`) order.
+ * Paths are absolute. Works for a package folder or a mounted disc.
+ */
+export async function playlistPaths(packageDir: string): Promise<string[]> {
+  const { manifest } = await inspectPackage(packageDir);
+  return [...manifest.tracks]
+    .sort((a, b) => a.number - b.number)
+    .map((track) => path.resolve(packageDir, ...track.filename.split('/')));
 }

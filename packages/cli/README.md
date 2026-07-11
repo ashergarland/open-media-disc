@@ -26,7 +26,7 @@ omd play <packageDir>
 | `checksum` | Recompute and check `CHECKSUMS.sha256` (use `--write` to save). |
 | `image` | Build a burn-ready UDF disc image (Windows in v0.2). |
 | `burn` | Burn a package or image to an 8cm DVD-RW and verify (Windows in v0.2). |
-| `play` | Preview playback order (audio output is a v0.1 stub). |
+| `play` | Play with mpv/ffplay (preview if neither); `--player` to override. |
 
 ### Examples
 
@@ -36,8 +36,8 @@ omd validate "./build/OMD-000001"
 omd inspect "./build/OMD-000001"
 ```
 
-`omd play` previews the manifest track order but does not output audio in v0.1.
-Real playback belongs in a player app or OMD hardware.
+`omd play` plays the album with an installed player (`mpv`, then `ffplay`), or
+prints the track order as a preview when neither is available.
 
 Full details are in the [CLI Reference](../../documentation/cli-reference.md).
 

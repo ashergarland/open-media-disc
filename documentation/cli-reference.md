@@ -192,15 +192,20 @@ Burn complete.
 
 ## `omd play`
 
-> **v0.1 stub.** OMD Core does not bundle an audio backend.
+Play a package (or a mounted disc) in manifest order using an installed player:
+`mpv`, then `ffplay`. Without either, it prints the track list as a preview.
 
 ```bash
 omd play "./build/OMD-000001"
+omd play "./build/OMD-000001" --player mpv
 ```
 
-Reads the manifest and lists tracks in playback order so you can preview what a
-player would present. It does **not** output audio. Real playback belongs in a
-player app or the OMD Pi Player hardware.
+| Option | Description |
+| --- | --- |
+| `<packageDir>` | A package directory or a mounted disc. Required. |
+| `--player <name>` | Force a player (overrides `mpv`/`ffplay`). Also via `OMD_PLAYER`. |
+
+Built-in audio decoding (no external player) is planned for the OMD Pi Player.
 
 ---
 
