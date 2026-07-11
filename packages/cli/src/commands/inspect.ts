@@ -1,4 +1,5 @@
 import {
+  detectMediaKind,
   estimateDiscSize,
   formatBytes,
   formatDuration,
@@ -23,8 +24,9 @@ export async function inspectCommand(args: ParsedArgs): Promise<number> {
   }
 
   const size = estimateDiscSize(info.totalSizeBytes);
+  const kind = await detectMediaKind(packageDir);
 
-  console.log('OMD Disc Detected');
+  console.log(kind === 'disc' ? 'OMD Disc' : 'OMD Package (folder)');
   console.log(`Disc ID: ${info.discId}`);
   console.log(`Artist: ${info.artist}`);
   console.log(`Album: ${info.album}`);

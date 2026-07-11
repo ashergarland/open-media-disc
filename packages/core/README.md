@@ -51,6 +51,7 @@ console.log(info.artist, info.album, info.trackCount);
 | `burnImage()` | Write an image to a disc and verify it (needs a burn backend). |
 | `burnPackage()` | Burn a package or image to a disc and verify (Windows). |
 | `verifyDisc()` | Verify a mounted disc against its `CHECKSUMS.sha256`. |
+| `detectMediaKind()` | Tell a mounted disc from an ordinary folder (Windows). |
 | `createManifest()` | Build a schema-valid manifest from track metadata. |
 | `parseManifest()` | Parse manifest JSON text into an object. |
 | `validateManifest()` | Validate an object against the manifest schema. |

@@ -82,6 +82,12 @@ absolute paths. Works for a package folder or a mounted disc.
 const tracks = await playlistPaths('./build/OMD-000001');
 ```
 
+### `detectMediaKind(targetPath): Promise<'disc' | 'package'>`
+
+Detect whether a path is a mounted optical disc or an ordinary folder (a Windows
+drive-type check). Degrades to `'package'` on other platforms or when the medium
+cannot be determined.
+
 ---
 
 ## Disc image API

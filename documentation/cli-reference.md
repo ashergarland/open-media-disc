@@ -105,7 +105,9 @@ omd inspect "./build/OMD-000001"
 ```
 
 Shows disc id, artist, album, year, format/version, track count, total duration,
-size versus the 8cm DVD-RW budget, and the track list in manifest order.
+size versus the 8cm DVD-RW budget, and the track list in manifest order. The
+header reads `OMD Disc` for a mounted optical disc and `OMD Package (folder)`
+otherwise.
 
 ---
 
