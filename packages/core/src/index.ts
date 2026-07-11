@@ -1,8 +1,9 @@
 /**
- * Open Media Disc (OMD) Core — v0.1
+ * Open Media Disc (OMD) Core
  *
- * Platform-independent SDK to create, validate, and inspect OMD FLAC data
- * packages. Does not burn optical media. See the `spec/` folder for the format
+ * Platform-independent SDK to create, validate, inspect, and image OMD FLAC data
+ * packages. Building a burn-ready UDF disc image is supported; writing that image
+ * to a physical disc is a separate step. See the `spec/` folder for the format
  * contract this library implements.
  */
 
@@ -14,3 +15,5 @@ export * from './filenames.js';
 export * from './discSize.js';
 export * from './validationTypes.js';
 export * from './package.js';
+export * from './discImage.js';
+export * from './discImageWindows.js';

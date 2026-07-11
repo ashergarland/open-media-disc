@@ -57,6 +57,7 @@ OMD-000001/
 | `omd validate <package>` | Verify structure, tracks, checksums, and capacity. |
 | `omd inspect <package>` | Print the album, tracks, and disc-size usage. |
 | `omd checksum <package>` | Recompute and check `CHECKSUMS.sha256`. |
+| `omd image <package> --out <img>` | Build a burn-ready UDF disc image (Windows). |
 | `omd play <package>` | Preview playback order (audio output is a v0.1 stub). |
 
 Full details in the [CLI Reference](./documentation/cli-reference.md).

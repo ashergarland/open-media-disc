@@ -5,9 +5,10 @@ import { createCommand } from '../commands/create.js';
 import { validateCommand } from '../commands/validate.js';
 import { inspectCommand } from '../commands/inspect.js';
 import { checksumCommand } from '../commands/checksum.js';
+import { imageCommand } from '../commands/image.js';
 import { playCommand } from '../commands/play.js';
 
-const HELP = `${CLI_NAME} v${CLI_VERSION} — Open Media Disc packaging tool
+const HELP = `${CLI_NAME} v${CLI_VERSION}: Open Media Disc packaging tool
 
 Usage:
   omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]
@@ -15,14 +16,16 @@ Usage:
   omd validate <packageDir> [--strict]
   omd inspect <packageDir>
   omd checksum <packageDir> [--write]
+  omd image <packageDir> --out <imagePath> [--label <name>]
   omd play <packageDir>
 
 Options:
   --help, -h       Show this help.
   --version, -v    Show version.
 
-OMD Core v0.1 creates and validates OMD FLAC data packages. It does not burn
-optical media or drive hardware. See the spec/ folder for the format contract.
+OMD creates, validates, inspects, and builds burn-ready UDF disc images of OMD
+FLAC data packages. Writing an image to a physical disc arrives in a later step.
+See the spec/ folder for the format contract.
 `;
 
 async function main(): Promise<number> {
@@ -49,6 +52,8 @@ async function main(): Promise<number> {
       return inspectCommand(args);
     case 'checksum':
       return checksumCommand(args);
+    case 'image':
+      return imageCommand(args);
     case 'play':
       return playCommand(args);
     default:

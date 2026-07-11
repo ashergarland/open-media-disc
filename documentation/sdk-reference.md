@@ -1,8 +1,9 @@
 # SDK Reference
 
 `@open-album-cartridge/core` is the platform-independent TypeScript SDK for
-creating, validating, and inspecting OMD packages. It has no optical-burning or
-hardware dependencies.
+creating, validating, inspecting, and imaging OMD packages. Building a UDF disc
+image uses the operating system's imaging tools (Windows IMAPI2 in v0.2); nothing
+extra needs installing.
 
 ```bash
 pnpm add @open-album-cartridge/core
@@ -71,6 +72,37 @@ manifest is missing or invalid — use `validatePackage` for graceful diagnostic
 const info = await inspectPackage('./build/OMD-000001');
 console.log(info.artist, info.album, info.trackCount, info.totalDurationSeconds);
 ```
+
+---
+
+## Disc image API
+
+### `buildDiscImage(options): Promise<BuildDiscImageResult>`
+
+Build a burn-ready **UDF** disc image from a validated package. The image content
+mirrors the package tree and its UDF volume label is the package `discId` unless
+overridden. Building an image needs no optical drive.
+
+```ts
+const result = await buildDiscImage({
+  packageDir: './build/OMD-000001',
+  outPath: './build/OMD-000001.img',
+  // optional:
+  volumeLabel: 'OMD-000001', // defaults to the package discId
+  validate: true,            // validate the package first (default true)
+  // backend: myBackend,     // inject a DiscImageBackend (mainly for tests)
+});
+// result: { outPath, volumeLabel, sizeBytes, backend }
+```
+
+> v0.2 ships a Windows (IMAPI2) backend only. On other platforms `buildDiscImage`
+> throws until a backend is available. See the [Roadmap](./roadmap.md).
+
+`resolveDiscImageBackend()` returns the platform backend. `DiscImageBackend` is
+the injectable seam: `{ name, isAvailable(), build(request) }`.
+
+Types: `BuildDiscImageOptions`, `BuildDiscImageResult`, `DiscImageBackend`,
+`DiscImageBuildRequest`.
 
 ---
 

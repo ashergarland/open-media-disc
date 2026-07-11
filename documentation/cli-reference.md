@@ -1,8 +1,8 @@
 # CLI Reference
 
 The `omd` command-line tool wraps [`@open-album-cartridge/core`](./sdk-reference.md).
-It creates and validates OMD packages. It does **not** burn optical media or
-drive hardware.
+It creates, validates, inspects, and builds burn-ready UDF images of OMD packages.
+It does **not** yet write images to a physical disc.
 
 Run commands from the repo root with `pnpm omd <command>` (after `pnpm build`),
 or invoke the installed `omd` binary directly.
@@ -15,6 +15,7 @@ omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]
 omd validate <packageDir> [--strict]
 omd inspect  <packageDir>
 omd checksum <packageDir> [--write]
+omd image    <packageDir> --out <imagePath> [--label <name>]
 omd play     <packageDir>
 
 omd --help | -h        Show help
@@ -119,6 +120,37 @@ omd checksum "./build/OMD-000001" --write   # (re)generate the file
 | --- | --- | --- |
 | `<packageDir>` | — | Package directory. Required. |
 | `--write` | off | Regenerate `CHECKSUMS.sha256` instead of verifying. |
+
+---
+
+## `omd image`
+
+Build a burn-ready **UDF** disc image from a validated package. The image content
+mirrors the package tree and its UDF volume label is the package `discId`.
+Building an image needs no optical drive.
+
+> Windows only in v0.2. Image creation uses IMAPI2; Linux and macOS backends are
+> planned. See the [Roadmap](./roadmap.md).
+
+```bash
+omd image "./build/OMD-000001" --out "./build/OMD-000001.img"
+```
+
+| Argument / option | Description |
+| --- | --- |
+| `<packageDir>` | Package directory to image. Required. |
+| `--out <imagePath>` | Destination image file. Required. |
+| `--label <name>` | Override the UDF volume label (default: the package `discId`). |
+
+Sample output:
+
+```text
+Built disc image: ./build/OMD-000001.img
+Volume label: OMD-000001
+Filesystem: UDF
+Size: 412 MB
+Backend: Windows IMAPI2
+```
 
 ---
 

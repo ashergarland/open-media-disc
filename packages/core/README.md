@@ -1,8 +1,9 @@
 # @open-album-cartridge/core
 
 The platform-independent TypeScript SDK behind [Open Media Disc](../../README.md).
-It creates, validates, and inspects OMD FLAC data packages: album folder in,
-verified package out. No optical burning, no hardware, no GUI.
+It creates, validates, inspects, and images OMD FLAC data packages: album folder
+in, verified package out. Building a burn-ready UDF disc image is supported;
+writing that image to a disc is a separate step.
 
 The SDK implements the format contract in the repository's [`spec/`](../../spec)
 folder, and it powers the [`omd` CLI](../cli).
@@ -45,6 +46,7 @@ console.log(info.artist, info.album, info.trackCount);
 | `createPackage()` | Build a full OMD package from an album folder. |
 | `validatePackage()` | Validate a package directory against the OMD rules. |
 | `inspectPackage()` | Return an album and track summary from a package. |
+| `buildDiscImage()` | Build a burn-ready UDF disc image from a package (Windows). |
 | `createManifest()` | Build a schema-valid manifest from track metadata. |
 | `parseManifest()` | Parse manifest JSON text into an object. |
 | `validateManifest()` | Validate an object against the manifest schema. |

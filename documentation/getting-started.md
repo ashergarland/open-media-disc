@@ -97,6 +97,27 @@ pnpm omd play "./build/OMD-000001"
 `omd play` lists tracks in manifest order but does **not** output audio in v0.1.
 Audio playback belongs in a dedicated player app or the OMD Pi Player hardware.
 
+## 6. Build a disc image (Windows)
+
+Turn a validated package into a burn-ready **UDF** disc image. This needs no
+optical drive.
+
+```bash
+pnpm omd image "./build/OMD-000001" --out "./build/OMD-000001.img"
+```
+
+```text
+Built disc image: ./build/OMD-000001.img
+Volume label: OMD-000001
+Filesystem: UDF
+Size: 412 MB
+Backend: Windows IMAPI2
+```
+
+The image mirrors the package and its volume label is the `discId`. Image
+building is Windows-only in v0.2 (IMAPI2); other platforms are planned. Writing
+the image to a physical disc is the next milestone step.
+
 ## Package size and 8cm DVD-RW
 
 OMD targets 8cm DVD-RW media with a usable budget of ~1.4 GB
