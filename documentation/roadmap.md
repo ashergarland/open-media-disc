@@ -63,8 +63,22 @@ storage layer) on top of the proven package format.
   The first backend targets **Windows (IMAPI2)**; Linux (`growisofs`/`xorriso`)
   and macOS (`drutil`) backends are planned follow-ups.
 - Real audio playback with `omd play` using an installed player (`mpv`, with
-  `ffplay` as a fallback). The current no-audio preview stays as a last resort.
-- Make `omd inspect` distinguish a package folder on disk from a mounted disc.
+  `ffplay` as a fallback, overridable via `--player` or `OMD_PLAYER`). The current
+  no-audio preview stays as a last resort.
+- Make `omd inspect` distinguish a package folder on disk from a mounted disc,
+  degrading to the package label when the medium cannot be determined.
+- Expose the flow as two CLI commands: `omd image` builds a reusable burn-ready
+  image; `omd burn` writes a package or a prebuilt image to disc and verifies it,
+  blanking a non-empty DVD-RW first.
+
+### Non-goals
+
+- No GUI: burning and playback stay on the CLI (OMD Studio is a later milestone).
+- No dedicated hardware: the writer dock, Pi player, and cartridge shell come later.
+- No cross-platform burning yet: Windows (IMAPI2) is the only backend in v0.2; the
+  `BurnBackend` seam keeps Linux and macOS as future work.
+- No built-in audio decoder: playback delegates to an installed player.
+- No format expansion: still FLAC-in-a-package, no DVD-Audio or Blu-ray authoring.
 
 ### Exit criteria
 
