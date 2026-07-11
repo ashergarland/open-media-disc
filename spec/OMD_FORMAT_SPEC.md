@@ -3,9 +3,11 @@
 **Open Media Disc (OMD)** — Format version `0.1.0`
 Format identifier: `OMD-FLAC-DATA`
 
-> Status: Draft. This document defines the on-disc/on-package contract for OMD Core v0.1.
-> It is intentionally minimal and stable so multiple language SDKs and future hardware
-> players can implement the same format without ambiguity.
+> Status: Draft. This document defines the on-disc and on-package contract for OMD. The
+> **package format is version `0.1.0`**. The disc-image and burn/verify layer (section 3)
+> was added for the v0.2 software and is backward compatible with 0.1.0 packages. The
+> contract is intentionally minimal and stable so multiple language SDKs and future
+> hardware players can implement it without ambiguity.
 
 ## 1. What Open Media Disc Is
 
@@ -14,9 +16,10 @@ rewritable optical album cartridge inspired by MiniDisc and UMD, built on commod
 DVD-RW media, FLAC audio, open metadata, and eventually dedicated Raspberry Pi-based
 player and writer hardware.
 
-The **cartridge is the format**; the DVD-RW is the storage layer. At v0.1, however, there
-is no cartridge and no burning. v0.1 defines only the **software package format**: an
-album folder in, a validated OMD package out.
+The **cartridge is the format**; the DVD-RW is the storage layer. There is no cartridge
+yet. The package format (album folder in, validated OMD package out) is the foundation;
+the v0.2 software adds the **media loop**: turning a validated package into a UDF disc
+image and burning it to 8cm DVD-RW. The cartridge shell remains future work.
 
 ## 2. Format Identity
 
@@ -30,18 +33,42 @@ album folder in, a validated OMD package out.
 | Audio codec | FLAC |
 | Metadata | `OMD-MANIFEST.json` (authoritative) |
 | Integrity | `CHECKSUMS.sha256` + per-track SHA-256 in manifest |
-| Target filesystem (future burn) | UDF (or ISO9660+UDF hybrid) |
+| Disc filesystem | UDF |
+| Disc volume label | `discId` (e.g. `OMD-000001`) |
 
-## 3. Package vs. Disc
+## 3. Package, Disc Image, and Burning
 
 An **OMD package** is a plain directory tree on a normal filesystem. It is the unit that
-OMD Core v0.1 creates, validates, and inspects. A future writer tool will turn a package
-into a burn-ready image and write it to an 8cm DVD-RW; that step is **out of scope** for
-v0.1.
+OMD Core creates, validates, and inspects.
 
 Because the package is a plain directory of standard file formats (JSON, FLAC, JPEG/PNG,
 PDF, SHA-256 text), it is always recoverable and inspectable with ordinary tools. This is
 a core design principle: **the format must remain debuggable outside its own ecosystem.**
+
+### 3.1 Disc image
+
+The v0.2 software turns a validated package into a burn-ready **disc image**. The image
+uses the **UDF** filesystem, and its content **mirrors the package tree exactly**:
+`OMD-MANIFEST.json` at the root, the `AUDIO/` directory, `CHECKSUMS.sha256`, and any
+`COVER.*` or `BOOKLET.pdf`. No files are added, removed, or renamed. The UDF **logical
+volume identifier (volume label) MUST be the package `discId`** (for example
+`OMD-000001`). Building an image needs no optical hardware, so it can be produced and
+inspected on any supported machine.
+
+### 3.2 Burning
+
+The target medium is an 8cm DVD-RW. Before writing, a non-empty rewritable disc **MUST be
+blanked** so the result contains only the OMD package. The burned disc is a plain UDF
+filesystem readable with ordinary tools, preserving recoverability.
+
+### 3.3 Verification
+
+A burn is complete only after **verification**: the burned disc is read back and every
+file is checked against `CHECKSUMS.sha256` and the per-track `sha256` in the manifest, by
+the same rules as package validation (see
+[`OMD_VALIDATION_RULES.md`](./OMD_VALIDATION_RULES.md)). Verification compares **file
+content**, not raw image bytes, so incidental filesystem metadata such as timestamps does
+not affect the result.
 
 ## 4. Package Contents
 
@@ -106,16 +133,21 @@ Example:
 
 ## 6. Versioning
 
-OMD keeps **format** and **software** versions separate:
+OMD keeps the **package format**, the **software**, and the **burn/disc-image layer**
+versions separate:
 
-- `omdFormat` + `omdVersion` describe the on-disc contract. A change to disc layout,
-  required fields, or validation semantics is a deliberate format version bump.
+- `omdFormat` + `omdVersion` describe the **package contract**: the manifest fields, the
+  file tree, and the checksum rules. Bump `omdVersion` only when that package contract
+  changes.
+- The disc-image and burn/verify layer (section 3) and the library/CLI package versions
+  are **independent of `omdVersion`**. Formalizing the UDF burn layer in the v0.2 software
+  is additive and backward compatible, so `omdVersion` stays `0.1.0`.
 - Library and CLI package versions follow independent semantic versioning and MUST NOT
   imply a format change.
 
-v0.1 producers MUST write `omdFormat: "OMD-FLAC-DATA"` and `omdVersion: "0.1.0"`.
-Consumers SHOULD reject an unknown `omdFormat` and SHOULD warn on a newer `omdVersion`
-they do not understand.
+Producers MUST write `omdFormat: "OMD-FLAC-DATA"` and `omdVersion: "0.1.0"`. Consumers
+SHOULD reject an unknown `omdFormat` and SHOULD warn on a newer `omdVersion` they do not
+understand.
 
 ## 7. Why FLAC Data, Not DVD-Audio
 
@@ -124,9 +156,10 @@ cheap, repeatable, personal album writing/rewriting with directly recoverable fi
 FLAC-in-a-data-package keeps the format simple to author, validate, and parse on future
 embedded players.
 
-## 8. Out of Scope for v0.1
+## 8. Out of Scope
 
-Optical burning, UDF/ISO image creation, Raspberry Pi device services, hardware control,
-cartridge mechanics, GUI/desktop/mobile apps, cloud accounts, DRM, DVD-Audio/Blu-ray, and
-streaming integration are all explicitly out of scope. v0.1 is: **owned album folder in →
-verified OMD package out.**
+Optical burning and UDF image creation are addressed by the v0.2 software (see section 3).
+Still out of scope: Raspberry Pi device services, hardware control beyond writing a disc,
+cartridge mechanics, GUI/desktop/mobile apps, cloud accounts, DRM, DVD-Audio/Blu-ray
+authoring, and streaming integration. The foundation remains: owned album folder in,
+verified OMD package out, now optionally burned to a verified 8cm DVD-RW.

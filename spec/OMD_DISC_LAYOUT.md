@@ -50,3 +50,13 @@ capacity warning (or an error in strict mode). See
 A consumer (player) SHOULD ignore files it does not recognize unless a debug mode is
 enabled. Future format versions may reserve additional root paths; v0.1 producers SHOULD
 NOT emit files outside the tree above.
+
+## 5. Disc Image (UDF)
+
+When a package is burned (v0.2 software), it is written as a **UDF** filesystem whose
+content mirrors the tree in section 1 exactly, with no files added, removed, or renamed.
+The UDF **volume label MUST be the package `discId`** (for example `OMD-000001`). A
+non-empty rewritable disc is blanked before writing, so it contains only the OMD package.
+After writing, the disc is verified by re-checking `CHECKSUMS.sha256` against the files on
+the disc; a burn succeeds only if verification passes. The burned disc stays a plain,
+browsable UDF filesystem, preserving recoverability.

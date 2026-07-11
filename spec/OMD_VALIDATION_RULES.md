@@ -77,3 +77,12 @@ mode it is a `CAPACITY_WARNING`-coded `error`.
 A file is recognized as FLAC when its first four bytes are the ASCII magic `fLaC`
 (`0x66 0x4C 0x61 0x43`). v0.1 does not require full FLAC frame decoding for validation; the
 STREAMINFO metadata block is parsed opportunistically to populate duration.
+
+## 7. Disc Verification
+
+After burning a disc (v0.2 software), the written medium is verified using the same
+integrity rules as a package: every file on the disc is re-hashed and compared to
+`CHECKSUMS.sha256` and the per-track `sha256` in the manifest (see section 2,
+`CHECKSUM_MISMATCH` and `CHECKSUM_MISSING_ENTRY`). A burn is reported successful only when
+disc verification produces zero integrity errors. Disc verification adds no new package
+validation codes; it reuses the integrity checks above against the mounted disc.

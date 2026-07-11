@@ -1,8 +1,8 @@
 # Package Format
 
 An **OMD package** is a plain directory tree of standard file formats. It is the
-unit OMD Core creates, validates, and inspects — and the thing a future writer
-tool will burn to an 8cm DVD-RW.
+unit OMD Core creates, validates, and inspects, and the source the v0.2 software
+burns to an 8cm DVD-RW.
 
 > This page is the friendly overview. The **normative** contract is in
 > [`spec/OMD_FORMAT_SPEC.md`](../spec/OMD_FORMAT_SPEC.md),
@@ -39,7 +39,8 @@ tool will burn to an 8cm DVD-RW.
 | Format version | `0.1.0` |
 | Audio codec | FLAC |
 | Target medium | 8cm DVD-RW (~1.4 GB usable) |
-| Target filesystem (future burn) | UDF (or ISO9660+UDF) |
+| Disc filesystem | UDF |
+| Disc volume label | `discId` (e.g. `OMD-000001`) |
 
 ## The manifest
 
@@ -85,7 +86,7 @@ presents an album, not a folder.
 | `omdVersion` | string | Format contract version, e.g. `0.1.0`. |
 | `discId` | string | Stable id like `OMD-000001`. |
 | `mediaType` | string | Target medium, default `8cm DVD-RW`. |
-| `filesystemTarget` | string | `UDF`, `ISO9660`, or `ISO9660+UDF`. |
+| `filesystemTarget` | string | Disc filesystem. `UDF` is used for v0.2 burning. |
 | `artist`, `album` | string | Album identity. |
 | `releaseYear` | integer | Optional. |
 | `audioCodec` | string | Always `FLAC` in v0.1. |
@@ -113,13 +114,24 @@ relative path), optional `durationSeconds`, `sizeBytes`, and `sha256`.
 
 See [`spec/OMD_DISC_LAYOUT.md`](../spec/OMD_DISC_LAYOUT.md) for the full rules.
 
+## Disc image (UDF)
+
+When burned by the v0.2 software, a package is written as a **UDF** disc image
+whose content mirrors the package tree exactly, with no files added or renamed.
+The UDF volume label is the package `discId` (for example `OMD-000001`). A
+non-empty rewritable disc is blanked first, and after writing the disc is verified
+by re-checking `CHECKSUMS.sha256` against the files on the disc. The burned disc
+stays a plain, browsable UDF filesystem, so it remains recoverable with ordinary
+tools. See [`spec/OMD_DISC_LAYOUT.md`](../spec/OMD_DISC_LAYOUT.md).
+
 ## Versioning
 
-OMD keeps **format** and **software** versions separate. `omdFormat` +
-`omdVersion` describe the on-disc contract; library and CLI versions move
-independently and never imply a format change. A format change (new required
-field, layout change, or validation-semantics change) is a deliberate
-`omdVersion` bump.
+OMD keeps the **package format**, the **software**, and the **burn/disc-image
+layer** versions separate. `omdFormat` + `omdVersion` describe the package
+contract (manifest fields, file tree, checksum rules); bump `omdVersion` only when
+that contract changes. The v0.2 burn/UDF layer is additive and backward
+compatible, so it does not change `omdVersion`, which stays `0.1.0`. Library and
+CLI versions move independently and never imply a format change.
 
 ## Why plain files?
 
