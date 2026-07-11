@@ -1,8 +1,8 @@
 # CLI Reference
 
 The `omd` command-line tool wraps [`@open-album-cartridge/core`](./sdk-reference.md).
-It creates, validates, inspects, and builds burn-ready UDF images of OMD packages.
-It does **not** yet write images to a physical disc.
+It creates, validates, inspects, images, and burns OMD packages. Burning requires
+Windows (IMAPI2) with a writer attached.
 
 Run commands from the repo root with `pnpm omd <command>` (after `pnpm build`),
 or invoke the installed `omd` binary directly.
@@ -16,6 +16,8 @@ omd validate <packageDir> [--strict]
 omd inspect  <packageDir>
 omd checksum <packageDir> [--write]
 omd image    <packageDir> --out <imagePath> [--label <name>]
+omd burn     <packageDir|imageFile> [--drive <path>] [--label <name>]
+             [--no-blank] [--no-verify]
 omd play     <packageDir>
 
 omd --help | -h        Show help
@@ -150,6 +152,40 @@ Volume label: OMD-000001
 Filesystem: UDF
 Size: 412 MB
 Backend: Windows IMAPI2
+```
+
+---
+
+## `omd burn`
+
+Burn a package (or a prebuilt image) to an 8cm DVD-RW and verify the result. A
+directory source is imaged to a temporary UDF image first; a file source is
+written directly. A non-blank rewritable disc is erased first unless `--no-blank`.
+
+> Windows only in v0.2, and destructive: burning erases a rewritable disc. Insert
+> a blank or rewritable disc before running.
+
+```bash
+omd burn "./build/OMD-000001" --drive "D:\\"
+```
+
+| Argument / option | Description |
+| --- | --- |
+| `<packageDir\|imageFile>` | A package directory or a prebuilt image file. Required. |
+| `--drive <path>` | Target drive mount path (e.g. `D:\`). Optional if exactly one writer is present. |
+| `--label <name>` | UDF volume label when imaging a package (default: the `discId`). |
+| `--no-blank` | Do not blank a non-blank rewritable disc first. |
+| `--no-verify` | Skip reading the burned disc back to verify it. |
+
+Sample output:
+
+```text
+Burning ./build/OMD-000001 to D:\ (HL-DT-ST BD-RE BP60NB10)
+A non-blank rewritable disc will be erased first.
+Disc blanked.
+Wrote image to D:\.
+Verification: PASS
+Burn complete.
 ```
 
 ---

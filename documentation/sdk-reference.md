@@ -137,12 +137,27 @@ const check = await verifyDisc('E:\\');
 if (!check.valid) console.error(check.errors);
 ```
 
-`BurnBackend` is the injectable seam: `{ name, isAvailable(), listDrives(),
-isBlank(drive), blank(drive), writeImage(request) }`. A `BurnDrive` carries the
-`mountPath` where the disc is read for verification.
+### `burnPackage(options): Promise<BurnImageResult>`
 
-Types: `BurnImageOptions`, `BurnImageResult`, `BurnBackend`, `BurnDrive`,
-`BurnImageRequest`.
+Burn a package directory (imaged to a temporary UDF image first) or a prebuilt
+image file to a disc, then verify. Uses the platform burn backend
+(`resolveBurnBackend()`) unless a `backend` or `imageBackend` is injected.
+
+```ts
+const result = await burnPackage({
+  source: './build/OMD-000001', // a package directory or an image file
+  drive: { mountPath: 'D:\\' },
+  // optional: backend, imageBackend, volumeLabel, blank, verify
+});
+```
+
+`BurnBackend` is the injectable seam: `{ name, isAvailable(), listDrives(),
+isBlank(drive), blank(drive), writeImage(request) }`. `resolveBurnBackend()`
+returns the platform backend, and a `BurnDrive` carries the `mountPath` where the
+disc is read for verification.
+
+Types: `BurnImageOptions`, `BurnImageResult`, `BurnPackageOptions`, `BurnBackend`,
+`BurnDrive`, `BurnImageRequest`.
 
 ---
 

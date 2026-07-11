@@ -18,3 +18,4 @@ export * from './package.js';
 export * from './discImage.js';
 export * from './discImageWindows.js';
 export * from './burn.js';
+export * from './burnWindows.js';

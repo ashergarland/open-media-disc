@@ -6,6 +6,7 @@ import { validateCommand } from '../commands/validate.js';
 import { inspectCommand } from '../commands/inspect.js';
 import { checksumCommand } from '../commands/checksum.js';
 import { imageCommand } from '../commands/image.js';
+import { burnCommand } from '../commands/burn.js';
 import { playCommand } from '../commands/play.js';
 
 const HELP = `${CLI_NAME} v${CLI_VERSION}: Open Media Disc packaging tool
@@ -17,15 +18,17 @@ Usage:
   omd inspect <packageDir>
   omd checksum <packageDir> [--write]
   omd image <packageDir> --out <imagePath> [--label <name>]
+  omd burn <packageDir|imageFile> [--drive <path>] [--label <name>]
+                                  [--no-blank] [--no-verify]
   omd play <packageDir>
 
 Options:
   --help, -h       Show this help.
   --version, -v    Show version.
 
-OMD creates, validates, inspects, and builds burn-ready UDF disc images of OMD
-FLAC data packages. Writing an image to a physical disc arrives in a later step.
-See the spec/ folder for the format contract.
+OMD builds, validates, inspects, images, and burns OMD FLAC data packages.
+Burning requires Windows (IMAPI2) with a writer attached. See the spec/ folder
+for the format contract.
 `;
 
 async function main(): Promise<number> {
@@ -54,6 +57,8 @@ async function main(): Promise<number> {
       return checksumCommand(args);
     case 'image':
       return imageCommand(args);
+    case 'burn':
+      return burnCommand(args);
     case 'play':
       return playCommand(args);
     default:

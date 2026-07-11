@@ -1,3 +1,9 @@
+import { randomUUID } from 'node:crypto';
+import { rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { WindowsImapiBurnBackend } from './burnWindows.js';
+import { buildDiscImage, type DiscImageBackend } from './discImage.js';
 import { validatePackage, type ValidatePackageOptions } from './package.js';
 import type { PackageValidationResult } from './validationTypes.js';
 
@@ -63,8 +69,8 @@ export interface BurnImageOptions {
   imagePath: string;
   /** Target drive. */
   drive: BurnDrive;
-  /** Backend that performs the write. */
-  backend: BurnBackend;
+  /** Backend that performs the write. Defaults to the platform backend. */
+  backend?: BurnBackend;
   /** Blank a non-blank rewritable disc before writing. Defaults to `true`. */
   blank?: boolean;
   /** Verify the burned disc afterward. Defaults to `true`. */
@@ -96,7 +102,8 @@ export interface BurnImageResult {
  * (`verified: false`) rather than thrown, so callers can surface it.
  */
 export async function burnImage(options: BurnImageOptions): Promise<BurnImageResult> {
-  const { imagePath, drive, backend } = options;
+  const { imagePath, drive } = options;
+  const backend = options.backend ?? resolveBurnBackend();
 
   if (!(await backend.isAvailable())) {
     throw new Error(
@@ -121,4 +128,71 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
   }
 
   return { imagePath, drive, blanked, verified, verification, backend: backend.name };
+}
+
+/**
+ * Resolve the burn backend for the current platform.
+ *
+ * v0.2 ships a Windows (IMAPI2) backend only. Linux and macOS backends are
+ * planned follow-ups; see the roadmap. On unsupported platforms the returned
+ * backend's {@link BurnBackend.isAvailable} reports `false`.
+ */
+export function resolveBurnBackend(): BurnBackend {
+  return new WindowsImapiBurnBackend();
+}
+
+/** Options for {@link burnPackage}. */
+export interface BurnPackageOptions {
+  /** A package directory or a prebuilt image file. */
+  source: string;
+  /** Target drive. */
+  drive: BurnDrive;
+  /** Burn backend. Defaults to the platform backend. */
+  backend?: BurnBackend;
+  /** Image backend used when building from a package directory. Defaults to the platform backend. */
+  imageBackend?: DiscImageBackend;
+  /** UDF volume label override when building an image from a package. */
+  volumeLabel?: string;
+  /** Blank a non-blank rewritable disc before writing. Defaults to `true`. */
+  blank?: boolean;
+  /** Verify the burned disc afterward. Defaults to `true`. */
+  verify?: boolean;
+}
+
+/**
+ * Burn a package or a prebuilt image to a disc.
+ *
+ * When `source` is a directory it is treated as an OMD package: a temporary
+ * burn-ready image is built (and removed afterward), then written. When `source`
+ * is a file it is written directly. The write is then verified.
+ */
+export async function burnPackage(options: BurnPackageOptions): Promise<BurnImageResult> {
+  const info = await stat(options.source);
+
+  let imagePath = options.source;
+  let tempImage: string | undefined;
+  if (info.isDirectory()) {
+    tempImage = path.join(tmpdir(), `omd-burn-${randomUUID()}.img`);
+    await buildDiscImage({
+      packageDir: options.source,
+      outPath: tempImage,
+      ...(options.volumeLabel ? { volumeLabel: options.volumeLabel } : {}),
+      ...(options.imageBackend ? { backend: options.imageBackend } : {}),
+    });
+    imagePath = tempImage;
+  }
+
+  try {
+    return await burnImage({
+      imagePath,
+      drive: options.drive,
+      ...(options.backend ? { backend: options.backend } : {}),
+      ...(options.blank !== undefined ? { blank: options.blank } : {}),
+      ...(options.verify !== undefined ? { verify: options.verify } : {}),
+    });
+  } finally {
+    if (tempImage) {
+      await rm(tempImage, { force: true });
+    }
+  }
 }

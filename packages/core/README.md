@@ -2,8 +2,8 @@
 
 The platform-independent TypeScript SDK behind [Open Media Disc](../../README.md).
 It creates, validates, inspects, and images OMD FLAC data packages: album folder
-in, verified package out. Building a burn-ready UDF disc image is supported;
-writing that image to a disc is a separate step.
+in, verified package out. Building a burn-ready UDF disc image and burning it to
+an 8cm DVD-RW are supported on Windows.
 
 The SDK implements the format contract in the repository's [`spec/`](../../spec)
 folder, and it powers the [`omd` CLI](../cli).
@@ -48,6 +48,7 @@ console.log(info.artist, info.album, info.trackCount);
 | `inspectPackage()` | Return an album and track summary from a package. |
 | `buildDiscImage()` | Build a burn-ready UDF disc image from a package (Windows). |
 | `burnImage()` | Write an image to a disc and verify it (needs a burn backend). |
+| `burnPackage()` | Burn a package or image to a disc and verify (Windows). |
 | `verifyDisc()` | Verify a mounted disc against its `CHECKSUMS.sha256`. |
 | `createManifest()` | Build a schema-valid manifest from track metadata. |
 | `parseManifest()` | Parse manifest JSON text into an object. |

@@ -2,8 +2,8 @@
 
 `omd`, the command-line tool for [Open Media Disc](../../README.md). It turns an
 album folder of FLAC files into a verified OMD package, then validates, inspects,
-images, and previews it. It wraps [`@open-album-cartridge/core`](../core) and does
-not yet write images to a physical disc.
+images, burns, and previews it. It wraps [`@open-album-cartridge/core`](../core).
+Burning requires Windows (IMAPI2) with a writer attached.
 
 ## Commands
 
@@ -14,6 +14,7 @@ omd validate <packageDir> [--strict]
 omd inspect <packageDir>
 omd checksum <packageDir> [--write]
 omd image <packageDir> --out <imagePath> [--label <name>]
+omd burn <packageDir|imageFile> [--drive <path>] [--label <name>] [--no-blank] [--no-verify]
 omd play <packageDir>
 ```
 
@@ -24,6 +25,7 @@ omd play <packageDir>
 | `inspect` | Print the album, tracks, and disc-size usage. |
 | `checksum` | Recompute and check `CHECKSUMS.sha256` (use `--write` to save). |
 | `image` | Build a burn-ready UDF disc image (Windows in v0.2). |
+| `burn` | Burn a package or image to an 8cm DVD-RW and verify (Windows in v0.2). |
 | `play` | Preview playback order (audio output is a v0.1 stub). |
 
 ### Examples

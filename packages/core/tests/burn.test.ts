@@ -1,12 +1,16 @@
-import { appendFile, readdir } from 'node:fs/promises';
+import { appendFile, mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   burnImage,
+  burnPackage,
   createPackage,
+  resolveBurnBackend,
   verifyDisc,
   type BurnBackend,
   type BurnImageRequest,
+  type DiscImageBackend,
+  type DiscImageBuildRequest,
 } from '../src/index.js';
 import { makeSourceAlbum, useTempDir } from './helpers/fixtures.js';
 
@@ -52,6 +56,24 @@ function makeFakeBurnBackend(opts?: { available?: boolean; blank?: boolean }): {
     },
     writeImage: async (request) => {
       calls.write.push(request);
+    },
+  };
+  return { backend, calls };
+}
+
+/** A disc-image backend that records requests and writes a placeholder image. */
+function makeFakeImageBackend(): {
+  backend: DiscImageBackend;
+  calls: DiscImageBuildRequest[];
+} {
+  const calls: DiscImageBuildRequest[] = [];
+  const backend: DiscImageBackend = {
+    name: 'FakeImage',
+    isAvailable: async () => true,
+    build: async (request) => {
+      calls.push(request);
+      await mkdir(path.dirname(request.outPath), { recursive: true });
+      await writeFile(request.outPath, Buffer.alloc(2048));
     },
   };
   return { backend, calls };
@@ -137,5 +159,51 @@ describe('burnImage', () => {
         backend,
       }),
     ).rejects.toThrow(/not available/i);
+  });
+});
+
+describe('resolveBurnBackend', () => {
+  it('returns the Windows IMAPI2 backend', () => {
+    expect(resolveBurnBackend().name).toBe('Windows IMAPI2');
+  });
+});
+
+describe('burnPackage', () => {
+  const tmp = useTempDir();
+
+  it('builds an image from a package directory, then burns and verifies', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const image = makeFakeImageBackend();
+    const { backend, calls } = makeFakeBurnBackend();
+
+    const result = await burnPackage({
+      source: pkg,
+      drive: { mountPath: pkg }, // the burned disc mirrors the package
+      backend,
+      imageBackend: image.backend,
+    });
+
+    expect(image.calls).toHaveLength(1);
+    expect(calls.write).toHaveLength(1);
+    expect(result.verified).toBe(true);
+  });
+
+  it('burns a prebuilt image file directly, without building an image', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const imageFile = path.join(tmp.path(), 'prebuilt.img');
+    await writeFile(imageFile, Buffer.alloc(2048));
+    const image = makeFakeImageBackend();
+    const { backend, calls } = makeFakeBurnBackend();
+
+    const result = await burnPackage({
+      source: imageFile,
+      drive: { mountPath: pkg },
+      backend,
+      imageBackend: image.backend,
+    });
+
+    expect(image.calls).toHaveLength(0);
+    expect(calls.write[0]!.imagePath).toBe(imageFile);
+    expect(result.verified).toBe(true);
   });
 });

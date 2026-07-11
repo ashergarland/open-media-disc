@@ -115,8 +115,21 @@ Backend: Windows IMAPI2
 ```
 
 The image mirrors the package and its volume label is the `discId`. Image
-building is Windows-only in v0.2 (IMAPI2); other platforms are planned. Writing
-the image to a physical disc is the next milestone step.
+building is Windows-only in v0.2 (IMAPI2); other platforms are planned. To write
+it to a disc, see the next section.
+
+## 7. Burn to a disc (Windows)
+
+Write a package (or a prebuilt image) to an 8cm DVD-RW and verify it. Insert a
+blank or rewritable disc first.
+
+```bash
+pnpm omd burn "./build/OMD-000001" --drive "D:\\"
+```
+
+> Burning is destructive: a non-blank rewritable disc is erased first (pass
+> `--no-blank` to skip). It is Windows-only in v0.2. With exactly one writer
+> attached you can omit `--drive`.
 
 ## Package size and 8cm DVD-RW
 

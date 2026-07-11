@@ -1,9 +1,7 @@
-import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { DiscImageBackend, DiscImageBuildRequest } from './discImage.js';
+import { runPowerShellScript } from './windowsPowerShell.js';
 
 /**
  * PowerShell + COM script that builds a pure UDF image with IMAPI2's
@@ -62,41 +60,6 @@ try {
 }
 `;
 
-/** Write the script to a temp file and run it with Windows PowerShell. */
-async function runImageScript(env: NodeJS.ProcessEnv): Promise<void> {
-  const scriptPath = path.join(tmpdir(), `omd-image-${randomUUID()}.ps1`);
-  await writeFile(scriptPath, BUILD_SCRIPT, 'utf8');
-
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(
-        'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', scriptPath],
-        { env, windowsHide: true },
-      );
-
-      let stderr = '';
-      child.stderr?.on('data', (chunk) => {
-        stderr += chunk.toString();
-      });
-      child.on('error', reject);
-      child.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(
-            new Error(
-              `PowerShell exited with code ${code}: ${stderr.trim() || '(no error output)'}`,
-            ),
-          );
-        }
-      });
-    });
-  } finally {
-    await rm(scriptPath, { force: true });
-  }
-}
-
 /**
  * Windows disc-image backend built on IMAPI2 (`IMAPI2FS.MsftFileSystemImage`).
  * Produces a pure UDF image file and needs no optical drive.
@@ -113,7 +76,7 @@ export class WindowsImapiImageBackend implements DiscImageBackend {
     const out = path.resolve(request.outPath);
     await mkdir(path.dirname(out), { recursive: true });
 
-    await runImageScript({
+    await runPowerShellScript(BUILD_SCRIPT, {
       ...process.env,
       OMD_IMG_SRC: src,
       OMD_IMG_OUT: out,
