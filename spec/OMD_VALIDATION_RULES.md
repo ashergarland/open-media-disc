@@ -1,6 +1,6 @@
 # OMD Validation Rules
 
-**Open Media Disc (OMD)** — Format version `0.1.0`
+**Open Media Disc (OMD)** (Format version `0.1.0`)
 
 This document defines what OMD Core checks when validating a package, and how each result
 is categorized. Multiple language SDKs should report equivalent categories so tools behave
@@ -51,16 +51,16 @@ Each result carries a stable `code` so other implementations can match behavior.
 
 `validatePackage()` evaluates in this order and short-circuits on fatal structural errors:
 
-1. **Structure** — manifest present, parseable, schema-valid; `CHECKSUMS.sha256` present;
+1. **Structure**: manifest present, parseable, schema-valid; `CHECKSUMS.sha256` present;
    `AUDIO/` present. A `MISSING_MANIFEST`, `MANIFEST_PARSE_ERROR`, or
    `MANIFEST_SCHEMA_ERROR` stops further track/checksum checks (nothing reliable to check
    against).
-2. **Format** — `omdFormat` supported, `omdVersion` known.
-3. **Tracks** — each track file exists, is FLAC, numbers are unique, `trackCount` matches.
-4. **Integrity** — recompute SHA-256 for each package file and compare to
+2. **Format**: `omdFormat` supported, `omdVersion` known.
+3. **Tracks**: each track file exists, is FLAC, numbers are unique, `trackCount` matches.
+4. **Integrity**: recompute SHA-256 for each package file and compare to
    `CHECKSUMS.sha256` and the per-track `sha256` in the manifest.
-5. **Metadata & portability** — cover art, filenames, OS junk.
-6. **Capacity** — compare `totalSizeBytes` to the media budget.
+5. **Metadata & portability**: cover art, filenames, OS junk.
+6. **Capacity**: compare `totalSizeBytes` to the media budget.
 
 ## 5. Capacity Budget
 

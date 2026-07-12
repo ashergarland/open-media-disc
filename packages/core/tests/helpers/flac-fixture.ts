@@ -5,7 +5,7 @@ import { writeFile } from 'node:fs/promises';
  *
  * These fixtures contain a real `fLaC` marker, a STREAMINFO metadata block
  * (so duration can be derived), and a VORBIS_COMMENT block (tags). They contain
- * NO audio frames, so real decoders cannot play them — they exist purely as
+ * NO audio frames, so real decoders cannot play them; they exist purely as
  * lightweight, non-copyrighted TEST FIXTURES for OMD tooling.
  */
 

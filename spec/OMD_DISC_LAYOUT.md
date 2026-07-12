@@ -1,6 +1,6 @@
 # OMD Disc Layout
 
-**Open Media Disc (OMD)** — Format version `0.1.0`
+**Open Media Disc (OMD)** (Format version `0.1.0`)
 
 This document defines the required and optional paths in an OMD package. The layout is the
 same whether the package lives in a build folder or is later burned to an 8cm DVD-RW.

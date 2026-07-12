@@ -8,12 +8,13 @@ self-describing packages meant for cheap, rewritable 8cm DVD-RW media.
 ## Is this a backup tool?
 
 No. OMD is an **album format**. It produces album objects with a manifest, cover
-art, and checksums — the disc is presented as an album, not a folder of files.
+art, and checksums, so the disc is presented as an album, not a folder of files.
 
-## Does v0.1 burn discs?
+## Does OMD burn discs?
 
-No. v0.1 is pure software: **album folder in → verified package out**. Burning,
-imaging, and hardware come in later milestones. See the [Roadmap](./roadmap.md).
+The v0.1 format is pure software: **album folder in → verified package out**. The
+v0.2 tools add imaging and burning to 8cm DVD-RW on Windows (IMAPI2), plus
+playback. See the [Roadmap](./roadmap.md).
 
 ## Why FLAC and not MP3 or DVD-Audio?
 
@@ -47,8 +48,8 @@ See the [Validation Guide](./validation.md).
 
 ## Where's the authoritative format definition?
 
-In [`spec/`](../spec). When documentation and spec disagree, the spec wins —
-please report the doc bug.
+In [`spec/`](../spec). When documentation and spec disagree, the spec wins.
+Please report the doc bug.
 
 ## Can I distribute music with OMD?
 

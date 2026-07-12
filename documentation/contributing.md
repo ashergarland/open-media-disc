@@ -20,13 +20,13 @@ Concretely, when you change one of these, update the matching docs:
 | Terminology | [glossary.md](./glossary.md) |
 | Anything user-facing | Root [README.md](../README.md) and this `documentation/` folder |
 
-The repository ships AI instructions that enforce this — see
+The repository ships AI instructions that enforce this. See
 `.github/copilot-instructions.md` and
 `.github/instructions/keep-docs-in-sync.instructions.md`.
 
 ## Spec-first
 
-OMD is defined by written specs, the JSON Schema, and conformance fixtures —
+OMD is defined by written specs, the JSON Schema, and conformance fixtures,
 **not** by "whatever a tool happens to output." Any change that affects
 interoperability belongs in [`spec/`](../spec) first, then the implementation,
 then the docs. When docs and spec disagree, the spec wins.
@@ -53,7 +53,7 @@ Before opening a PR:
 
 - Add or update tests under `packages/*/tests` for any behavior change.
 - Use the synthetic FLAC fixtures in
-  [`packages/core/tests/helpers`](../packages/core/tests/helpers) — never commit
+  [`packages/core/tests/helpers`](../packages/core/tests/helpers), never commit
   copyrighted audio.
 - Cover both success and failure paths (e.g. new validation codes need a failing
   fixture).

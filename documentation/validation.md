@@ -49,14 +49,14 @@ A package is **VALID** when it has zero `error` results. `--strict` (or
 
 Checks run in this order and short-circuit on fatal structural problems:
 
-1. **Structure** — manifest present, parseable, schema-valid; `CHECKSUMS.sha256`
+1. **Structure**: manifest present, parseable, schema-valid; `CHECKSUMS.sha256`
    present; `AUDIO/` present.
-2. **Format** — `omdFormat` supported, `omdVersion` known.
-3. **Tracks** — files exist, are FLAC, unique numbers, count matches.
-4. **Integrity** — recompute SHA-256 and compare to the manifest and
+2. **Format**: `omdFormat` supported, `omdVersion` known.
+3. **Tracks**: files exist, are FLAC, unique numbers, count matches.
+4. **Integrity**: recompute SHA-256 and compare to the manifest and
    `CHECKSUMS.sha256`.
-5. **Metadata & portability** — cover art, filenames, OS junk.
-6. **Capacity** — total size versus the media budget.
+5. **Metadata & portability**: cover art, filenames, OS junk.
+6. **Capacity**: total size versus the media budget.
 
 ## Example: an intentionally invalid package
 

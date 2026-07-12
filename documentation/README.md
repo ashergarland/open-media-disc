@@ -1,13 +1,13 @@
-# Open Media Disc — Documentation
+# Open Media Disc: Documentation
 
-Welcome to the official documentation for **Open Media Disc (OMD)** — an
+Welcome to the official documentation for **Open Media Disc (OMD)**, an
 open-source physical music format. This is the public landing page for users and
 developers. If you are new here, start with **[What is OMD?](./what-is-omd.md)**
 and then **[Getting Started](./getting-started.md)**.
 
 > **The cartridge is the format; the DVD-RW is the storage layer.**
-> OMD Core v0.1 is pure software: **album folder in → verified OMD package out →
-> validate / inspect / play locally.** No burning, no hardware, no GUI yet.
+> The v0.1 format is pure software: **album folder in → verified OMD package
+> out.** v0.2 adds imaging, burning to disc (Windows), and playback. No GUI yet.
 
 ---
 
@@ -32,7 +32,7 @@ and then **[Getting Started](./getting-started.md)**.
 
 ```text
 documentation/
-  README.md            You are here — public landing + index
+  README.md            You are here (public landing + index)
   what-is-omd.md       Vision, motivation, and design principles
   project-status.md    What is built today and what is left
   installation.md      Prerequisites, install, build, verify
@@ -53,12 +53,12 @@ This documentation is the **friendly, task-oriented** entry point. The
 **normative** contract that every OMD implementation must follow lives in the
 [`spec/`](../spec) folder:
 
-- [OMD_FORMAT_SPEC.md](../spec/OMD_FORMAT_SPEC.md) — format identity and rules
-- [OMD_DISC_LAYOUT.md](../spec/OMD_DISC_LAYOUT.md) — required/optional paths
-- [OMD_VALIDATION_RULES.md](../spec/OMD_VALIDATION_RULES.md) — validation codes
-- [OMD_MANIFEST_SCHEMA.json](../spec/OMD_MANIFEST_SCHEMA.json) — JSON Schema
+- [OMD_FORMAT_SPEC.md](../spec/OMD_FORMAT_SPEC.md): format identity and rules
+- [OMD_DISC_LAYOUT.md](../spec/OMD_DISC_LAYOUT.md): required/optional paths
+- [OMD_VALIDATION_RULES.md](../spec/OMD_VALIDATION_RULES.md): validation codes
+- [OMD_MANIFEST_SCHEMA.json](../spec/OMD_MANIFEST_SCHEMA.json): JSON Schema
 
-When documentation and the spec disagree, **the spec wins** — please open an
+When documentation and the spec disagree, **the spec wins**. Please open an
 issue so we can fix the docs.
 
 ## Packages
@@ -71,7 +71,8 @@ issue so we can fix the docs.
 ## Current status
 
 - **Format:** `OMD-FLAC-DATA` v0.1.0
-- **Milestone:** OMD Core v0.1 — create and validate packages, no hardware.
+- **Milestone:** Core v0.1 done; v0.2 (Write and Play) adds imaging, burning
+  (Windows), and playback.
 - **License:** [MIT](../LICENSE)
 
 ---

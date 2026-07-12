@@ -38,7 +38,7 @@ omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `<albumFolder>` | — | Source folder containing `.flac` files (and optional cover). Required. |
+| `<albumFolder>` | - | Source folder containing `.flac` files (and optional cover). Required. |
 | `--out <dir>` | `./build/<discId>` | Output package directory. |
 | `--disc-id <id>` | `OMD-000001` | Stable disc identifier (`OMD-` + 6+ digits). |
 | `--artist <name>` | inferred from tags | Override album artist. |
@@ -74,7 +74,7 @@ omd validate "./build/OMD-000001"
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `<packageDir>` | — | Package directory to validate. Required. |
+| `<packageDir>` | - | Package directory to validate. Required. |
 | `--strict` | off | Promote a capacity overflow from a warning to an error. |
 
 Sample output:
@@ -122,7 +122,7 @@ omd checksum "./build/OMD-000001" --write   # (re)generate the file
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `<packageDir>` | — | Package directory. Required. |
+| `<packageDir>` | - | Package directory. Required. |
 | `--write` | off | Regenerate `CHECKSUMS.sha256` instead of verifying. |
 
 ---

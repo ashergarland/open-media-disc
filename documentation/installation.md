@@ -1,7 +1,8 @@
 # Installation
 
-OMD Core v0.1 is a Node.js/TypeScript monorepo. Everything runs locally — no
-optical drive or hardware is required to create and validate packages.
+OMD is a Node.js/TypeScript monorepo. Creating, validating, and inspecting
+packages runs locally with no optical drive or hardware. Burning a disc needs
+Windows and a writer; playback uses an installed audio player.
 
 ## Prerequisites
 
@@ -10,6 +11,8 @@ optical drive or hardware is required to create and validate packages.
 | [Node.js](https://nodejs.org) | 18 or newer | LTS recommended. |
 | [pnpm](https://pnpm.io) | 8+ | Preferred package manager for this workspace. |
 | Git | any recent | To clone the repository. |
+| `mpv` or `ffplay` | any recent | Optional, for `omd play` audio. Without one, play prints a preview. |
+| Windows (IMAPI2) | built in | Optional, for `omd image` / `omd burn`. No install needed; other platforms are planned. |
 
 Install pnpm if you don't have it:
 

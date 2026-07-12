@@ -66,7 +66,7 @@ capacity overflow to an error). Returns a `PackageValidationResult` with
 ### `inspectPackage(packageDir): Promise<PackageInspection>`
 
 Read a package manifest and return an album/track summary. Throws if the
-manifest is missing or invalid — use `validatePackage` for graceful diagnostics.
+manifest is missing or invalid; use `validatePackage` for graceful diagnostics.
 
 ```ts
 const info = await inspectPackage('./build/OMD-000001');
@@ -236,8 +236,8 @@ Type: `DiscSizeEstimate { totalSizeBytes, budgetBytes, remainingBytes, usedFract
 
 ## Validation types
 
-- `ValidationSeverity` — `'error' | 'warning' | 'info'`.
-- `ValidationCode` — stable string codes (see [Validation Guide](./validation.md)).
+- `ValidationSeverity`: `'error' | 'warning' | 'info'`.
+- `ValidationCode`: stable string codes (see [Validation Guide](./validation.md)).
 - `ValidationIssue { severity, code, message, path? }`.
 - `PackageValidationResult { valid, issues, errors, warnings }`.
 

@@ -4,7 +4,7 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 
 | Term | Meaning |
 | --- | --- |
-| **OMD** | Open Media Disc — an open-source physical music format. |
+| **OMD** | Open Media Disc, an open-source physical music format. |
 | **OMD-FLAC-DATA** | The v0.1 native data format: FLAC audio plus a manifest, artwork, and checksums, stored as a plain directory / data disc. |
 | **OMD package** | A directory tree conforming to the OMD disc layout. The unit OMD Core creates, validates, and inspects. |
 | **Manifest** | `OMD-MANIFEST.json` at the package root. The authoritative album table of contents: metadata, track order, paths, sizes, and per-track checksums. |
@@ -13,7 +13,10 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 | **8cm DVD-RW** | The commodity rewritable optical medium OMD targets (~1.4 GB usable). |
 | **Capacity budget** | The usable byte limit for the target medium. Default `1,400,000,000` bytes for 8cm DVD-RW. |
 | **Checksums file** | `CHECKSUMS.sha256`, a standard `sha256sum`-style integrity list for every package file. |
-| **Full-image write** | The intended burn model: erase and rewrite the whole disc image rather than mutating individual files. (Burning is out of scope for v0.1.) |
+| **Full-image write** | The burn model: erase and rewrite the whole disc image rather than mutating individual files. |
+| **UDF** | The disc filesystem OMD writes when burning (see the format spec). |
+| **Disc image** | A burn-ready UDF image of a package, built by `omd image`. |
+| **Burn** | Writing a package or image to an 8cm DVD-RW and verifying it (`omd burn`; Windows in v0.2). |
 | **Validation error** | A finding that makes a package invalid (e.g. missing manifest, checksum mismatch). |
 | **Validation warning** | A recommendation or risk that does not invalidate the package (e.g. missing cover art, over-capacity). |
 | **Strict mode** | Validation setting that promotes a capacity overflow from a warning to an error. |

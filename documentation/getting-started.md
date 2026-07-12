@@ -1,8 +1,8 @@
 # Getting Started
 
 This guide walks through creating and validating your first **Open Media Disc
-(OMD)** package. Everything here is pure software — no optical drive, no
-hardware, no burning.
+(OMD)** package. The core flow is pure software (no optical drive or hardware).
+Building an image and burning a disc (later sections, Windows-only) are optional.
 
 If you haven't set up the project yet, do that first:
 **[Installation](./installation.md)**.

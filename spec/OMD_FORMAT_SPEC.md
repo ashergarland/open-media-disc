@@ -1,6 +1,6 @@
 # OMD Format Specification
 
-**Open Media Disc (OMD)** — Format version `0.1.0`
+**Open Media Disc (OMD)** (Format version `0.1.0`)
 Format identifier: `OMD-FLAC-DATA`
 
 > Status: Draft. This document defines the on-disc and on-package contract for OMD. The
@@ -75,11 +75,11 @@ not affect the result.
 See [`OMD_DISC_LAYOUT.md`](./OMD_DISC_LAYOUT.md) for the exact tree. In summary, a valid
 package contains:
 
-- `OMD-MANIFEST.json` — required, at package root. The album table of contents.
-- `CHECKSUMS.sha256` — required. Standard `sha256sum`-style file for the whole package.
-- `AUDIO/` — required. FLAC tracks, numbered in playback order.
-- `COVER.jpg` / `COVER.png` — recommended cover art at the root.
-- `BOOKLET.pdf` — optional.
+- `OMD-MANIFEST.json`: required, at package root. The album table of contents.
+- `CHECKSUMS.sha256`: required. Standard `sha256sum`-style file for the whole package.
+- `AUDIO/`: required. FLAC tracks, numbered in playback order.
+- `COVER.jpg` / `COVER.png`: recommended cover art at the root.
+- `BOOKLET.pdf`: optional.
 
 ## 5. Manifest
 
