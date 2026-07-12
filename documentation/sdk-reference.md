@@ -143,6 +143,7 @@ const result = await burnImage({
   blank: true,            // blank a non-blank RW first (default true)
   verify: true,           // verify the burned disc (default true)
   eject: true,            // eject on success (default true; false keeps it in)
+  onProgress: (p) => console.log(p.phase), // optional live phase reporting
 });
 // result: { imagePath, drive, blanked, verified, verification?, ejected, media?, backend }
 // media: { kind: 'rewritable' | 'write-once' | 'unknown', blank, typeName?, capacityBytes? }
@@ -182,7 +183,8 @@ backend, and a `BurnDrive` carries the `mountPath` where the disc is read for
 verification.
 
 Types: `BurnImageOptions`, `BurnImageResult`, `BurnPackageOptions`, `BurnBackend`,
-`BurnDrive`, `BurnImageRequest`, `MediaInfo`, `DiscMediaKind`.
+`BurnDrive`, `BurnImageRequest`, `MediaInfo`, `DiscMediaKind`, `BurnProgress`,
+`BurnPhase`.
 
 ---
 

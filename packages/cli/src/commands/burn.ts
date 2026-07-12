@@ -3,6 +3,7 @@ import {
   formatBytes,
   resolveBurnBackend,
   type BurnDrive,
+  type BurnProgress,
   type MediaInfo,
 } from '@open-album-cartridge/core';
 import { boolOption, stringOption, type ParsedArgs } from '../args.js';
@@ -13,6 +14,83 @@ const USAGE =
 /** Normalize a mount path for comparison (drop trailing slashes, upper-case). */
 function normalizeMount(mountPath: string): string {
   return mountPath.replace(/[\\/]+$/, '').toUpperCase();
+}
+
+/**
+ * A live, single-line phase reporter (spinner + elapsed time) for a burn. On a
+ * TTY it animates a spinner; otherwise it prints one line per phase.
+ */
+function createBurnReporter(): {
+  onProgress: (progress: BurnProgress) => void;
+  stop: () => void;
+} {
+  const isTty = Boolean(process.stdout.isTTY);
+  const frames = ['-', '\\', '|', '/'];
+  let timer: NodeJS.Timeout | undefined;
+  let frame = 0;
+  let start = 0;
+  let label = '';
+
+  const elapsed = (): string => {
+    const s = Math.floor((Date.now() - start) / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+  const render = (): void => {
+    frame = (frame + 1) % frames.length;
+    process.stdout.write(`\r${frames[frame]} ${label}... ${elapsed()}   `);
+  };
+  const clearLine = (): void => {
+    if (isTty && label) {
+      process.stdout.write(`\r${' '.repeat(label.length + 24)}\r`);
+    }
+  };
+  const stop = (): void => {
+    if (timer) {
+      clearInterval(timer);
+      timer = undefined;
+    }
+    clearLine();
+    label = '';
+  };
+  const begin = (next: string): void => {
+    stop();
+    label = next;
+    start = Date.now();
+    if (isTty) {
+      render();
+      timer = setInterval(render, 120);
+    } else {
+      console.log(`${next}...`);
+    }
+  };
+
+  return {
+    onProgress: (progress: BurnProgress): void => {
+      switch (progress.phase) {
+        case 'building':
+          begin('Building disc image');
+          break;
+        case 'blanking':
+          begin('Blanking disc');
+          break;
+        case 'writing':
+          begin(`Writing${progress.totalBytes ? ` ${formatBytes(progress.totalBytes)}` : ''} to disc`);
+          break;
+        case 'remounting':
+          begin('Remounting disc');
+          break;
+        case 'verifying':
+          begin('Verifying');
+          break;
+        case 'ejecting':
+          begin('Ejecting');
+          break;
+        default:
+          break; // 'probing' is too quick to show
+      }
+    },
+    stop,
+  };
 }
 
 /**
@@ -108,6 +186,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
     console.log('A non-blank rewritable disc will be erased first.');
   }
 
+  const reporter = createBurnReporter();
   try {
     const result = await burnPackage({
       source,
@@ -116,9 +195,11 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
       blank,
       verify,
       eject,
+      onProgress: reporter.onProgress,
       ...(media ? { media } : {}),
       ...(label ? { volumeLabel: label } : {}),
     });
+    reporter.stop();
 
     if (result.blanked) {
       console.log('Disc blanked.');
@@ -147,6 +228,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
     console.error('Disc left in drive for inspection.');
     return 1;
   } catch (err) {
+    reporter.stop();
     console.error(`Burn failed: ${(err as Error).message}`);
     return 1;
   }

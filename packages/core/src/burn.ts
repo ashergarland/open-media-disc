@@ -45,6 +45,24 @@ export interface MediaInfo {
   capacityBytes?: number;
 }
 
+/** A phase of a burn, reported through {@link BurnImageOptions.onProgress}. */
+export type BurnPhase =
+  | 'building'
+  | 'probing'
+  | 'blanking'
+  | 'writing'
+  | 'remounting'
+  | 'verifying'
+  | 'ejecting';
+
+/** A progress update emitted during a burn. */
+export interface BurnProgress {
+  /** The phase that is now starting. */
+  phase: BurnPhase;
+  /** Total bytes for the phase, when known (for example the image size while writing). */
+  totalBytes?: number;
+}
+
 /**
  * A platform-specific engine that writes an image to physical optical media.
  * Backends are injectable so the {@link burnImage} orchestration can be tested
@@ -108,6 +126,8 @@ export interface BurnImageOptions {
   eject?: boolean;
   /** Pre-probed media info, to avoid a second probe. Optional. */
   media?: MediaInfo;
+  /** Called before each phase of the burn, for progress reporting. Optional. */
+  onProgress?: (progress: BurnProgress) => void;
 }
 
 /** Result of {@link burnImage}. */
@@ -151,20 +171,31 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
     );
   }
 
+  const emit = (phase: BurnPhase, totalBytes?: number): void =>
+    options.onProgress?.({ phase, ...(totalBytes !== undefined ? { totalBytes } : {}) });
+
   // Probe the disc so we handle rewritable vs write-once media correctly and can
   // check capacity before doing anything destructive.
+  emit('probing');
   const media =
     options.media ?? (backend.probeMedia ? await backend.probeMedia(drive) : undefined);
 
-  // Capacity guard: never blank or write a disc the image will not fit on.
-  if (media?.capacityBytes !== undefined) {
-    const imageSize = (await stat(imagePath)).size;
-    if (imageSize > media.capacityBytes) {
-      throw new Error(
-        `Image is ${imageSize} bytes but the disc holds ${media.capacityBytes} bytes` +
-          `${media.typeName ? ` (${media.typeName})` : ''}. It will not fit.`,
-      );
+  // Determine the image size for the capacity check and progress reporting.
+  let imageSize: number | undefined;
+  if (media?.capacityBytes !== undefined || options.onProgress) {
+    try {
+      imageSize = (await stat(imagePath)).size;
+    } catch {
+      imageSize = undefined;
     }
+  }
+
+  // Capacity guard: never blank or write a disc the image will not fit on.
+  if (media?.capacityBytes !== undefined && imageSize !== undefined && imageSize > media.capacityBytes) {
+    throw new Error(
+      `Image is ${imageSize} bytes but the disc holds ${media.capacityBytes} bytes` +
+        `${media.typeName ? ` (${media.typeName})` : ''}. It will not fit.`,
+    );
   }
 
   let blanked = false;
@@ -181,16 +212,19 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
         }
       } else if (!media.blank) {
         // Rewritable and not blank: erase it first.
+        emit('blanking');
         await backend.blank(drive);
         blanked = true;
       }
     } else if (!(await backend.isBlank(drive))) {
       // Unknown media: fall back to the blank heuristic.
+      emit('blanking');
       await backend.blank(drive);
       blanked = true;
     }
   }
 
+  emit('writing', imageSize);
   await backend.writeImage({ imagePath, drive });
 
   const doVerify = options.verify !== false;
@@ -199,12 +233,14 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
   // Remount the freshly burned disc in place so the OS re-reads the new
   // filesystem. Needed to verify, and to leave a readable disc when not ejecting.
   if ((doVerify || !doEject) && backend.remount) {
+    emit('remounting');
     await backend.remount(drive);
   }
 
   let verified = false;
   let verification: PackageValidationResult | undefined;
   if (doVerify) {
+    emit('verifying');
     verification = await verifyDisc(drive.mountPath);
     verified = verification.valid;
   }
@@ -213,6 +249,7 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
   const success = doVerify ? verified : true;
   let ejected = false;
   if (doEject && success && backend.eject) {
+    emit('ejecting');
     await backend.eject(drive);
     ejected = true;
   }
@@ -251,6 +288,8 @@ export interface BurnPackageOptions {
   eject?: boolean;
   /** Pre-probed media info, to avoid a second probe. Optional. */
   media?: MediaInfo;
+  /** Called before each phase of the burn, for progress reporting. Optional. */
+  onProgress?: (progress: BurnProgress) => void;
 }
 
 /**
@@ -266,6 +305,7 @@ export async function burnPackage(options: BurnPackageOptions): Promise<BurnImag
   let imagePath = options.source;
   let tempImage: string | undefined;
   if (info.isDirectory()) {
+    options.onProgress?.({ phase: 'building' });
     tempImage = path.join(tmpdir(), `omd-burn-${randomUUID()}.img`);
     await buildDiscImage({
       packageDir: options.source,
@@ -285,6 +325,7 @@ export async function burnPackage(options: BurnPackageOptions): Promise<BurnImag
       ...(options.verify !== undefined ? { verify: options.verify } : {}),
       ...(options.eject !== undefined ? { eject: options.eject } : {}),
       ...(options.media ? { media: options.media } : {}),
+      ...(options.onProgress ? { onProgress: options.onProgress } : {}),
     });
   } finally {
     if (tempImage) {

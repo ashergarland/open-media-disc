@@ -243,6 +243,23 @@ describe('burnImage', () => {
     expect(calls.write).toHaveLength(0);
   });
 
+  it('reports phases in order via onProgress', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend } = makeFakeBurnBackend({ blank: false });
+    const phases: string[] = [];
+
+    await burnImage({
+      imagePath: path.join(tmp.path(), 'disc.img'),
+      drive: { mountPath: pkg },
+      backend,
+      onProgress: (p) => phases.push(p.phase),
+    });
+
+    expect(phases).toContain('writing');
+    expect(phases).toContain('verifying');
+    expect(phases.indexOf('writing')).toBeLessThan(phases.indexOf('verifying'));
+  });
+
   it('throws when the backend is unavailable', async () => {
     const pkg = await buildTestPackage(tmp.path());
     const { backend } = makeFakeBurnBackend({ available: false });

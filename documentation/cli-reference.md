@@ -174,6 +174,9 @@ After writing, the disc is remounted in place and read back to verify it against
 completion signal; use `--no-eject` to keep it in the drive (handy for burning
 several discs in a row). A failed verification leaves the disc in the drive.
 
+While burning, a live status line shows the current phase (building, writing,
+verifying) and elapsed time.
+
 > Windows only in v0.2, and destructive: burning erases a rewritable disc.
 > Rewritable discs can be reused; a write-once disc must be blank.
 
