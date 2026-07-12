@@ -9,12 +9,13 @@ the goals in the [Roadmap](./roadmap.md). For the vision behind the project, see
 
 ## In one line
 
-Open Media Disc (OMD) is an open-source physical music format. The current
-milestone, **OMD Core v0.1**, makes the format real as pure software: it turns a
-folder of owned FLAC files into a verified, self-describing album package. No
-burning, hardware, or GUI is part of this milestone.
+Open Media Disc (OMD) is an open-source physical music format. The v0.1 format
+turns a folder of owned FLAC files into a verified, self-describing album package.
+The current release, **v0.2 Write and Play**, adds building a UDF disc image,
+burning a package to 8cm DVD-RW and verifying it (Windows), and playback with mpv
+or ffplay. No GUI yet.
 
-## What is implemented (OMD Core v0.1)
+## What is implemented (through v0.2)
 
 The repository delivers a working pnpm and TypeScript monorepo in four layers:
 
@@ -29,24 +30,25 @@ The repository delivers a working pnpm and TypeScript monorepo in four layers:
     checksums, a dependency-free FLAC metadata reader, filename normalization,
     and 8cm DVD-RW disc-size estimation (about a 1.4 GB budget).
 - **The `omd` CLI** `@open-album-cartridge/cli` ([`packages/cli`](../packages/cli))
-  with commands `create`, `validate`, `inspect`, `checksum`, and `play` (play is
-  a no-audio preview stub), plus `--help` and `--version` and a 0/1/2 exit-code
-  convention.
+  with commands `create`, `validate`, `inspect`, `checksum`, `image`, `burn`, and
+  `play` (real playback via mpv/ffplay), plus `--help` and `--version` and a
+  0/1/2 exit-code convention.
 - **Supporting assets:** synthetic FLAC example fixtures generated via
   `pnpm gen:examples`, a passing Vitest suite, and clean lint. The public docs
   live in [`documentation/`](./README.md).
 
-End to end, you can already build a package from an album folder, validate its
-structure, tracks, checksums, and capacity, inspect it, and preview track order.
+End to end, you can build a package from an album folder, validate its structure,
+tracks, checksums, and capacity, inspect it, build a burn-ready UDF image, burn
+and verify it on Windows, and play the album.
 
 ## What is left (per the roadmap)
 
-Everything past v0.1 is still to come. The ladder builds outward only after the
-format is proven.
+Core v0.1 and v0.2 Write and Play are done. Everything below builds outward from
+the proven format and media loop.
 
 | Milestone | Goal | Status |
 | --- | --- | --- |
-| Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | In progress |
+| Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | ✅ Done |
 | OMD Studio (alpha) | Desktop app wrapping the core: package, label, burn | Planned |
 | Multi-language SDKs | Shared conformance fixtures across TS (later Rust) | Planned |
 | Writer Dock | Device: erase, burn, verify, eject 8cm DVD-RW | Planned |
@@ -55,25 +57,24 @@ format is proven.
 | Portable player | Battery, MiniDisc-style handheld | Research |
 | Cartridge-native | 8cm DVD-RW inside a serviceable cartridge shell | Long-term R&D |
 
-Explicitly **out of scope for v0.1** and deferred to those milestones: optical
-burning, UDF/ISO image creation, Raspberry Pi device services, hardware control,
-cartridge mechanics, GUI/desktop/mobile apps, cloud accounts, DRM,
-DVD-Audio/Blu-ray authoring, marketplace features, and streaming integration.
+Still **out of scope** and deferred to those milestones: Raspberry Pi device
+services, hardware control beyond writing a disc, cartridge mechanics,
+GUI/desktop/mobile apps, cloud accounts, DRM, DVD-Audio/Blu-ray authoring,
+marketplace features, and streaming integration.
 
 ## The gap in plain terms
 
-- **Done:** the software format and its tooling (spec, SDK, CLI, docs, tests).
-  The "album folder in, verified package out" loop works today.
-- **In progress (v0.2):** the host-side media loop: building a burn-ready disc
-  image, writing a package to 8cm DVD-RW, and playing it back from the CLI.
+- **Done (v0.1):** the software format and its tooling (spec, SDK, CLI, docs, tests).
+  The "album folder in, verified package out" loop.
+- **Done (v0.2):** the host-side media loop: building a burn-ready UDF image,
+  burning a package to 8cm DVD-RW and verifying it (Windows), and playback via
+  mpv/ffplay.
 - **Not yet started:** dedicated hardware (a writer dock, a Pi player, the
   cartridge shell), the desktop Studio app, and additional-language SDKs.
 
-The immediate next step is the **v0.2 Write and Play** milestone: build a
-burn-ready UDF disc image, write a package to physical 8cm DVD-RW through a
-cross-platform `BurnBackend` (Windows IMAPI2 first), and add real host playback to
-`omd play`. See the [Roadmap](./roadmap.md#next-milestone-v02-write-and-play) for
-the goal and exit criteria.
+The immediate next step is a milestone past v0.2: OMD Studio (a desktop app
+wrapping the core), multi-language SDKs, or the player/writer hardware track. See
+the [Roadmap](./roadmap.md#milestone-v02-write-and-play) for what v0.2 delivered.
 
 ## Keep this page current
 

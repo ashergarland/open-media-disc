@@ -15,9 +15,10 @@ with the `omd` CLI and `@open-album-cartridge/core` SDK. No hardware required.
 For a full breakdown of what is built versus what is left, see
 [Project Status](./project-status.md).
 
-**Next up: v0.2 Write and Play (in progress).** Build a burn-ready disc image,
-write a package to physical 8cm DVD-RW, and play it back from the CLI. See
-[Next milestone: v0.2 Write and Play](#next-milestone-v02-write-and-play) below.
+**v0.2 Write and Play: done.** The CLI and SDK now build a burn-ready UDF disc
+image, burn a package to 8cm DVD-RW and verify it (Windows), and play the album
+with mpv or ffplay. Next up: OMD Studio, multi-language SDKs, and player/writer
+hardware. See [Milestone: v0.2 Write and Play](#milestone-v02-write-and-play).
 
 ## Milestone ladder
 
@@ -39,7 +40,7 @@ flowchart LR
 | Milestone | Goal | Status |
 | --- | --- | --- |
 | **Core v0.1** | Stable package format: create, validate, inspect. | ✅ Done |
-| **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | In progress |
+| **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | ✅ Done |
 | **OMD Studio (alpha)** | Desktop tool wrapping the core: package, label, burn. | Planned |
 | **Multi-language SDKs** | Shared conformance fixtures across TS (and later Rust). | Planned |
 | **Writer Dock** | Dedicated device: erase → burn → verify → eject 8cm DVD-RW. | Planned |
@@ -48,7 +49,9 @@ flowchart LR
 | **Portable player** | Battery, cache-first, MiniDisc-style handheld. | Research |
 | **Cartridge-native** | Spin an 8cm DVD-RW inside a serviceable cartridge shell. | Long-term R&D |
 
-## Next milestone: v0.2 Write and Play
+## Milestone: v0.2 Write and Play
+
+**Status: delivered in v0.2.0.**
 
 **Goal.** Take a validated OMD package all the way to a playable physical disc:
 build a burn-ready disc image, write it to 8cm DVD-RW, verify the burned disc, and

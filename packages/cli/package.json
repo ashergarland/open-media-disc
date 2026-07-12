@@ -1,6 +1,6 @@
 {
   "name": "@open-album-cartridge/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Open Media Disc (OMD) command-line tool — create, validate, inspect, checksum, and play OMD packages.",
   "license": "MIT",
   "type": "module",
