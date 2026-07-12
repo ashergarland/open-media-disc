@@ -47,6 +47,9 @@ importers:
       '@open-album-cartridge/core':
         specifier: workspace:*
         version: link:../core
+      '@open-album-cartridge/label':
+        specifier: workspace:*
+        version: link:../label
     devDependencies:
       '@types/node':
         specifier: ^20.14.10
@@ -64,6 +67,22 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
+      rimraf:
+        specifier: ^5.0.9
+        version: 5.0.10
+      typescript:
+        specifier: ^5.5.3
+        version: 5.9.3
+
+  packages/label:
+    dependencies:
+      '@open-album-cartridge/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.10
+        version: 20.19.43
       rimraf:
         specifier: ^5.0.9
         version: 5.0.10

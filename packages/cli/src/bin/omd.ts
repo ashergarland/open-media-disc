@@ -7,6 +7,7 @@ import { inspectCommand } from '../commands/inspect.js';
 import { checksumCommand } from '../commands/checksum.js';
 import { imageCommand } from '../commands/image.js';
 import { burnCommand } from '../commands/burn.js';
+import { labelCommand } from '../commands/label.js';
 import { playCommand } from '../commands/play.js';
 
 const HELP = `${CLI_NAME} v${CLI_VERSION}: Open Media Disc packaging tool
@@ -20,15 +21,16 @@ Usage:
   omd image <packageDir> --out <imagePath> [--label <name>]
   omd burn <packageDir|imageFile> [--drive <path>] [--label <name>]
                                   [--no-blank] [--no-verify] [--no-eject]
+  omd label <packageDir> --out <file.svg> [--fit fill|fit|stretch] [--copies <n>]
   omd play <packageDir>
 
 Options:
   --help, -h       Show this help.
   --version, -v    Show version.
 
-OMD builds, validates, inspects, images, and burns OMD FLAC data packages.
-Burning requires Windows (IMAPI2) with a writer attached. See the spec/ folder
-for the format contract.
+OMD builds, validates, inspects, images, burns, and labels OMD FLAC data
+packages. Burning requires Windows (IMAPI2) with a writer attached. See the spec/
+folder for the format contract.
 `;
 
 async function main(): Promise<number> {
@@ -59,6 +61,8 @@ async function main(): Promise<number> {
       return imageCommand(args);
     case 'burn':
       return burnCommand(args);
+    case 'label':
+      return labelCommand(args);
     case 'play':
       return playCommand(args);
     default:

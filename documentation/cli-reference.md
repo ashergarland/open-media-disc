@@ -1,8 +1,8 @@
 # CLI Reference
 
 The `omd` command-line tool wraps [`@open-album-cartridge/core`](./sdk-reference.md).
-It creates, validates, inspects, images, and burns OMD packages. Burning requires
-Windows (IMAPI2) with a writer attached.
+It creates, validates, inspects, images, burns, and labels OMD packages. Burning
+requires Windows (IMAPI2) with a writer attached.
 
 Run commands from the repo root with `pnpm omd <command>` (after `pnpm build`),
 or invoke the installed `omd` binary directly.
@@ -18,6 +18,7 @@ omd checksum <packageDir> [--write]
 omd image    <packageDir> --out <imagePath> [--label <name>]
 omd burn     <packageDir|imageFile> [--drive <path>] [--label <name>]
              [--no-blank] [--no-verify]
+omd label    <packageDir> --out <file.svg> [--fit fill|fit|stretch] [--copies <n>]
 omd play     <packageDir>
 
 omd --help | -h        Show help
@@ -204,6 +205,37 @@ Wrote image to D:\.
 Verification: PASS
 Burn complete.
 Disc ejected.
+```
+
+---
+
+## `omd label`
+
+Generate a printable **album-art label sheet** (SVG) from a package's cover art,
+sized for mini CD jewel cases by default. Print it at 100% on US Letter, or let
+OMD Studio print it.
+
+```bash
+omd label "./build/OMD-000001" --out "./build/OMD-000001-label.svg" --copies 4
+```
+
+| Argument / option | Description |
+| --- | --- |
+| `<packageDir>` | Package directory (must include cover art). Required. |
+| `--out <file.svg>` | Destination SVG file. Required. |
+| `--width <in>` | Label width in inches (default 3.4375, mini CD jewel case). |
+| `--height <in>` | Label height in inches (default 3.3125). |
+| `--fit <mode>` | `fill` (center-crop, default), `fit` (letterbox), or `stretch`. |
+| `--copies <n>` | Number of labels to place on the sheet (default 1). |
+| `--no-crop-marks` | Omit the cut outline and corner marks. |
+
+Sample output:
+
+```text
+Wrote label sheet: ./build/OMD-000001-label.svg
+Album: Blank Banshee - Blank Banshee 0
+Disc ID: OMD-000001
+Labels: 4
 ```
 
 ---

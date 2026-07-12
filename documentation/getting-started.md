@@ -133,6 +133,19 @@ pnpm omd burn "./build/OMD-000001" --drive "D:\\"
 > Windows-only in v0.2. With exactly one writer attached you can omit `--drive`.
 > The disc ejects on success; pass `--no-eject` to keep it in for the next burn.
 
+## 8. Print a label (any platform)
+
+Make a printable album-art label sheet (SVG) from the package cover art, sized
+for mini CD jewel cases by default.
+
+```bash
+pnpm omd label "./build/OMD-000001" --out "./build/OMD-000001-label.svg" --copies 4
+```
+
+Open the SVG in a browser and print it at 100% scale on US Letter, or let OMD
+Studio print it. Use `--fit`, `--width`/`--height`, or `--no-crop-marks` to adjust
+the layout.
+
 ## Package size and 8cm DVD-RW
 
 OMD targets 8cm DVD-RW media with a usable budget of ~1.4 GB

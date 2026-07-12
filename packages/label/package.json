@@ -1,0 +1,34 @@
+{
+  "name": "@open-album-cartridge/label",
+  "version": "0.2.0",
+  "description": "Open Media Disc (OMD) label generator: printable album-art label sheets from OMD packages.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@open-album-cartridge/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "rimraf": "^5.0.9",
+    "typescript": "^5.5.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

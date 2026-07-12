@@ -17,7 +17,8 @@
     "omd": "node ./dist/bin/omd.js"
   },
   "dependencies": {
-    "@open-album-cartridge/core": "workspace:*"
+    "@open-album-cartridge/core": "workspace:*",
+    "@open-album-cartridge/label": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

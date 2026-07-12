@@ -54,6 +54,14 @@ export function intOption(args: ParsedArgs, key: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Read a floating-point option, or undefined when absent/invalid. */
+export function floatOption(args: ParsedArgs, key: string): number | undefined {
+  const value = stringOption(args, key);
+  if (value === undefined) return undefined;
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 /** Read a boolean flag. */
 export function boolOption(args: ParsedArgs, key: string): boolean {
   return args.options[key] === true || args.options[key] === 'true';

@@ -60,6 +60,7 @@ OMD-000001/
 | `omd checksum <package>` | Recompute and check `CHECKSUMS.sha256`. |
 | `omd image <package> --out <img>` | Build a burn-ready UDF disc image (Windows). |
 | `omd burn <package\|image> [--drive]` | Burn to an 8cm DVD-RW and verify (Windows). |
+| `omd label <package> --out <svg>` | Make a printable album-art label sheet (SVG). |
 | `omd play <package>` | Play the album with mpv/ffplay (preview if neither). |
 
 Full details in the [CLI Reference](./documentation/cli-reference.md).
@@ -109,6 +110,7 @@ open-album-cartridge/
   spec/            Normative format contract (Markdown + JSON Schema)
   documentation/   User and developer guide (start at documentation/README.md)
   packages/core/   @open-album-cartridge/core: the SDK
+  packages/label/  @open-album-cartridge/label: printable label sheets
   packages/cli/    @open-album-cartridge/cli: the omd CLI
   examples/        Sample album and generated packages
   scripts/         Tooling (pnpm gen:examples)
@@ -117,6 +119,7 @@ open-album-cartridge/
 | Package | Description |
 | --- | --- |
 | [`@open-album-cartridge/core`](./packages/core) | Platform-independent SDK: create, validate, inspect. |
+| [`@open-album-cartridge/label`](./packages/label) | Printable album-art label sheets (SVG). |
 | [`@open-album-cartridge/cli`](./packages/cli) | The `omd` command-line tool. |
 
 ## Where this is going
