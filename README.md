@@ -121,9 +121,10 @@ open-album-cartridge/
 
 ## Where this is going
 
-v0.1 proved the format; **v0.2 Write and Play** takes it to disc and playback.
-From here the roadmap reaches OMD Studio, multi-language SDKs, a Raspberry Pi
-player, a writer dock, and eventually a cartridge shell. See the
+v0.1 proved the format; **v0.2 Write and Play** took it to disc and playback.
+**OMD Studio (alpha)** is now in progress: a desktop app wrapping the core, with
+printable labels and an integrated player. Beyond it: multi-language SDKs, a
+Raspberry Pi player, a writer dock, and eventually a cartridge shell. See the
 [Roadmap](./documentation/roadmap.md) for the full picture.
 
 ## Contributing

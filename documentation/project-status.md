@@ -49,7 +49,7 @@ the proven format and media loop.
 | Milestone | Goal | Status |
 | --- | --- | --- |
 | Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | ✅ Done |
-| OMD Studio (alpha) | Desktop app wrapping the core: package, label, burn | Planned |
+| OMD Studio (alpha) | Desktop app wrapping the core: package, label, burn, play | In progress |
 | Multi-language SDKs | Shared conformance fixtures across TS (later Rust) | Planned |
 | Writer Dock | Device: erase, burn, verify, eject 8cm DVD-RW | Planned |
 | Pi Player | Raspberry Pi device that plays bare OMD discs | Planned |
@@ -72,9 +72,10 @@ marketplace features, and streaming integration.
 - **Not yet started:** dedicated hardware (a writer dock, a Pi player, the
   cartridge shell), the desktop Studio app, and additional-language SDKs.
 
-The immediate next step is a milestone past v0.2: OMD Studio (a desktop app
-wrapping the core), multi-language SDKs, or the player/writer hardware track. See
-the [Roadmap](./roadmap.md#milestone-v02-write-and-play) for what v0.2 delivered.
+The current milestone is **OMD Studio (alpha)**: an Electron desktop app that
+wraps the core for select, package, label, burn, verify, and play, plus printable
+label generation. See
+[Milestone: OMD Studio (alpha)](./roadmap.md#milestone-omd-studio-alpha).
 
 ## Keep this page current
 

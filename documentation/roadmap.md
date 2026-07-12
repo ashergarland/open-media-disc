@@ -17,8 +17,11 @@ For a full breakdown of what is built versus what is left, see
 
 **v0.2 Write and Play: done.** The CLI and SDK now build a burn-ready UDF disc
 image, burn a package to 8cm DVD-RW and verify it (Windows), and play the album
-with mpv or ffplay. Next up: OMD Studio, multi-language SDKs, and player/writer
-hardware. See [Milestone: v0.2 Write and Play](#milestone-v02-write-and-play).
+with mpv or ffplay. See [Milestone: v0.2 Write and Play](#milestone-v02-write-and-play).
+
+**OMD Studio (alpha): in progress.** A desktop app (Electron) wrapping the core
+for select, package, label, burn, verify, and play, plus printable label
+generation. See [Milestone: OMD Studio (alpha)](#milestone-omd-studio-alpha).
 
 ## Milestone ladder
 
@@ -41,7 +44,7 @@ flowchart LR
 | --- | --- | --- |
 | **Core v0.1** | Stable package format: create, validate, inspect. | ✅ Done |
 | **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | ✅ Done |
-| **OMD Studio (alpha)** | Desktop tool wrapping the core: package, label, burn. | Planned |
+| **OMD Studio (alpha)** | Desktop app wrapping the core: package, label, burn, play. | In progress |
 | **Multi-language SDKs** | Shared conformance fixtures across TS (and later Rust). | Planned |
 | **Writer Dock** | Dedicated device: erase → burn → verify → eject 8cm DVD-RW. | Planned |
 | **Pi Player** | Raspberry Pi playback device reading bare OMD discs. | Planned |
@@ -96,6 +99,46 @@ storage layer) on top of the proven package format.
 **Platform note.** Burning is validated on Windows first, because that is where a
 DVD writer is available for real hardware testing. The `BurnBackend` interface
 keeps the other platforms as future backends without changing the format.
+
+## Milestone: OMD Studio (alpha)
+
+**Status: in progress.**
+
+**Goal.** A desktop app (Electron) that wraps the existing OMD core in a guided
+flow: select an album, package and validate it, generate a printable label, burn
+and verify it to disc, and play a mounted disc in an integrated player. The GUI
+reuses the same core modules as the CLI, with no duplicated logic.
+
+### In scope
+
+- A new `@open-album-cartridge/studio` Electron app in this monorepo, reusing
+  `@open-album-cartridge/core` directly in the main process.
+- **Label generation:** a shared, cross-platform label module and an `omd label`
+  command that render a printable album-art label sheet (mini CD jewel-case size
+  by default) with crop marks. Studio prints it.
+- Studio screens for the full flow: select album, package and validate, inspect,
+  label, and burn (drive select, media info, live progress, verify, eject).
+- An integrated player: inspect a mounted disc, show album art and the track
+  list, play, pause, and seek tracks, and verify checksums.
+
+### Non-goals
+
+- No change to the disc format: `omdVersion` stays `0.1.0`.
+- No cross-platform burning yet (burn stays Windows/IMAPI2; packaging, labels,
+  and playback are cross-platform).
+- No local catalog database in this alpha (a lightweight future add).
+- No installer or auto-update polish; a runnable build is the alpha bar.
+
+### Exit criteria
+
+- `omd label` produces a printable label sheet from a package, with tests.
+- The Studio app drives the full flow end to end on Windows: select, package,
+  label, burn, verify, and play a mounted disc with seek.
+- `pnpm build`, `pnpm test`, and `pnpm lint` stay green and the docs are updated.
+
+**Build order.** The shared label module and `omd label` first (cross-platform
+and testable), then the Electron scaffold, then the flow screens, then the
+integrated player.
 
 ## What's explicitly *out of scope* for v0.1
 
