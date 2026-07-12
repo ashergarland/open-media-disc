@@ -61,6 +61,27 @@ integration. v0.1 makes the format real, nothing more.
 - **Do not block on the hard part.** Cartridge mechanics come only after the
   software and media loop are proven.
 
+## OMD Studio (alpha) decisions (locked)
+
+These are locked planning decisions for the OMD Studio (alpha) milestone. See
+[`documentation/omd-studio.md`](../../documentation/omd-studio.md) for the full
+design note.
+
+- **Themeable in-app player.** Retro, Winamp-inspired looks come from VS
+  Code-style token themes: a theme is data (a JSON map of named tokens plus local
+  assets), injected as CSS variables. Themes never ship CSS or JS and never
+  control layout. Layout and interaction stay consistent across every theme.
+- **Player scope.** It is an album/disc player, not a music library manager. FLAC
+  plays natively in Chromium, so no custom decoder is needed for alpha; the
+  external players (`mpv`, `ffplay`) stay a CLI fallback.
+- **`omd rip`.** Verified read-back of a mounted OMD disc to disk (a re-burnable
+  package or a friendly album folder), checked against the manifest checksums. It
+  is a shared core function that Studio wraps, and it does not change the format
+  (`omdVersion` stays `0.1.0`).
+- **Share for the Pi player.** Player and theming live in a shared UI package so
+  the future Raspberry Pi player reuses the same components and theming contract.
+  Studio owns the desktop shell and the burn and label workflows.
+
 ## Ethics
 
 OMD is for music the user owns. Never help use OMD to distribute music the user

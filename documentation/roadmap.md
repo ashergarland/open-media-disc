@@ -44,7 +44,7 @@ flowchart LR
 | --- | --- | --- |
 | **Core v0.1** | Stable package format: create, validate, inspect. | ✅ Done |
 | **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | ✅ Done |
-| **OMD Studio (alpha)** | Desktop app wrapping the core: package, label, burn, play. | In progress |
+| **OMD Studio (alpha)** | Desktop app wrapping the core: package, label, burn, play (themeable), and rip. | In progress |
 | **Multi-language SDKs** | Shared conformance fixtures across TS (and later Rust). | Planned |
 | **Writer Dock** | Dedicated device: erase → burn → verify → eject 8cm DVD-RW. | Planned |
 | **Pi Player** | Raspberry Pi playback device reading bare OMD discs. | Planned |
@@ -106,8 +106,11 @@ keeps the other platforms as future backends without changing the format.
 
 **Goal.** A desktop app (Electron) that wraps the existing OMD core in a guided
 flow: select an album, package and validate it, generate a printable label, burn
-and verify it to disc, and play a mounted disc in an integrated player. The GUI
-reuses the same core modules as the CLI, with no duplicated logic.
+and verify it to disc, play a mounted disc in an integrated, themeable player,
+and rip a disc back to disk as a verified archival copy. The GUI reuses the same
+core modules as the CLI, with no duplicated logic. See the
+[OMD Studio design note](./omd-studio.md) for the player theming contract and the
+`omd rip` design.
 
 ### In scope
 
@@ -120,6 +123,13 @@ reuses the same core modules as the CLI, with no duplicated logic.
   label, and burn (drive select, media info, live progress, verify, eject).
 - An integrated player: inspect a mounted disc, show album art and the track
   list, play, pause, and seek tracks, and verify checksums.
+- A **themeable player:** retro, Winamp-inspired looks via VS Code-style token
+  themes (data-only JSON plus local assets, with no custom CSS/JS and no layout
+  control), a modern default, and consistent layout across themes. The v1 token
+  contract lives in the [OMD Studio design note](./omd-studio.md).
+- **Ripping (`omd rip`):** verified read-back of a mounted OMD disc to disk, as a
+  re-burnable package or a friendly album folder, checked against the manifest
+  checksums. A shared core function that Studio wraps.
 
 ### Non-goals
 
@@ -134,11 +144,17 @@ reuses the same core modules as the CLI, with no duplicated logic.
 - `omd label` produces a printable label sheet from a package, with tests.
 - The Studio app drives the full flow end to end on Windows: select, package,
   label, burn, verify, and play a mounted disc with seek.
+- The integrated player is themeable via the v1 token contract (a switchable
+  retro theme plus the modern default), and no theme can inject CSS or JS or
+  change the layout.
+- `omd rip` reads a mounted OMD disc back to disk (package or album mode) and
+  verifies it against the manifest checksums, with tests.
 - `pnpm build`, `pnpm test`, and `pnpm lint` stay green and the docs are updated.
 
 **Build order.** The shared label module and `omd label` first (cross-platform
 and testable), then the Electron scaffold, then the flow screens, then the
-integrated player.
+integrated player, then player theming (the v1 token contract) and `omd rip`
+(shared, verified read-back), both cross-platform and testable.
 
 ## What's explicitly *out of scope* for v0.1
 

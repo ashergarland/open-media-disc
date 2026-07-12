@@ -24,6 +24,7 @@ and then **[Getting Started](./getting-started.md)**.
 | Call the library from code | [SDK Reference](./sdk-reference.md) |
 | Understand validation results | [Validation Guide](./validation.md) |
 | See where the project is going | [Roadmap](./roadmap.md) |
+| Read the OMD Studio design (theming + ripping) | [OMD Studio Design](./omd-studio.md) |
 | Get quick answers | [FAQ](./faq.md) |
 | Look up a term | [Glossary](./glossary.md) |
 | Contribute | [Contributing](./contributing.md) |
@@ -42,6 +43,7 @@ documentation/
   sdk-reference.md     @open-album-cartridge/core API reference
   validation.md        Error/warning codes and how to fix them
   roadmap.md           Milestones from software to cartridge hardware
+  omd-studio.md        OMD Studio (alpha) design: player theming + ripping
   faq.md               Common questions
   glossary.md          Terminology
   contributing.md      How to work on OMD and keep docs in sync
