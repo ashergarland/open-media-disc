@@ -112,6 +112,7 @@ open-album-cartridge/
   packages/core/   @open-album-cartridge/core: the SDK
   packages/label/  @open-album-cartridge/label: printable label sheets
   packages/cli/    @open-album-cartridge/cli: the omd CLI
+  packages/studio/ @open-album-cartridge/studio: the desktop app (Electron)
   examples/        Sample album and generated packages
   scripts/         Tooling (pnpm gen:examples)
 ```
@@ -121,6 +122,7 @@ open-album-cartridge/
 | [`@open-album-cartridge/core`](./packages/core) | Platform-independent SDK: create, validate, inspect. |
 | [`@open-album-cartridge/label`](./packages/label) | Printable album-art label sheets (SVG). |
 | [`@open-album-cartridge/cli`](./packages/cli) | The `omd` command-line tool. |
+| [`@open-album-cartridge/studio`](./packages/studio) | The OMD Studio desktop app (Electron, alpha). |
 
 ## Where this is going
 

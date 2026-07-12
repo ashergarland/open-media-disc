@@ -1,0 +1,25 @@
+{
+  "name": "@open-album-cartridge/studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OMD Studio: a desktop app for packaging, labeling, burning, and playing Open Media Discs.",
+  "license": "MIT",
+  "main": "./dist/main/main.cjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node build.mjs",
+    "start": "electron .",
+    "dev": "node build.mjs && electron .",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@open-album-cartridge/core": "workspace:*",
+    "@open-album-cartridge/label": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "electron": "^31.3.0",
+    "esbuild": "^0.23.1",
+    "rimraf": "^5.0.9",
+    "typescript": "^5.5.3"
+  }
+}

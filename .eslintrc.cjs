@@ -17,6 +17,12 @@ module.exports = {
     es2022: true,
   },
   ignorePatterns: ['dist/', 'node_modules/', 'build/', '*.cjs', '*.mjs'],
+  overrides: [
+    {
+      files: ['packages/studio/src/renderer/**/*.ts'],
+      env: { browser: true },
+    },
+  ],
   rules: {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   },

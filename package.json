@@ -17,7 +17,8 @@
     "format": "prettier --write \"**/*.{ts,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,json,md}\"",
     "gen:examples": "tsx scripts/make-examples.mts",
-    "omd": "node packages/cli/dist/bin/omd.js"
+    "omd": "node packages/cli/dist/bin/omd.js",
+    "studio": "pnpm --filter @open-album-cartridge/studio start"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
