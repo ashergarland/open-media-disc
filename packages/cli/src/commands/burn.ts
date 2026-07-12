@@ -2,7 +2,7 @@ import { burnPackage, resolveBurnBackend, type BurnDrive } from '@open-album-car
 import { boolOption, stringOption, type ParsedArgs } from '../args.js';
 
 const USAGE =
-  'Usage: omd burn <packageDir|imageFile> [--drive <path>] [--label <name>] [--no-blank] [--no-verify]';
+  'Usage: omd burn <packageDir|imageFile> [--drive <path>] [--label <name>] [--no-blank] [--no-verify] [--no-eject]';
 
 /** Normalize a mount path for comparison (drop trailing slashes, upper-case). */
 function normalizeMount(mountPath: string): string {
@@ -11,7 +11,7 @@ function normalizeMount(mountPath: string): string {
 
 /**
  * `omd burn <packageDir|imageFile> [--drive <path>] [--label <name>]
- *    [--no-blank] [--no-verify]`
+ *    [--no-blank] [--no-verify] [--no-eject]`
  */
 export async function burnCommand(args: ParsedArgs): Promise<number> {
   const source = args.positionals[0];
@@ -66,6 +66,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
   const label = stringOption(args, 'label');
   const blank = !boolOption(args, 'no-blank');
   const verify = !boolOption(args, 'no-verify');
+  const eject = !boolOption(args, 'no-eject');
 
   console.log(
     `Burning ${source} to ${drive.mountPath}${drive.description ? ` (${drive.description})` : ''}`,
@@ -81,6 +82,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
       backend,
       blank,
       verify,
+      eject,
       ...(label ? { volumeLabel: label } : {}),
     });
 
@@ -89,13 +91,17 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
     }
     console.log(`Wrote image to ${result.drive.mountPath}.`);
 
+    const discState = result.ejected ? 'Disc ejected.' : 'Disc left in drive.';
+
     if (!verify) {
       console.log('Burn complete (verification skipped).');
+      console.log(discState);
       return 0;
     }
     if (result.verified) {
       console.log('Verification: PASS');
       console.log('Burn complete.');
+      console.log(discState);
       return 0;
     }
     console.error('Verification: FAIL');
@@ -104,6 +110,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
         console.error(`  error [${e.code}] ${e.message}`);
       }
     }
+    console.error('Disc left in drive for inspection.');
     return 1;
   } catch (err) {
     console.error(`Burn failed: ${(err as Error).message}`);

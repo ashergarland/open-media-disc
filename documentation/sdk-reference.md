@@ -126,9 +126,11 @@ Types: `BuildDiscImageOptions`, `BuildDiscImageResult`, `DiscImageBackend`,
 ### `burnImage(options): Promise<BurnImageResult>`
 
 Write a burn-ready image to a disc through a `BurnBackend`, then verify the
-result. Blanks a non-blank rewritable disc first (unless disabled) and reads the
-burned disc back to check it against `CHECKSUMS.sha256`. A failed verification is
-reported (`verified: false`), not thrown.
+result. Blanks a non-blank rewritable disc first (unless disabled), remounts the
+freshly burned disc in place, and reads it back to check it against
+`CHECKSUMS.sha256`. A failed verification is reported (`verified: false`), not
+thrown. On success the disc is ejected (unless `eject: false`); a failed burn is
+left in the drive.
 
 ```ts
 const result = await burnImage({
@@ -137,8 +139,9 @@ const result = await burnImage({
   backend: myBurnBackend, // a BurnBackend; the Windows backend arrives next
   blank: true,            // blank a non-blank RW first (default true)
   verify: true,           // verify the burned disc (default true)
+  eject: true,            // eject on success (default true; false keeps it in)
 });
-// result: { imagePath, drive, blanked, verified, verification?, backend }
+// result: { imagePath, drive, blanked, verified, verification?, ejected, backend }
 ```
 
 ### `verifyDisc(mountPath, options?): Promise<PackageValidationResult>`
@@ -167,9 +170,11 @@ const result = await burnPackage({
 ```
 
 `BurnBackend` is the injectable seam: `{ name, isAvailable(), listDrives(),
-isBlank(drive), blank(drive), writeImage(request) }`. `resolveBurnBackend()`
-returns the platform backend, and a `BurnDrive` carries the `mountPath` where the
-disc is read for verification.
+isBlank(drive), blank(drive), writeImage(request) }`, plus optional
+`remount(drive)` (re-read the burned disc in place before verifying) and
+`eject(drive)` (the completion eject). `resolveBurnBackend()` returns the platform
+backend, and a `BurnDrive` carries the `mountPath` where the disc is read for
+verification.
 
 Types: `BurnImageOptions`, `BurnImageResult`, `BurnPackageOptions`, `BurnBackend`,
 `BurnDrive`, `BurnImageRequest`.

@@ -164,6 +164,11 @@ Burn a package (or a prebuilt image) to an 8cm DVD-RW and verify the result. A
 directory source is imaged to a temporary UDF image first; a file source is
 written directly. A non-blank rewritable disc is erased first unless `--no-blank`.
 
+After writing, the disc is remounted in place and read back to verify it against
+`CHECKSUMS.sha256` (no reinsert needed). On success the disc is ejected as a
+completion signal; use `--no-eject` to keep it in the drive (handy for burning
+several discs in a row). A failed verification leaves the disc in the drive.
+
 > Windows only in v0.2, and destructive: burning erases a rewritable disc. Insert
 > a blank or rewritable disc before running.
 
@@ -178,6 +183,7 @@ omd burn "./build/OMD-000001" --drive "D:\\"
 | `--label <name>` | UDF volume label when imaging a package (default: the `discId`). |
 | `--no-blank` | Do not blank a non-blank rewritable disc first. |
 | `--no-verify` | Skip reading the burned disc back to verify it. |
+| `--no-eject` | Keep the disc in the drive after a successful burn (default is to eject). |
 
 Sample output:
 
@@ -188,6 +194,7 @@ Disc blanked.
 Wrote image to D:\.
 Verification: PASS
 Burn complete.
+Disc ejected.
 ```
 
 ---

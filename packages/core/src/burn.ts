@@ -48,6 +48,14 @@ export interface BurnBackend {
   blank(drive: BurnDrive): Promise<void>;
   /** Write an image file to the drive. */
   writeImage(request: BurnImageRequest): Promise<void>;
+  /**
+   * Force the operating system to re-read the freshly burned disc in place so it
+   * can be read back and verified without a physical reinsert. Optional; a
+   * backend that does not need it may omit it.
+   */
+  remount?(drive: BurnDrive): Promise<void>;
+  /** Eject the disc. Used as the completion signal after a successful burn. Optional. */
+  eject?(drive: BurnDrive): Promise<void>;
 }
 
 /**
@@ -75,6 +83,8 @@ export interface BurnImageOptions {
   blank?: boolean;
   /** Verify the burned disc afterward. Defaults to `true`. */
   verify?: boolean;
+  /** Eject the disc after a successful burn. Defaults to `true`. */
+  eject?: boolean;
 }
 
 /** Result of {@link burnImage}. */
@@ -89,6 +99,8 @@ export interface BurnImageResult {
   verified: boolean;
   /** Verification detail, when verification ran. */
   verification?: PackageValidationResult;
+  /** Whether the disc was ejected at the end (only on success, unless disabled). */
+  ejected: boolean;
   /** Name of the backend that performed the write. */
   backend: string;
 }
@@ -97,9 +109,11 @@ export interface BurnImageResult {
  * Write a burn-ready image to a disc and verify the result.
  *
  * Blanks a non-blank rewritable disc first (unless disabled), writes the image
- * through the backend, then reads the burned disc back and verifies it against
- * `CHECKSUMS.sha256`. A failed verification is reported in the result
- * (`verified: false`) rather than thrown, so callers can surface it.
+ * through the backend, remounts the freshly burned disc in place, then reads it
+ * back and verifies it against `CHECKSUMS.sha256`. A failed verification is
+ * reported in the result (`verified: false`) rather than thrown, so callers can
+ * surface it. On a successful burn the disc is ejected as a completion signal
+ * (unless `eject` is `false`); a failed burn is left in the drive for inspection.
  */
 export async function burnImage(options: BurnImageOptions): Promise<BurnImageResult> {
   const { imagePath, drive } = options;
@@ -120,14 +134,31 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
 
   await backend.writeImage({ imagePath, drive });
 
+  const doVerify = options.verify !== false;
+  const doEject = options.eject !== false;
+
+  // Remount the freshly burned disc in place so the OS re-reads the new
+  // filesystem. Needed to verify, and to leave a readable disc when not ejecting.
+  if ((doVerify || !doEject) && backend.remount) {
+    await backend.remount(drive);
+  }
+
   let verified = false;
   let verification: PackageValidationResult | undefined;
-  if (options.verify !== false) {
+  if (doVerify) {
     verification = await verifyDisc(drive.mountPath);
     verified = verification.valid;
   }
 
-  return { imagePath, drive, blanked, verified, verification, backend: backend.name };
+  // Eject only on success; a failed burn stays in the drive for inspection.
+  const success = doVerify ? verified : true;
+  let ejected = false;
+  if (doEject && success && backend.eject) {
+    await backend.eject(drive);
+    ejected = true;
+  }
+
+  return { imagePath, drive, blanked, verified, verification, ejected, backend: backend.name };
 }
 
 /**
@@ -157,6 +188,8 @@ export interface BurnPackageOptions {
   blank?: boolean;
   /** Verify the burned disc afterward. Defaults to `true`. */
   verify?: boolean;
+  /** Eject the disc after a successful burn. Defaults to `true`. */
+  eject?: boolean;
 }
 
 /**
@@ -189,6 +222,7 @@ export async function burnPackage(options: BurnPackageOptions): Promise<BurnImag
       ...(options.backend ? { backend: options.backend } : {}),
       ...(options.blank !== undefined ? { blank: options.blank } : {}),
       ...(options.verify !== undefined ? { verify: options.verify } : {}),
+      ...(options.eject !== undefined ? { eject: options.eject } : {}),
     });
   } finally {
     if (tempImage) {

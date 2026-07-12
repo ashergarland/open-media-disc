@@ -41,11 +41,11 @@ async function corruptFirstTrack(packageDir: string): Promise<void> {
 /** A burn backend that records calls and never touches hardware. */
 function makeFakeBurnBackend(opts?: { available?: boolean; blank?: boolean }): {
   backend: BurnBackend;
-  calls: { blank: number; write: BurnImageRequest[] };
+  calls: { blank: number; write: BurnImageRequest[]; remount: number; eject: number };
 } {
   const available = opts?.available ?? true;
   const blank = opts?.blank ?? false;
-  const calls = { blank: 0, write: [] as BurnImageRequest[] };
+  const calls = { blank: 0, write: [] as BurnImageRequest[], remount: 0, eject: 0 };
   const backend: BurnBackend = {
     name: 'FakeBurner',
     isAvailable: async () => available,
@@ -56,6 +56,12 @@ function makeFakeBurnBackend(opts?: { available?: boolean; blank?: boolean }): {
     },
     writeImage: async (request) => {
       calls.write.push(request);
+    },
+    remount: async () => {
+      calls.remount += 1;
+    },
+    eject: async () => {
+      calls.eject += 1;
     },
   };
   return { backend, calls };
@@ -116,6 +122,10 @@ describe('burnImage', () => {
     expect(result.blanked).toBe(true);
     expect(result.verified).toBe(true);
     expect(result.backend).toBe('FakeBurner');
+    // Remounts in place to verify, then ejects on success.
+    expect(calls.remount).toBe(1);
+    expect(calls.eject).toBe(1);
+    expect(result.ejected).toBe(true);
   });
 
   it('skips blanking when the disc is already blank', async () => {
@@ -146,6 +156,25 @@ describe('burnImage', () => {
 
     expect(result.verified).toBe(false);
     expect(result.verification?.errors.some((e) => e.code === 'CHECKSUM_MISMATCH')).toBe(true);
+    // A failed burn is left in the drive: not ejected.
+    expect(result.ejected).toBe(false);
+  });
+
+  it('does not eject when eject is disabled, but still verifies', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend, calls } = makeFakeBurnBackend();
+
+    const result = await burnImage({
+      imagePath: path.join(tmp.path(), 'disc.img'),
+      drive: { mountPath: pkg },
+      backend,
+      eject: false,
+    });
+
+    expect(result.verified).toBe(true);
+    expect(result.ejected).toBe(false);
+    expect(calls.eject).toBe(0);
+    expect(calls.remount).toBe(1);
   });
 
   it('throws when the backend is unavailable', async () => {
