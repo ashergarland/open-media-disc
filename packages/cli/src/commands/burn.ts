@@ -1,4 +1,10 @@
-import { burnPackage, resolveBurnBackend, type BurnDrive } from '@open-album-cartridge/core';
+import {
+  burnPackage,
+  formatBytes,
+  resolveBurnBackend,
+  type BurnDrive,
+  type MediaInfo,
+} from '@open-album-cartridge/core';
 import { boolOption, stringOption, type ParsedArgs } from '../args.js';
 
 const USAGE =
@@ -68,10 +74,37 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
   const verify = !boolOption(args, 'no-verify');
   const eject = !boolOption(args, 'no-eject');
 
+  // Probe the disc so we can show its type and fail fast on unusable media.
+  let media: MediaInfo | undefined;
+  if (backend.probeMedia) {
+    try {
+      media = await backend.probeMedia(drive);
+    } catch {
+      // Probing is best-effort; fall back to the blank heuristic.
+    }
+  }
+
+  if (media && media.kind === 'write-once' && !media.blank) {
+    console.error(
+      `This ${media.typeName ?? 'write-once'} disc already contains data and cannot be ` +
+        `erased. Insert a blank disc.`,
+    );
+    return 1;
+  }
+
   console.log(
     `Burning ${source} to ${drive.mountPath}${drive.description ? ` (${drive.description})` : ''}`,
   );
-  if (blank) {
+  if (media) {
+    const cap = media.capacityBytes ? `, ${formatBytes(media.capacityBytes)}` : '';
+    console.log(
+      `Disc: ${media.typeName ?? 'unknown'} (${media.kind}${cap}), ` +
+        `${media.blank ? 'blank' : 'not blank'}.`,
+    );
+    if (blank && media.kind === 'rewritable' && !media.blank) {
+      console.log('The rewritable disc will be erased first.');
+    }
+  } else if (blank) {
     console.log('A non-blank rewritable disc will be erased first.');
   }
 
@@ -83,6 +116,7 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
       blank,
       verify,
       eject,
+      ...(media ? { media } : {}),
       ...(label ? { volumeLabel: label } : {}),
     });
 

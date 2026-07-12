@@ -30,6 +30,21 @@ export interface BurnImageRequest {
   drive: BurnDrive;
 }
 
+/** Whether optical media can be erased and rewritten. */
+export type DiscMediaKind = 'rewritable' | 'write-once' | 'unknown';
+
+/** The disc currently in a drive, as probed by a {@link BurnBackend}. */
+export interface MediaInfo {
+  /** Whether the disc can be erased (`rewritable`) or is `write-once`. */
+  kind: DiscMediaKind;
+  /** Whether the disc currently holds no data. */
+  blank: boolean;
+  /** Friendly media name, for example `DVD-R`, `DVD-RW`, `BD-RE`. */
+  typeName?: string;
+  /** Total writable capacity in bytes, when known. */
+  capacityBytes?: number;
+}
+
 /**
  * A platform-specific engine that writes an image to physical optical media.
  * Backends are injectable so the {@link burnImage} orchestration can be tested
@@ -48,6 +63,12 @@ export interface BurnBackend {
   blank(drive: BurnDrive): Promise<void>;
   /** Write an image file to the drive. */
   writeImage(request: BurnImageRequest): Promise<void>;
+  /**
+   * Probe the disc in the drive: rewritable vs write-once, blank or not, media
+   * name, and capacity. Optional; when absent the orchestration falls back to
+   * {@link isBlank}.
+   */
+  probeMedia?(drive: BurnDrive): Promise<MediaInfo>;
   /**
    * Force the operating system to re-read the freshly burned disc in place so it
    * can be read back and verified without a physical reinsert. Optional; a
@@ -85,6 +106,8 @@ export interface BurnImageOptions {
   verify?: boolean;
   /** Eject the disc after a successful burn. Defaults to `true`. */
   eject?: boolean;
+  /** Pre-probed media info, to avoid a second probe. Optional. */
+  media?: MediaInfo;
 }
 
 /** Result of {@link burnImage}. */
@@ -101,6 +124,8 @@ export interface BurnImageResult {
   verification?: PackageValidationResult;
   /** Whether the disc was ejected at the end (only on success, unless disabled). */
   ejected: boolean;
+  /** Detected media info, when the backend could probe it. */
+  media?: MediaInfo;
   /** Name of the backend that performed the write. */
   backend: string;
 }
@@ -126,10 +151,44 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
     );
   }
 
+  // Probe the disc so we handle rewritable vs write-once media correctly and can
+  // check capacity before doing anything destructive.
+  const media =
+    options.media ?? (backend.probeMedia ? await backend.probeMedia(drive) : undefined);
+
+  // Capacity guard: never blank or write a disc the image will not fit on.
+  if (media?.capacityBytes !== undefined) {
+    const imageSize = (await stat(imagePath)).size;
+    if (imageSize > media.capacityBytes) {
+      throw new Error(
+        `Image is ${imageSize} bytes but the disc holds ${media.capacityBytes} bytes` +
+          `${media.typeName ? ` (${media.typeName})` : ''}. It will not fit.`,
+      );
+    }
+  }
+
   let blanked = false;
-  if (options.blank !== false && !(await backend.isBlank(drive))) {
-    await backend.blank(drive);
-    blanked = true;
+  if (options.blank !== false) {
+    if (media) {
+      if (media.kind === 'write-once') {
+        // Write-once media cannot be erased. A blank disc is fine to write; a
+        // used one cannot be reused.
+        if (!media.blank) {
+          throw new Error(
+            `This ${media.typeName ?? 'write-once'} disc already contains data and ` +
+              `cannot be erased. Insert a blank disc.`,
+          );
+        }
+      } else if (!media.blank) {
+        // Rewritable and not blank: erase it first.
+        await backend.blank(drive);
+        blanked = true;
+      }
+    } else if (!(await backend.isBlank(drive))) {
+      // Unknown media: fall back to the blank heuristic.
+      await backend.blank(drive);
+      blanked = true;
+    }
   }
 
   await backend.writeImage({ imagePath, drive });
@@ -158,7 +217,7 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
     ejected = true;
   }
 
-  return { imagePath, drive, blanked, verified, verification, ejected, backend: backend.name };
+  return { imagePath, drive, blanked, verified, verification, ejected, media, backend: backend.name };
 }
 
 /**
@@ -190,6 +249,8 @@ export interface BurnPackageOptions {
   verify?: boolean;
   /** Eject the disc after a successful burn. Defaults to `true`. */
   eject?: boolean;
+  /** Pre-probed media info, to avoid a second probe. Optional. */
+  media?: MediaInfo;
 }
 
 /**
@@ -223,6 +284,7 @@ export async function burnPackage(options: BurnPackageOptions): Promise<BurnImag
       ...(options.blank !== undefined ? { blank: options.blank } : {}),
       ...(options.verify !== undefined ? { verify: options.verify } : {}),
       ...(options.eject !== undefined ? { eject: options.eject } : {}),
+      ...(options.media ? { media: options.media } : {}),
     });
   } finally {
     if (tempImage) {

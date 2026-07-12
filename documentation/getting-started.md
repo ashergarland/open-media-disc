@@ -121,16 +121,17 @@ it to a disc, see the next section.
 
 ## 7. Burn to a disc (Windows)
 
-Write a package (or a prebuilt image) to an 8cm DVD-RW and verify it. Insert a
-blank or rewritable disc first.
+Write a package (or a prebuilt image) to writable DVD media and verify it. Insert
+a blank disc first (a rewritable DVD-RW/DVD+RW, or a blank write-once DVD-R/DVD+R).
 
 ```bash
 pnpm omd burn "./build/OMD-000001" --drive "D:\\"
 ```
 
 > Burning is destructive: a non-blank rewritable disc is erased first (pass
-> `--no-blank` to skip). It is Windows-only in v0.2. With exactly one writer
-> attached you can omit `--drive`.
+> `--no-blank` to skip), while a non-blank write-once disc is refused. It is
+> Windows-only in v0.2. With exactly one writer attached you can omit `--drive`.
+> The disc ejects on success; pass `--no-eject` to keep it in for the next burn.
 
 ## Package size and 8cm DVD-RW
 

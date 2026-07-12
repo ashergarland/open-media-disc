@@ -1,7 +1,38 @@
 import path from 'node:path';
 import { MANIFEST_FILENAME } from './constants.js';
-import type { BurnBackend, BurnDrive, BurnImageRequest } from './burn.js';
+import type {
+  BurnBackend,
+  BurnDrive,
+  BurnImageRequest,
+  MediaInfo,
+  DiscMediaKind,
+} from './burn.js';
 import { runPowerShellScript } from './windowsPowerShell.js';
+
+/**
+ * IMAPI `IMAPI_MEDIA_PHYSICAL_TYPE` values mapped to a friendly name and whether
+ * the media is rewritable or write-once. Read-only ROM types map to `unknown`.
+ */
+const MEDIA_TYPES: Record<number, { kind: DiscMediaKind; name: string }> = {
+  1: { kind: 'unknown', name: 'CD-ROM' },
+  2: { kind: 'write-once', name: 'CD-R' },
+  3: { kind: 'rewritable', name: 'CD-RW' },
+  4: { kind: 'unknown', name: 'DVD-ROM' },
+  5: { kind: 'rewritable', name: 'DVD-RAM' },
+  6: { kind: 'write-once', name: 'DVD+R' },
+  7: { kind: 'rewritable', name: 'DVD+RW' },
+  8: { kind: 'write-once', name: 'DVD+R DL' },
+  9: { kind: 'write-once', name: 'DVD-R' },
+  10: { kind: 'rewritable', name: 'DVD-RW' },
+  11: { kind: 'write-once', name: 'DVD-R DL' },
+  13: { kind: 'rewritable', name: 'DVD+RW DL' },
+  14: { kind: 'unknown', name: 'HD DVD-ROM' },
+  15: { kind: 'write-once', name: 'HD DVD-R' },
+  16: { kind: 'rewritable', name: 'HD DVD-RAM' },
+  17: { kind: 'unknown', name: 'BD-ROM' },
+  18: { kind: 'write-once', name: 'BD-R' },
+  19: { kind: 'rewritable', name: 'BD-RE' },
+};
 
 /**
  * Windows burn backend built on IMAPI2 (`IMAPI2.MsftDiscMaster2`,
@@ -44,6 +75,25 @@ try {
   $data.Recorder = $rec
   $data.ClientName = 'Open Media Disc'
   if ($data.MediaHeuristicallyBlank) { 'true' } else { 'false' }
+} catch {
+  [Console]::Error.WriteLine($_.Exception.Message); exit 1
+}
+`;
+
+/** Probe the media type, blank state, and capacity of the disc in the recorder. */
+const PROBE_SCRIPT = String.raw`
+$ErrorActionPreference = 'Stop'
+try {
+  $rec = New-Object -ComObject IMAPI2.MsftDiscRecorder2
+  $rec.InitializeDiscRecorder($env:OMD_REC_ID)
+  $data = New-Object -ComObject IMAPI2.MsftDiscFormat2Data
+  $data.Recorder = $rec
+  $data.ClientName = 'Open Media Disc'
+  $type = [int]$data.CurrentPhysicalMediaType
+  $blank = [bool]$data.MediaHeuristicallyBlank
+  $sectors = 0
+  try { $sectors = [long]$data.TotalSectorsOnMedia } catch { $sectors = 0 }
+  [pscustomobject]@{ type = $type; blank = $blank; sectors = $sectors } | ConvertTo-Json -Compress
 } catch {
   [Console]::Error.WriteLine($_.Exception.Message); exit 1
 }
@@ -203,6 +253,25 @@ export class WindowsImapiBurnBackend implements BurnBackend {
       OMD_REC_ID: this.recorderId(drive),
     });
     return out.trim() === 'true';
+  }
+
+  async probeMedia(drive: BurnDrive): Promise<MediaInfo> {
+    const out = await runPowerShellScript(PROBE_SCRIPT, {
+      ...process.env,
+      OMD_REC_ID: this.recorderId(drive),
+    });
+    const raw = JSON.parse(out.trim() || '{}') as {
+      type?: number;
+      blank?: boolean;
+      sectors?: number;
+    };
+    const mapped = raw.type !== undefined ? MEDIA_TYPES[raw.type] : undefined;
+    return {
+      kind: mapped?.kind ?? 'unknown',
+      blank: raw.blank === true,
+      ...(mapped?.name ? { typeName: mapped.name } : {}),
+      ...(raw.sectors && raw.sectors > 0 ? { capacityBytes: raw.sectors * 2048 } : {}),
+    };
   }
 
   async blank(drive: BurnDrive): Promise<void> {

@@ -160,17 +160,22 @@ Backend: Windows IMAPI2
 
 ## `omd burn`
 
-Burn a package (or a prebuilt image) to an 8cm DVD-RW and verify the result. A
-directory source is imaged to a temporary UDF image first; a file source is
-written directly. A non-blank rewritable disc is erased first unless `--no-blank`.
+Burn a package (or a prebuilt image) to writable DVD media (DVD-R, DVD-RW,
+DVD+R, DVD+RW) and verify the result. A directory source is imaged to a temporary
+UDF image first; a file source is written directly.
+
+The disc is probed first: a non-blank **rewritable** disc is erased before writing
+(unless `--no-blank`), while a non-blank **write-once** disc (DVD-R, DVD+R) is
+refused because it cannot be reused. The command also checks the image fits the
+disc capacity before writing.
 
 After writing, the disc is remounted in place and read back to verify it against
 `CHECKSUMS.sha256` (no reinsert needed). On success the disc is ejected as a
 completion signal; use `--no-eject` to keep it in the drive (handy for burning
 several discs in a row). A failed verification leaves the disc in the drive.
 
-> Windows only in v0.2, and destructive: burning erases a rewritable disc. Insert
-> a blank or rewritable disc before running.
+> Windows only in v0.2, and destructive: burning erases a rewritable disc.
+> Rewritable discs can be reused; a write-once disc must be blank.
 
 ```bash
 omd burn "./build/OMD-000001" --drive "D:\\"
@@ -189,7 +194,8 @@ Sample output:
 
 ```text
 Burning ./build/OMD-000001 to D:\ (HL-DT-ST BD-RE BP60NB10)
-A non-blank rewritable disc will be erased first.
+Disc: DVD-RW (rewritable, 1.4 GB), not blank.
+The rewritable disc will be erased first.
 Disc blanked.
 Wrote image to D:\.
 Verification: PASS
