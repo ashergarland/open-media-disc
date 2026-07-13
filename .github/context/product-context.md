@@ -81,6 +81,12 @@ design note.
 - **Share for the Pi player.** Player and theming live in a shared UI package so
   the future Raspberry Pi player reuses the same components and theming contract.
   Studio owns the desktop shell and the burn and label workflows.
+- **Navigation and layout.** OMD Studio uses a sidebar shell: a slim left icon
+  nav (Create Disc, Player, Catalog, Themes, Settings), a main content area, and a
+  persistent Now Playing bar. The default theme is Y2K / Frutiger Aero (glossy
+  aqua). For touch-first hardware (Raspberry Pi touchscreens and appliance-style
+  OMD devices) a dashboard tile launcher layout is preferred over the sidebar, and
+  it should shape the future Pi player UI.
 
 ## Ethics
 

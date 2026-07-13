@@ -47,7 +47,7 @@ flowchart LR
 | **OMD Studio (alpha)** | Desktop app wrapping the core: package, label, burn, play (themeable), and rip. | In progress |
 | **Multi-language SDKs** | Shared conformance fixtures across TS (and later Rust). | Planned |
 | **Writer Dock** | Dedicated device: erase → burn → verify → eject 8cm DVD-RW. | Planned |
-| **Pi Player** | Raspberry Pi playback device reading bare OMD discs. | Planned |
+| **Pi Player** | Raspberry Pi playback device reading bare OMD discs (touch-first dashboard UI). | Planned |
 | **OMD Deck** | Component-style home-audio player. | Research |
 | **Portable player** | Battery, cache-first, MiniDisc-style handheld. | Research |
 | **Cartridge-native** | Spin an 8cm DVD-RW inside a serviceable cartridge shell. | Long-term R&D |
@@ -121,6 +121,9 @@ core modules as the CLI, with no duplicated logic. See the
   by default) with crop marks. Studio prints it.
 - Studio screens for the full flow: select album, package and validate, inspect,
   label, and burn (drive select, media info, live progress, verify, eject).
+- A **sidebar app shell** (left nav: Create Disc, Player, Catalog, Themes,
+  Settings) with a persistent Now Playing bar, using the Y2K and Frutiger Aero
+  glossy theme by default. See the [OMD Studio design note](./omd-studio.md).
 - An integrated player: inspect a mounted disc, show album art and the track
   list, play, pause, and seek tracks, and verify checksums.
 - A **themeable player:** retro, Winamp-inspired looks via VS Code-style token

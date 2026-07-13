@@ -10,6 +10,35 @@ OMD Studio wraps the same core modules as the `omd` CLI, with no duplicated
 logic. Both features below follow that rule: shared, testable logic first, then
 the GUI wraps it.
 
+## Navigation and layout (locked)
+
+OMD Studio uses a **sidebar layout**:
+
+- A slim left navigation rail with icon-and-label items: Create Disc, Player,
+  Catalog, Themes, and Settings.
+- A large main content area for the active view.
+- A slim persistent **Now Playing** bar across the bottom (album thumbnail, track
+  and artist, scrubber, transport, a small VU meter, volume, and the Verified and
+  FLAC badges) so playback continues while you move through the create flow.
+
+Why the sidebar: it scales as the app grows (catalog, themes, settings), it reads
+as a focused publishing workstation, and it shares lineage with the VS Code-style
+token theming below. The layout stays fixed; only the theme changes.
+
+Default theme: **Y2K / Frutiger Aero** (glossy aqua glass) is the default skin.
+Other skins (for example Classic Amp, Hi-Fi Silver, Cassette) ship through the
+token theme system described below.
+
+### Touch-first hardware (Raspberry Pi and appliances)
+
+The sidebar is a desktop choice. For touch-first environments, a **dashboard tile
+launcher** layout is preferred: large tap targets as glossy tiles (Play a Disc,
+Create a Disc, Catalog, Now Playing, Themes, Settings) with a live Now Playing
+tile. This is the better fit for **Raspberry Pi touchscreen devices and simple
+appliance-style OMD hardware**, and it should inform the future Pi player UI. It
+reuses the same shared components and theming contract; only the shell layout
+differs from the desktop app.
+
 ## The integrated player
 
 - Studio plays a mounted OMD disc **in-app**, not by launching an external
@@ -175,7 +204,9 @@ the disc (ripped, verified, output path), the same way burn and verify are.
   `packages/player` or `packages/ui`), so OMD Studio and the future Raspberry Pi
   player reuse the same components, playback state model, and theming contract.
   Studio owns the desktop shell and the burn and label workflows; the Pi player
-  is a lean, player-first app built from the same parts.
+  is a lean, player-first app built from the same parts. The Pi player uses a
+  touch-first dashboard layout rather than the desktop sidebar (see Navigation
+  and layout).
 - `omd rip` is a core function plus a CLI command. Studio calls the same
   function, so no logic is duplicated in the UI.
 
