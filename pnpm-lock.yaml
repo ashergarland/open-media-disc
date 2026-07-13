@@ -98,6 +98,9 @@ importers:
       '@open-album-cartridge/label':
         specifier: workspace:*
         version: link:../label
+      '@open-album-cartridge/ui':
+        specifier: workspace:*
+        version: link:../ui
     devDependencies:
       '@types/node':
         specifier: ^20.14.10

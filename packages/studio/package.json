@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@open-album-cartridge/core": "workspace:*",
-    "@open-album-cartridge/label": "workspace:*"
+    "@open-album-cartridge/label": "workspace:*",
+    "@open-album-cartridge/ui": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

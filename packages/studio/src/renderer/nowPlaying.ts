@@ -1,0 +1,152 @@
+/**
+ * The persistent Now Playing bar.
+ *
+ * A pure view over the shared player state: given a {@link PlayerState} and a
+ * set of handlers, it builds the bar. The shell re-renders it on every player
+ * transition. It never decodes audio itself.
+ */
+
+import { currentTrack, type PlayerState } from '@open-album-cartridge/ui';
+import { el, svgIcon, type IconName } from './dom';
+
+/** Callbacks the bar invokes as the user drives the transport. */
+export interface NowPlayingHandlers {
+  onTogglePlay(): void;
+  onNext(): void;
+  onPrevious(): void;
+  onToggleShuffle(): void;
+  onCycleRepeat(): void;
+  onVolume(value: number): void;
+  onSeek(fraction: number): void;
+}
+
+function formatTime(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+interface TransportButtonOptions {
+  active?: boolean;
+  primary?: boolean;
+  disabled?: boolean;
+  extraClass?: string;
+}
+
+function transportButton(
+  icon: IconName,
+  label: string,
+  onClick: () => void,
+  options: TransportButtonOptions = {},
+): HTMLElement {
+  const classes = ['np-btn'];
+  if (options.primary) classes.push('np-btn-primary');
+  if (options.active) classes.push('is-active');
+  if (options.extraClass) classes.push(options.extraClass);
+  return el(
+    'button',
+    {
+      class: classes.join(' '),
+      'aria-label': label,
+      title: label,
+      disabled: options.disabled ? true : null,
+      onclick: onClick,
+    },
+    [svgIcon(icon)],
+  );
+}
+
+function vuChannel(live: boolean): HTMLElement {
+  const channel = el('div', { class: `vu-channel${live ? ' is-live' : ''}` });
+  for (let i = 0; i < 10; i++) {
+    const seg = el('span', { class: 'vu-seg' });
+    // CSSOM (not a style attribute) so the strict CSP is respected.
+    seg.style.setProperty('--i', String(i));
+    channel.append(seg);
+  }
+  return channel;
+}
+
+/** Build the Now Playing bar for the given player state. */
+export function renderNowPlaying(state: PlayerState, handlers: NowPlayingHandlers): HTMLElement {
+  const track = currentTrack(state);
+  const hasTrack = track !== undefined;
+  const duration = track?.durationSeconds ?? 0;
+  const elapsed = state.elapsedSeconds;
+  const fraction = duration > 0 ? Math.min(1, elapsed / duration) : 0;
+  const playing = state.status === 'playing';
+
+  const trackInfo = el('div', { class: 'np-track' }, [
+    el('div', { class: 'np-thumb', 'aria-hidden': 'true' }, [svgIcon('create', 26)]),
+    el('div', { class: 'np-track-text' }, [
+      el('div', { class: 'np-title', text: track ? track.title : 'Nothing playing' }),
+      el('div', {
+        class: 'np-artist',
+        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Player or Create Disc'),
+      }),
+    ]),
+  ]);
+
+  const repeatButton = transportButton('repeat', `Repeat: ${state.repeat}`, handlers.onCycleRepeat, {
+    active: state.repeat !== 'off',
+    extraClass: state.repeat === 'one' ? 'is-one' : undefined,
+  });
+  const transport = el('div', { class: 'np-transport' }, [
+    transportButton('shuffle', 'Shuffle', handlers.onToggleShuffle, { active: state.shuffle }),
+    transportButton('prev', 'Previous', handlers.onPrevious, { disabled: !hasTrack }),
+    transportButton(playing ? 'pause' : 'play', playing ? 'Pause' : 'Play', handlers.onTogglePlay, {
+      primary: true,
+      disabled: !hasTrack,
+    }),
+    transportButton('next', 'Next', handlers.onNext, { disabled: !hasTrack }),
+    repeatButton,
+  ]);
+
+  const scrubber = el('input', {
+    class: 'np-scrubber',
+    type: 'range',
+    min: '0',
+    max: '1000',
+    value: String(Math.round(fraction * 1000)),
+    disabled: hasTrack ? null : true,
+    'aria-label': 'Seek',
+  }) as HTMLInputElement;
+  scrubber.addEventListener('input', () => handlers.onSeek(Number(scrubber.value) / 1000));
+
+  const progress = el('div', { class: 'np-progress' }, [
+    el('span', { class: 'np-time', text: formatTime(elapsed) }),
+    scrubber,
+    el('span', { class: 'np-time', text: formatTime(duration) }),
+  ]);
+
+  const volume = el('input', {
+    class: 'np-volume',
+    type: 'range',
+    min: '0',
+    max: '100',
+    value: String(Math.round(state.volume * 100)),
+    'aria-label': 'Volume',
+  }) as HTMLInputElement;
+  volume.addEventListener('input', () => handlers.onVolume(Number(volume.value) / 100));
+
+  const meters = el('div', { class: 'np-vu', 'aria-hidden': 'true' }, [
+    vuChannel(playing),
+    vuChannel(playing),
+  ]);
+
+  const badges = el('div', { class: `np-badges${hasTrack ? '' : ' is-dim'}` }, [
+    el('span', { class: 'badge badge-verified' }, [svgIcon('check', 14), el('span', { text: 'Verified' })]),
+    el('span', { class: 'badge badge-flac', text: 'FLAC' }),
+  ]);
+
+  const side = el('div', { class: 'np-side' }, [
+    meters,
+    el('div', { class: 'np-volume-wrap' }, [svgIcon('volume', 18), volume]),
+    badges,
+  ]);
+
+  return el('footer', { class: 'now-playing' }, [
+    trackInfo,
+    el('div', { class: 'np-center' }, [transport, progress]),
+    side,
+  ]);
+}
