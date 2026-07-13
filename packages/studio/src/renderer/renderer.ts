@@ -27,6 +27,7 @@ import {
 import type { OmdStudioApi, StudioDrive, StudioInfo } from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 import { renderNowPlaying } from './nowPlaying';
+import { renderCreateWizard } from './createWizard';
 
 declare global {
   interface Window {
@@ -231,11 +232,7 @@ function settingsView(): HTMLElement {
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
     case 'create':
-      return placeholderView(
-        'Create Disc',
-        'Turn a FLAC album folder into a verified, burned 8cm mini DVD-RW.',
-        ['Select album', 'Package and validate', 'Print label', 'Burn to Disc', 'Verify', 'Play'],
-      );
+      return renderCreateWizard({ onOpenPlayer: () => setView('player') });
     case 'player':
       return placeholderView('Player', 'Play a mounted OMD disc with verified, lossless FLAC.', [
         'Auto-detect a mounted disc',
