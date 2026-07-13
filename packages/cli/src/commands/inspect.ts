@@ -27,7 +27,7 @@ export async function inspectCommand(args: ParsedArgs): Promise<number> {
   const kind = await detectMediaKind(packageDir);
 
   console.log(kind === 'disc' ? 'OMD Disc' : 'OMD Package (folder)');
-  console.log(`Disc ID: ${info.discId}`);
+  console.log(`Disc title: ${info.discId}`);
   console.log(`Artist: ${info.artist}`);
   console.log(`Album: ${info.album}`);
   if (info.releaseYear !== undefined) console.log(`Year: ${info.releaseYear}`);

@@ -71,8 +71,13 @@ describe('validateManifest', () => {
     expect(validateManifest(broken).valid).toBe(false);
   });
 
-  it('rejects a bad discId', () => {
-    const m = { ...createManifest(baseInput()), discId: 'DISC1' };
+  it('accepts an editable Unicode disc title as discId', () => {
+    const m = { ...createManifest(baseInput()), discId: '真夏の日 / Deluxe' };
+    expect(validateManifest(m).valid).toBe(true);
+  });
+
+  it('rejects an empty discId', () => {
+    const m = { ...createManifest(baseInput()), discId: '' };
     expect(validateManifest(m).valid).toBe(false);
   });
 

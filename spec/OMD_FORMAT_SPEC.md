@@ -34,7 +34,7 @@ image and burning it to 8cm DVD-RW. The cartridge shell remains future work.
 | Metadata | `OMD-MANIFEST.json` (authoritative) |
 | Integrity | `CHECKSUMS.sha256` + per-track SHA-256 in manifest |
 | Disc filesystem | UDF |
-| Disc volume label | `discId` (e.g. `OMD-000001`) |
+| Disc volume label | best-effort rendering of the disc title (see section 3) |
 
 ## 3. Package, Disc Image, and Burning
 
@@ -51,8 +51,11 @@ The v0.2 software turns a validated package into a burn-ready **disc image**. Th
 uses the **UDF** filesystem, and its content **mirrors the package tree exactly**:
 `OMD-MANIFEST.json` at the root, the `AUDIO/` directory, `CHECKSUMS.sha256`, and any
 `COVER.*` or `BOOKLET.pdf`. No files are added, removed, or renamed. The UDF **logical
-volume identifier (volume label) MUST be the package `discId`** (for example
-`OMD-000001`). Building an image needs no optical hardware, so it can be produced and
+volume identifier (volume label) is a best-effort rendering of the disc title**; a disc's
+identity is read from the manifest `discId`, never from the volume label. When the title
+cannot be stored verbatim, the label degrades in order to an ASCII rendering of the title,
+the first track title, the artist, and finally `OMD-<short hash>`, so a burn never fails on
+the title alone. Building an image needs no optical hardware, so it can be produced and
 inspected on any supported machine.
 
 ### 3.2 Burning

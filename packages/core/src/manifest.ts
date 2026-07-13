@@ -33,7 +33,10 @@ export const manifestSchema = z
   .object({
     omdFormat: z.literal(OMD_FORMAT),
     omdVersion: z.string().regex(/^\d+\.\d+\.\d+$/, 'omdVersion must be semver x.y.z'),
-    discId: z.string().regex(/^OMD-\d{6,}$/, 'discId must look like OMD-000001'),
+    discId: z
+      .string()
+      .min(1, 'discId (disc title) must not be empty')
+      .max(200, 'discId must be at most 200 characters'),
     mediaType: z.string().min(1),
     filesystemTarget: z.enum(['UDF', 'ISO9660', 'ISO9660+UDF']),
     artist: z.string().min(1),

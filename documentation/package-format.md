@@ -40,7 +40,7 @@ burns to an 8cm DVD-RW.
 | Audio codec | FLAC |
 | Target medium | 8cm DVD-RW (~1.4 GB usable) |
 | Disc filesystem | UDF |
-| Disc volume label | `discId` (e.g. `OMD-000001`) |
+| Disc volume label | best-effort rendering of the disc title |
 
 ## The manifest
 
@@ -84,7 +84,7 @@ presents an album, not a folder.
 | --- | --- | --- |
 | `omdFormat` | string | Always `OMD-FLAC-DATA` in v0.1. |
 | `omdVersion` | string | Format contract version, e.g. `0.1.0`. |
-| `discId` | string | Stable id like `OMD-000001`. |
+| `discId` | string | Editable disc title (defaults to the album title). Full Unicode; legacy `OMD-000NNN` still valid. |
 | `mediaType` | string | Target medium, default `8cm DVD-RW`. |
 | `filesystemTarget` | string | Disc filesystem. `UDF` is used for v0.2 burning. |
 | `artist`, `album` | string | Album identity. |
@@ -118,7 +118,8 @@ See [`spec/OMD_DISC_LAYOUT.md`](../spec/OMD_DISC_LAYOUT.md) for the full rules.
 
 When burned by the v0.2 software, a package is written as a **UDF** disc image
 whose content mirrors the package tree exactly, with no files added or renamed.
-The UDF volume label is the package `discId` (for example `OMD-000001`). A
+The UDF volume label is a best-effort rendering of the disc title; a disc's
+identity is read from the manifest `discId`, never from the volume label. A
 non-empty rewritable disc is blanked first, and after writing the disc is verified
 by re-checking `CHECKSUMS.sha256` against the files on the disc. The burned disc
 stays a plain, browsable UDF filesystem, so it remains recoverable with ordinary

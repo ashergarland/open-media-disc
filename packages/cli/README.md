@@ -9,7 +9,7 @@ writer attached.
 ## Commands
 
 ```bash
-omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001] \
+omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force] \
                          [--artist <name>] [--album <title>] [--year <yyyy>]
 omd validate <packageDir> [--strict]
 omd inspect <packageDir>

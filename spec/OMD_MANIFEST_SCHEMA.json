@@ -32,9 +32,10 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
     "discId": {
-      "description": "Stable local identifier for the physical disc, e.g. OMD-000001.",
+      "description": "Human, editable disc title (defaults to the album title). Full Unicode and not required to be unique. Legacy OMD-000NNN identifiers remain valid.",
       "type": "string",
-      "pattern": "^OMD-\\d{6,}$"
+      "minLength": 1,
+      "maxLength": 200
     },
     "mediaType": {
       "description": "Target physical medium.",

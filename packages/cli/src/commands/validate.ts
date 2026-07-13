@@ -27,7 +27,7 @@ export async function validateCommand(args: ParsedArgs): Promise<number> {
     const checksumOk = !result.issues.some(
       (i) => i.code === 'CHECKSUM_MISMATCH' || i.code === 'CHECKSUM_MISSING_ENTRY',
     );
-    console.log(`Disc ID: ${info.discId}`);
+    console.log(`Disc title: ${info.discId}`);
     console.log(`Artist: ${info.artist}`);
     console.log(`Album: ${info.album}`);
     console.log(`Format: ${info.omdFormat} v${info.omdVersion}`);

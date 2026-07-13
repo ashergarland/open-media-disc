@@ -10,7 +10,7 @@ or invoke the installed `omd` binary directly.
 ## Synopsis
 
 ```text
-omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]
+omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]
                          [--artist <name>] [--album <title>] [--year <yyyy>]
 omd validate <packageDir> [--strict]
 omd inspect  <packageDir>
@@ -40,8 +40,9 @@ omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
 | Option | Default | Description |
 | --- | --- | --- |
 | `<albumFolder>` | - | Source folder containing `.flac` files (and optional cover). Required. |
-| `--out <dir>` | `./build/<discId>` | Output package directory. |
-| `--disc-id <id>` | `OMD-000001` | Stable disc identifier (`OMD-` + 6+ digits). |
+| `--out <dir>` | `./build/<disc title>` | Output package directory (the title is slugified for the path). |
+| `--disc-id <title>` | album title | Disc title stored as `discId`. Any Unicode text; defaults to the album title. |
+| `--force` | off | Overwrite the output folder if it already exists. |
 | `--artist <name>` | inferred from tags | Override album artist. |
 | `--album <title>` | inferred from tags | Override album title. |
 | `--year <yyyy>` | inferred from tags | Override release year. |
@@ -54,7 +55,7 @@ Sample output:
 
 ```text
 Created OMD package: ./build/OMD-000001
-Disc ID: OMD-000001
+Disc title: Blank Banshee 0
 Artist: Blank Banshee
 Album: Blank Banshee 0
 Tracks: 15
@@ -83,7 +84,7 @@ Sample output:
 ```text
 OMD Package: VALID
 
-Disc ID: OMD-000001
+Disc title: Blank Banshee 0
 Artist: Blank Banshee
 Album: Blank Banshee 0
 Format: OMD-FLAC-DATA v0.1.0
@@ -131,8 +132,8 @@ omd checksum "./build/OMD-000001" --write   # (re)generate the file
 ## `omd image`
 
 Build a burn-ready **UDF** disc image from a validated package. The image content
-mirrors the package tree and its UDF volume label is the package `discId`.
-Building an image needs no optical drive.
+mirrors the package tree and its UDF volume label is a best-effort rendering of
+the disc title. Building an image needs no optical drive.
 
 > Windows only in v0.2. Image creation uses IMAPI2; Linux and macOS backends are
 > planned. See the [Roadmap](./roadmap.md).
@@ -145,7 +146,7 @@ omd image "./build/OMD-000001" --out "./build/OMD-000001.img"
 | --- | --- |
 | `<packageDir>` | Package directory to image. Required. |
 | `--out <imagePath>` | Destination image file. Required. |
-| `--label <name>` | Override the UDF volume label (default: the package `discId`). |
+| `--label <name>` | Override the UDF volume label (default: derived from the disc title). |
 
 Sample output:
 
@@ -189,7 +190,7 @@ omd burn "./build/OMD-000001" --drive "D:\\"
 | --- | --- |
 | `<packageDir\|imageFile>` | A package directory or a prebuilt image file. Required. |
 | `--drive <path>` | Target drive mount path (e.g. `D:\`). Optional if exactly one writer is present. |
-| `--label <name>` | UDF volume label when imaging a package (default: the `discId`). |
+| `--label <name>` | UDF volume label when imaging a package (default: derived from the disc title). |
 | `--no-blank` | Do not blank a non-blank rewritable disc first. |
 | `--no-verify` | Skip reading the burned disc back to verify it. |
 | `--no-eject` | Keep the disc in the drive after a successful burn (default is to eject). |
@@ -234,7 +235,7 @@ Sample output:
 ```text
 Wrote label sheet: ./build/OMD-000001-label.svg
 Album: Blank Banshee - Blank Banshee 0
-Disc ID: OMD-000001
+Disc title: Blank Banshee 0
 Labels: 4
 ```
 

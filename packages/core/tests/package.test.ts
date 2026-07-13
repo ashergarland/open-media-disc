@@ -8,6 +8,7 @@ import {
   createPackage,
   formatChecksumsFile,
   inspectPackage,
+  OutputExistsError,
   validatePackage,
 } from '../src/index.js';
 import { makeSourceAlbum, useTempDir } from './helpers/fixtures.js';
@@ -73,6 +74,65 @@ describe('createPackage', () => {
     expect(manifest.artist).toBe('Inferred Artist');
     expect(manifest.album).toBe('Inferred Album');
     expect(manifest.releaseYear).toBe(2025);
+  });
+
+  it('defaults the disc title (discId) to the album title', async () => {
+    const src = path.join(tmp.path(), 'src-default-id');
+    const out = path.join(tmp.path(), 'out-default-id');
+    await makeSourceAlbum(src, {
+      artist: 'Default Artist',
+      album: 'Default Album',
+      year: 2026,
+      tracks: [{ number: 1, title: 'One' }],
+    });
+    const { manifest } = await createPackage({
+      sourceDir: src,
+      outDir: out,
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(manifest.discId).toBe('Default Album');
+  });
+
+  it('defaults the output folder to build/<slugified title>', async () => {
+    const src = path.join(tmp.path(), 'src-default-out');
+    await makeSourceAlbum(src, {
+      artist: 'A',
+      album: 'Night: Sessions',
+      year: 2026,
+      tracks: [{ number: 1, title: 'One' }],
+    });
+    const cwd = process.cwd();
+    process.chdir(tmp.path());
+    try {
+      const { outDir, manifest } = await createPackage({
+        sourceDir: src,
+        generator: { name: 'test', version: '0.1.0' },
+      });
+      expect(manifest.discId).toBe('Night: Sessions');
+      expect(outDir).toBe(path.join('build', 'Night Sessions'));
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+
+  it('refuses to overwrite an existing folder unless allowed', async () => {
+    const src = path.join(tmp.path(), 'src-overwrite');
+    const out = path.join(tmp.path(), 'out-overwrite');
+    await makeSourceAlbum(src, {
+      artist: 'Overwrite Artist',
+      album: 'Overwrite Album',
+      year: 2026,
+      tracks: [{ number: 1, title: 'One' }],
+    });
+    const base = {
+      sourceDir: src,
+      outDir: out,
+      generator: { name: 'test', version: '0.1.0' },
+    };
+    await createPackage(base);
+    await expect(createPackage(base)).rejects.toBeInstanceOf(OutputExistsError);
+    const { validation } = await createPackage({ ...base, overwrite: true });
+    expect(validation.valid).toBe(true);
   });
 
   it('throws when the source folder has no FLAC files', async () => {

@@ -13,7 +13,7 @@ import { playCommand } from '../commands/play.js';
 const HELP = `${CLI_NAME} v${CLI_VERSION}: Open Media Disc packaging tool
 
 Usage:
-  omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]
+  omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]
                            [--artist <name>] [--album <title>] [--year <yyyy>]
   omd validate <packageDir> [--strict]
   omd inspect <packageDir>

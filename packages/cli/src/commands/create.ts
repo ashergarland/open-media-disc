@@ -1,42 +1,77 @@
 import {
   createPackage,
   formatBytes,
+  OutputExistsError,
   type CreatePackageOptions,
+  type CreatePackageResult,
 } from '@open-album-cartridge/core';
-import { intOption, stringOption, type ParsedArgs } from '../args.js';
+import { createInterface } from 'node:readline/promises';
+import { boolOption, intOption, stringOption, type ParsedArgs } from '../args.js';
 import { CLI_NAME, CLI_VERSION } from '../version.js';
 
+const USAGE =
+  'Usage: omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]';
+
+/** Ask the user (interactive TTY only) whether to overwrite an existing folder. */
+async function confirmOverwrite(outDir: string): Promise<boolean> {
+  if (!process.stdin.isTTY) return false;
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question(`Output folder "${outDir}" exists. Overwrite? [y/N] `);
+    const normalized = answer.trim().toLowerCase();
+    return normalized === 'y' || normalized === 'yes';
+  } finally {
+    rl.close();
+  }
+}
+
 /**
- * `omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]
- *    [--artist ...] [--album ...] [--year 2026] [--strict]`
+ * `omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]
+ *    [--artist ...] [--album ...] [--year 2026]`
+ *
+ * The disc title (`discId`) defaults to the album title and the output folder
+ * defaults to `build/<slugified title>`. Existing output is only replaced with
+ * `--force` or an interactive confirmation.
  */
 export async function createCommand(args: ParsedArgs): Promise<number> {
   const sourceDir = args.positionals[0];
   if (!sourceDir) {
-    console.error('Usage: omd create <albumFolder> [--out <dir>] [--disc-id OMD-000001]');
+    console.error(USAGE);
     return 2;
   }
 
-  const discId = stringOption(args, 'disc-id') ?? 'OMD-000001';
-  const outDir = stringOption(args, 'out') ?? `./build/${discId}`;
-
   const options: CreatePackageOptions = {
     sourceDir,
-    outDir,
-    discId,
     generator: { name: CLI_NAME, version: CLI_VERSION },
   };
+  const discId = stringOption(args, 'disc-id');
+  const outDir = stringOption(args, 'out');
   const artist = stringOption(args, 'artist');
   const album = stringOption(args, 'album');
   const year = intOption(args, 'year');
+  if (discId) options.discId = discId;
+  if (outDir) options.outDir = outDir;
   if (artist) options.artist = artist;
   if (album) options.album = album;
   if (year !== undefined) options.releaseYear = year;
+  if (boolOption(args, 'force')) options.overwrite = true;
 
-  const { manifest, validation } = await createPackage(options);
+  let result: CreatePackageResult;
+  try {
+    result = await createPackage(options);
+  } catch (err) {
+    if (!(err instanceof OutputExistsError)) throw err;
+    if (!(await confirmOverwrite(err.outDir))) {
+      console.error(`Aborted: ${err.outDir} already exists. Use --force to overwrite.`);
+      return 1;
+    }
+    result = await createPackage({ ...options, overwrite: true });
+  }
 
-  console.log(`Created OMD package: ${outDir}`);
-  console.log(`Disc ID: ${manifest.discId}`);
+  const { manifest, validation } = result;
+
+  console.log(`Created OMD package: ${result.outDir}`);
+  console.log(`Disc title: ${manifest.discId}`);
   console.log(`Artist: ${manifest.artist}`);
   console.log(`Album: ${manifest.album}`);
   console.log(`Tracks: ${manifest.trackCount}`);

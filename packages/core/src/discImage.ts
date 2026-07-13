@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises';
 import { inspectPackage, validatePackage } from './package.js';
+import { deriveVolumeLabel } from './discTitle.js';
 import { WindowsImapiImageBackend } from './discImageWindows.js';
 
 /** Request passed to a {@link DiscImageBackend} to build a UDF image file. */
@@ -8,7 +9,7 @@ export interface DiscImageBuildRequest {
   packageDir: string;
   /** Destination path for the image file. */
   outPath: string;
-  /** UDF volume label to stamp on the image (the package `discId`). */
+  /** UDF volume label to stamp on the image (best-effort from the disc title). */
   volumeLabel: string;
 }
 
@@ -32,7 +33,7 @@ export interface BuildDiscImageOptions {
   packageDir: string;
   /** Destination image file path. */
   outPath: string;
-  /** Override the UDF volume label. Defaults to the package `discId`. */
+  /** Override the UDF volume label. Defaults to a label derived from the disc title. */
   volumeLabel?: string;
   /** Validate the package before imaging. Defaults to `true`. */
   validate?: boolean;
@@ -68,8 +69,9 @@ export function resolveDiscImageBackend(): DiscImageBackend {
  * Build a burn-ready UDF disc image from a validated OMD package.
  *
  * The image content mirrors the package tree exactly and its UDF volume label is
- * the package `discId` (see `spec/OMD_DISC_LAYOUT.md`). Building an image needs no
- * optical hardware. Writing the image to a disc is a separate step.
+ * a best-effort rendering of the disc title (see `spec/OMD_DISC_LAYOUT.md`).
+ * Building an image needs no optical hardware. Writing the image to a disc is a
+ * separate step.
  */
 export async function buildDiscImage(
   options: BuildDiscImageOptions,
@@ -85,9 +87,10 @@ export async function buildDiscImage(
     }
   }
 
-  // The UDF volume label is the package discId unless the caller overrides it.
-  const { discId } = await inspectPackage(packageDir);
-  const volumeLabel = options.volumeLabel ?? discId;
+  // The UDF volume label is derived from the disc title unless the caller
+  // overrides it. Identity always comes from the manifest, not this label.
+  const { manifest } = await inspectPackage(packageDir);
+  const volumeLabel = options.volumeLabel ?? deriveVolumeLabel(manifest);
 
   const backend = options.backend ?? resolveDiscImageBackend();
   if (!(await backend.isAvailable())) {

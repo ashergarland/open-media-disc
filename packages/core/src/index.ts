@@ -9,6 +9,7 @@
 
 export * from './constants.js';
 export * from './manifest.js';
+export * from './discTitle.js';
 export * from './checksums.js';
 export * from './flac.js';
 export * from './filenames.js';

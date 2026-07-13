@@ -8,7 +8,7 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 | **OMD-FLAC-DATA** | The v0.1 native data format: FLAC audio plus a manifest, artwork, and checksums, stored as a plain directory / data disc. |
 | **OMD package** | A directory tree conforming to the OMD disc layout. The unit OMD Core creates, validates, and inspects. |
 | **Manifest** | `OMD-MANIFEST.json` at the package root. The authoritative album table of contents: metadata, track order, paths, sizes, and per-track checksums. |
-| **Disc ID** | A stable local identifier for a physical disc/cartridge, e.g. `OMD-000001`. |
+| **Disc ID** | The editable disc title stored as `discId` in the manifest. Full Unicode; defaults to the album title and need not be unique. Legacy `OMD-000NNN` identifiers remain valid. |
 | **Cartridge** | The long-term physical shell that holds an 8cm DVD-RW so it can spin and be read/written in place. Not part of v0.1. |
 | **8cm DVD-RW** | The commodity rewritable optical medium OMD targets (~1.4 GB usable). |
 | **Capacity budget** | The usable byte limit for the target medium. Default `1,400,000,000` bytes for 8cm DVD-RW. |

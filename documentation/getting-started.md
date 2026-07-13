@@ -21,14 +21,14 @@ normalizes filenames, copies audio into `AUDIO/`, detects cover art, and writes
 the manifest and checksums.
 
 ```bash
-pnpm omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001" --disc-id OMD-000001
+pnpm omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
 ```
 
 Expected output:
 
 ```text
 Created OMD package: ./build/OMD-000001
-Disc ID: OMD-000001
+Disc title: Blank Banshee 0
 Artist: Blank Banshee
 Album: Blank Banshee 0
 Tracks: 15
@@ -41,8 +41,9 @@ Common options (full list in the [CLI Reference](./cli-reference.md)):
 
 | Option | Meaning |
 | --- | --- |
-| `--out <dir>` | Output package folder (default `./build/<discId>`). |
-| `--disc-id OMD-000001` | Stable disc identifier (default `OMD-000001`). |
+| `--out <dir>` | Output package folder (default `./build/<disc title>`). |
+| `--disc-id <title>` | Disc title stored as `discId` (default: the album title). |
+| `--force` | Overwrite the output folder if it already exists. |
 | `--artist <name>` | Override the artist inferred from tags. |
 | `--album <title>` | Override the album inferred from tags. |
 | `--year <yyyy>` | Override the release year. |

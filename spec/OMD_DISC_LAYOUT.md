@@ -55,8 +55,12 @@ NOT emit files outside the tree above.
 
 When a package is burned (v0.2 software), it is written as a **UDF** filesystem whose
 content mirrors the tree in section 1 exactly, with no files added, removed, or renamed.
-The UDF **volume label MUST be the package `discId`** (for example `OMD-000001`). A
-non-empty rewritable disc is blanked before writing, so it contains only the OMD package.
+The UDF **volume label is a best-effort rendering of the disc title** (`discId`): the
+Unicode title where the medium allows it, otherwise a degraded ASCII label (ASCII title,
+then first track title, then artist, then `OMD-<short hash>`). A disc's identity is read
+from the manifest, never from the volume label, so the label may be truncated or
+normalized without changing what the disc is. A non-empty rewritable disc is blanked
+before writing, so it contains only the OMD package.
 After writing, the disc is verified by re-checking `CHECKSUMS.sha256` against the files on
 the disc; a burn succeeds only if verification passes. The burned disc stays a plain,
 browsable UDF filesystem, preserving recoverability.

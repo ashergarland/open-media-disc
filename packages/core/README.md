@@ -27,7 +27,7 @@ import {
 const { manifest, validation } = await createPackage({
   sourceDir: './Albums/Blank Banshee 0',
   outDir: './build/OMD-000001',
-  discId: 'OMD-000001',
+  discId: 'Blank Banshee 0', // the disc title; defaults to the album title
 });
 
 // Validate an existing package.

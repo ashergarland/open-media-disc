@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { open } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -20,6 +20,7 @@ import {
 import { estimateDiscSize } from './discSize.js';
 import { isFlacBuffer, parseFlacMetadata } from './flac.js';
 import { isOsJunkName, isPortableFilename, normalizeFilename } from './filenames.js';
+import { slugifyForPath } from './discTitle.js';
 import {
   createManifest,
   manifestSchema,
@@ -39,10 +40,18 @@ import type {
 export interface CreatePackageOptions {
   /** Source album folder containing FLAC files (and optional cover art). */
   sourceDir: string;
-  /** Destination package folder. Created if missing. */
-  outDir: string;
-  /** Disc ID such as `OMD-000001`. Required for a stable, labelable object. */
-  discId: string;
+  /**
+   * Destination package folder. Created if missing. Defaults to
+   * `build/<slugified disc title>` when omitted.
+   */
+  outDir?: string;
+  /**
+   * Disc title (the editable, human `discId`). Full Unicode and not required to
+   * be unique. Defaults to the resolved album title when omitted.
+   */
+  discId?: string;
+  /** Overwrite the output folder if it already exists. Defaults to `false`. */
+  overwrite?: boolean;
   /** Override artist (else inferred from FLAC tags). */
   artist?: string;
   /** Override album (else inferred from FLAC tags). */
@@ -62,6 +71,21 @@ export interface CreatePackageResult {
   outDir: string;
   manifest: OmdManifest;
   validation: PackageValidationResult;
+}
+
+/**
+ * Thrown by {@link createPackage} when the destination folder already exists and
+ * `overwrite` was not set. Callers can catch this to prompt the user or retry
+ * with `overwrite: true`.
+ */
+export class OutputExistsError extends Error {
+  /** The output folder that already exists. */
+  readonly outDir: string;
+  constructor(outDir: string) {
+    super(`Output folder already exists: ${outDir}`);
+    this.name = 'OutputExistsError';
+    this.outDir = outDir;
+  }
 }
 
 interface SourceTrack {
@@ -110,7 +134,7 @@ function titleFromFilename(name: string): string {
  * `CHECKSUMS.sha256`, then validates the result.
  */
 export async function createPackage(options: CreatePackageOptions): Promise<CreatePackageResult> {
-  const { sourceDir, outDir, discId } = options;
+  const { sourceDir } = options;
   const budgetBytes = options.budgetBytes ?? DVD_RW_8CM_USABLE_BYTES;
   const generator = options.generator ?? { name: 'OMD Core', version: OMD_VERSION };
 
@@ -163,6 +187,20 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
     options.releaseYear ??
     sourceTracks.find((t) => t.year && Number.isFinite(t.year))?.year ??
     undefined;
+
+  // The disc title (discId) defaults to the album title; the output folder
+  // defaults to a filesystem-safe slug of that title under `build/`.
+  const discId = (options.discId ?? album).trim() || album;
+  const outDir = options.outDir ?? path.join('build', slugifyForPath(discId));
+
+  // Refuse to clobber an existing output unless the caller opts in. Thrown
+  // before any files are written so a CLI or GUI can prompt and retry.
+  if (await pathExists(outDir)) {
+    if (!options.overwrite) {
+      throw new OutputExistsError(outDir);
+    }
+    await rm(outDir, { recursive: true, force: true });
+  }
 
   // Prepare output directories.
   const audioOut = path.join(outDir, AUDIO_DIR);

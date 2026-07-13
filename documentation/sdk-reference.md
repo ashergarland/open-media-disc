@@ -32,8 +32,9 @@ Build a normalized OMD package from a source album folder.
 ```ts
 const { outDir, manifest, validation } = await createPackage({
   sourceDir: './Albums/Blank Banshee 0',
+  // Optional. discId defaults to the album title; outDir to build/<slug>.
   outDir: './build/OMD-000001',
-  discId: 'OMD-000001',
+  discId: 'Blank Banshee 0',
   // optional overrides:
   artist: 'Blank Banshee',
   album: 'Blank Banshee 0',
@@ -44,9 +45,12 @@ const { outDir, manifest, validation } = await createPackage({
 });
 ```
 
-`CreatePackageOptions` fields: `sourceDir`, `outDir`, `discId` (required);
-`artist`, `album`, `releaseYear`, `budgetBytes`, `generator`, `createdAt`
-(optional). Returns `{ outDir, manifest, validation }`.
+`CreatePackageOptions` fields: `sourceDir` (required); `outDir`, `discId`,
+`overwrite`, `artist`, `album`, `releaseYear`, `budgetBytes`, `generator`,
+`createdAt` (optional). `discId` is the disc title and defaults to the resolved
+album title; `outDir` defaults to `build/<slugified title>`; `overwrite` replaces
+an existing folder (otherwise an `OutputExistsError` is thrown). Returns
+`{ outDir, manifest, validation }`.
 
 ### `validatePackage(packageDir, options?): Promise<PackageValidationResult>`
 
@@ -95,15 +99,15 @@ cannot be determined.
 ### `buildDiscImage(options): Promise<BuildDiscImageResult>`
 
 Build a burn-ready **UDF** disc image from a validated package. The image content
-mirrors the package tree and its UDF volume label is the package `discId` unless
-overridden. Building an image needs no optical drive.
+mirrors the package tree and its UDF volume label is a best-effort rendering of
+the disc title unless overridden. Building an image needs no optical drive.
 
 ```ts
 const result = await buildDiscImage({
   packageDir: './build/OMD-000001',
   outPath: './build/OMD-000001.img',
   // optional:
-  volumeLabel: 'OMD-000001', // defaults to the package discId
+  volumeLabel: 'Blank Banshee 0', // defaults to a label derived from the disc title
   validate: true,            // validate the package first (default true)
   // backend: myBackend,     // inject a DiscImageBackend (mainly for tests)
 });

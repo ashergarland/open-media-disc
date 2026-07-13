@@ -43,7 +43,7 @@ export async function labelCommand(args: ParsedArgs): Promise<number> {
 
     console.log(`Wrote label sheet: ${outPath}`);
     console.log(`Album: ${sheet.artist} - ${sheet.album}`);
-    console.log(`Disc ID: ${sheet.discId}`);
+    console.log(`Disc title: ${sheet.discId}`);
     console.log(`Labels: ${sheet.placements.length}`);
     return 0;
   } catch (err) {
