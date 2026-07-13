@@ -115,6 +115,18 @@ importers:
         specifier: ^5.5.3
         version: 5.9.3
 
+  packages/ui:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.10
+        version: 20.19.43
+      rimraf:
+        specifier: ^5.0.9
+        version: 5.0.10
+      typescript:
+        specifier: ^5.5.3
+        version: 5.9.3
+
 packages:
 
   /@electron/get@2.0.3:

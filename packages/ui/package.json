@@ -1,0 +1,31 @@
+{
+  "name": "@open-album-cartridge/ui",
+  "version": "0.1.0",
+  "description": "Open Media Disc (OMD) shared UI kit: the Aqua token theme engine and a framework-agnostic player model, reused by OMD Studio and the Pi player.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "rimraf": "^5.0.9",
+    "typescript": "^5.5.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
