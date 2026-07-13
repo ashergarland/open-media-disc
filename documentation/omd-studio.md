@@ -162,6 +162,67 @@ Amp, Hi-Fi Silver, Cassette, CRT). Every theme must still pass contrast and
 hit-target checks, so retro never means unusable. If community themes bundle
 fonts, mind font licensing; the safest option is a curated, bundled font set.
 
+### Default theme: Aqua (Y2K / Frutiger Aero)
+
+**Aqua** is the default theme shipped with OMD Studio. Its starting token values
+come from the Y2K style sheet.
+
+Palette (source swatches and their roles):
+
+| Swatch | Role |
+| --- | --- |
+| `#00D4E7` | Primary accent (bright cyan) |
+| `#55C7F2` | Secondary accent (sky blue) |
+| `#BEE9FB` | Panel and surface glass (light blue) |
+| `#F7FDFF` | App background (near white) |
+| `#C9D3DA` | Borders and inactive tracks (light gray) |
+| `#2B3A42` | Primary text (charcoal) |
+| `#36D17A` | Success and the Verified badge (green) |
+| `#B884F7` | Extra accent for highlights (purple) |
+| Iridescent | CD-rainbow accent for the disc mark and small flourishes |
+
+Starting token values for the Aqua theme:
+
+```jsonc
+{
+  "name": "Aqua",
+  "type": "light",
+  "colors": {
+    "app.background": "#F7FDFF",
+    "surface.background": "#BEE9FB",
+    "text.primary": "#2B3A42",
+    "text.muted": "#6E8794",
+    "accent": "#00D4E7",
+    "transport.button": "#55C7F2",
+    "transport.buttonActive": "#00D4E7",
+    "progress.track": "#C9D3DA",
+    "progress.fill": "#00D4E7",
+    "vu.low": "#36D17A",
+    "vu.high": "#FF5A5F"
+  },
+  "typography": { "uiFont": "Inter", "displayFont": "Poppins" },
+  "shape": { "radius": "12px", "borderStyle": "solid", "glow": "0 0 12px rgba(0, 212, 231, 0.35)" },
+  "visualizer": "bars"
+}
+```
+
+Notes:
+
+- `text.muted` and `vu.high` are derived; the style sheet has no mid-tone text
+  color or red, so these are tuned for readable secondary text and a standard red
+  VU peak. Adjust as needed.
+- The iridescent CD accent and the purple `#B884F7` are decorative extras, not
+  core tokens; use them for the disc mark, selection highlights, and small
+  flourishes.
+- Fonts are freely licensable substitutes for the style sheet's Omnes (headings)
+  and Frutiger Next (body). Swap in the licensed fonts only if you hold the
+  rights.
+
+Components the default theme defines (from the style sheet), all reading from the
+tokens above: primary and secondary buttons (normal, hover, pressed), a toggle, a
+slider, a card and panel, a sidebar nav item, a top tab, a progress bar, stereo VU
+meters, the Verified and FLAC lossless badges, and the 8cm mini DVD-RW disc icon.
+
 ## `omd rip` (verified read-back and archival)
 
 Rationale: burning writes a disc, and ripping reads it back. Ripping makes an OMD
