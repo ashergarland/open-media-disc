@@ -192,6 +192,32 @@ Types: `BurnImageOptions`, `BurnImageResult`, `BurnPackageOptions`, `BurnBackend
 
 ---
 
+## Rip API
+
+### `ripPackage(options): Promise<RipResult>`
+
+Copy a mounted OMD disc (or any OMD package folder) back to disk, verifying every
+track against the manifest. This is a verified file copy, not audio re-encoding.
+
+```ts
+const result = await ripPackage({
+  sourceDir: 'D:\\',                 // a mounted disc or an OMD package folder
+  outDir: './rips/Blank Banshee 0', // defaults to build/<slugified title>
+  mode: 'package',                  // 'package' (re-burnable clone) or 'album' (FLAC + cover)
+  // overwrite: true,               // replace an existing folder (else OutputExistsError)
+  // validate: false,               // skip validating the source first (default validates)
+});
+console.log(result.verified, `${result.filesMatched}/${result.filesTotal}`);
+```
+
+`package` mode reproduces the whole tree and re-validates the clone
+(`result.validation`); `album` mode writes only the FLAC tracks and cover art.
+`result.files` lists each track with its `sha256` and whether it `matched`.
+
+Types: `RipOptions`, `RipResult`, `RippedFile`, `RipMode`.
+
+---
+
 ## Manifest API
 
 | Function | Signature | Purpose |

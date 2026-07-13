@@ -62,6 +62,7 @@ OMD-000001/
 | `omd burn <package\|image> [--drive]` | Burn to an 8cm DVD-RW and verify (Windows). |
 | `omd label <package> --out <svg>` | Make a printable album-art label sheet (SVG). |
 | `omd play <package>` | Play the album with mpv/ffplay (preview if neither). |
+| `omd rip <disc> --out <dir>` | Copy a disc back to disk as a verified package or album. |
 
 Full details in the [CLI Reference](./documentation/cli-reference.md).
 

@@ -9,6 +9,7 @@ import { imageCommand } from '../commands/image.js';
 import { burnCommand } from '../commands/burn.js';
 import { labelCommand } from '../commands/label.js';
 import { playCommand } from '../commands/play.js';
+import { ripCommand } from '../commands/rip.js';
 
 const HELP = `${CLI_NAME} v${CLI_VERSION}: Open Media Disc packaging tool
 
@@ -23,14 +24,15 @@ Usage:
                                   [--no-blank] [--no-verify] [--no-eject]
   omd label <packageDir> --out <file.svg> [--fit fill|fit|stretch] [--copies <n>]
   omd play <packageDir>
+  omd rip <sourceDir|drive> [--out <dir>] [--mode package|album] [--force]
 
 Options:
   --help, -h       Show this help.
   --version, -v    Show version.
 
-OMD builds, validates, inspects, images, burns, and labels OMD FLAC data
-packages. Burning requires Windows (IMAPI2) with a writer attached. See the spec/
-folder for the format contract.
+OMD builds, validates, inspects, images, burns, labels, plays, and rips OMD
+FLAC data packages. Burning requires Windows (IMAPI2) with a writer attached.
+See the spec/ folder for the format contract.
 `;
 
 async function main(): Promise<number> {
@@ -65,6 +67,8 @@ async function main(): Promise<number> {
       return labelCommand(args);
     case 'play':
       return playCommand(args);
+    case 'rip':
+      return ripCommand(args);
     default:
       console.error(`Unknown command: ${first}\n`);
       console.error(HELP);

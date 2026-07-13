@@ -5,25 +5,12 @@ import {
   type CreatePackageOptions,
   type CreatePackageResult,
 } from '@open-album-cartridge/core';
-import { createInterface } from 'node:readline/promises';
 import { boolOption, intOption, stringOption, type ParsedArgs } from '../args.js';
+import { confirmOverwrite } from '../prompt.js';
 import { CLI_NAME, CLI_VERSION } from '../version.js';
 
 const USAGE =
   'Usage: omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]';
-
-/** Ask the user (interactive TTY only) whether to overwrite an existing folder. */
-async function confirmOverwrite(outDir: string): Promise<boolean> {
-  if (!process.stdin.isTTY) return false;
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(`Output folder "${outDir}" exists. Overwrite? [y/N] `);
-    const normalized = answer.trim().toLowerCase();
-    return normalized === 'y' || normalized === 'yes';
-  } finally {
-    rl.close();
-  }
-}
 
 /**
  * `omd create <albumFolder> [--out <dir>] [--disc-id <disc title>] [--force]

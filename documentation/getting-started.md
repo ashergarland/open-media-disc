@@ -147,6 +147,19 @@ Open the SVG in a browser and print it at 100% scale on US Letter, or let OMD
 Studio print it. Use `--fit`, `--width`/`--height`, or `--no-crop-marks` to adjust
 the layout.
 
+## 9. Rip a disc back
+
+Copy a mounted OMD disc (or any package folder) back to disk, verifying every
+track against the manifest. This is a verified file copy, not audio re-encoding.
+
+```bash
+pnpm omd rip "D:\" --out "./rips/Blank Banshee 0"
+pnpm omd rip "D:\" --out "./rips/Blank Banshee 0" --mode album
+```
+
+`package` mode (default) makes a re-burnable clone that re-validates on its own;
+`album` mode makes a friendly folder of FLAC tracks and cover art.
+
 ## Package size and 8cm DVD-RW
 
 OMD targets 8cm DVD-RW media with a usable budget of ~1.4 GB

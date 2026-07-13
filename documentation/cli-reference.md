@@ -20,6 +20,7 @@ omd burn     <packageDir|imageFile> [--drive <path>] [--label <name>]
              [--no-blank] [--no-verify]
 omd label    <packageDir> --out <file.svg> [--fit fill|fit|stretch] [--copies <n>]
 omd play     <packageDir>
+omd rip      <sourceDir|drive> [--out <dir>] [--mode package|album] [--force]
 
 omd --help | -h        Show help
 omd --version | -v     Show version
@@ -257,6 +258,39 @@ omd play "./build/OMD-000001" --player mpv
 | `--player <name>` | Force a player (overrides `mpv`/`ffplay`). Also via `OMD_PLAYER`. |
 
 Built-in audio decoding (no external player) is planned for the OMD Pi Player.
+
+---
+
+## `omd rip`
+
+Copy a mounted OMD disc (or any OMD package folder) back to disk, verifying every
+track against the manifest. Ripping is a verified file copy, not audio
+re-encoding: OMD stores FLAC files in a UDF filesystem, so `omd rip` reproduces
+those exact files and certifies them.
+
+```bash
+omd rip "D:\" --out "./rips/Blank Banshee 0"
+omd rip "D:\" --out "./rips/Blank Banshee 0" --mode album
+```
+
+| Argument / option | Description |
+| --- | --- |
+| `<sourceDir\|drive>` | A mounted disc mount path (e.g. `D:\`) or an OMD package directory. Required. |
+| `--out <dir>` | Destination directory. Defaults to `./build/<disc title>`. |
+| `--mode <mode>` | `package` (default) makes a re-burnable clone; `album` makes a friendly FLAC + cover folder. |
+| `--force` | Overwrite the output folder if it already exists. |
+| `--no-validate` | Skip validating the source before ripping. |
+
+Sample output:
+
+```text
+Ripped package clone to: ./rips/Blank Banshee 0
+Disc title: Blank Banshee 0
+Artist: Blank Banshee
+Album: Blank Banshee 0
+Tracks: 15/15 verified
+Status: VERIFIED
+```
 
 ---
 

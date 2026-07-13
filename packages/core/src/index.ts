@@ -16,6 +16,7 @@ export * from './filenames.js';
 export * from './discSize.js';
 export * from './validationTypes.js';
 export * from './package.js';
+export * from './rip.js';
 export * from './discImage.js';
 export * from './discImageWindows.js';
 export * from './burn.js';

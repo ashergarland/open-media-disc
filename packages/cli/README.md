@@ -18,6 +18,7 @@ omd image <packageDir> --out <imagePath> [--label <name>]
 omd burn <packageDir|imageFile> [--drive <path>] [--label <name>] [--no-blank] [--no-verify] [--no-eject]
 omd label <packageDir> --out <file.svg> [--fit fill|fit|stretch] [--copies <n>]
 omd play <packageDir>
+omd rip <sourceDir|drive> [--out <dir>] [--mode package|album] [--force]
 ```
 
 | Command | What it does |
