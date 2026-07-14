@@ -612,14 +612,12 @@ function buildShell(): void {
   clearChildren(root);
 
   const brand = el('div', { class: 'brand' }, [
+    svgWordmark(),
     el('img', { class: 'brand-mark', src: 'assets/omd-disc.png', alt: '' }),
-    el('div', { class: 'brand-text' }, [
-      svgWordmark(),
-      el('div', {
-        class: 'brand-tag',
-        text: 'Turn FLAC albums into real, playable 8cm mini DVD-RW discs.',
-      }),
-    ]),
+    el('div', {
+      class: 'brand-tag',
+      text: 'Turn FLAC albums into real, playable 8cm mini DVD-RW discs.',
+    }),
   ]);
 
   const nav = el('nav', { class: 'nav' });

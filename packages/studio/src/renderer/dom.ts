@@ -193,9 +193,9 @@ export function svgWordmark(): SVGElement {
   defs.appendChild(grad);
   svg.appendChild(defs);
 
-  const omd = shape('text', { x: '0', y: '35', class: 'wm-omd' });
+  const omd = shape('text', { x: '79', y: '35', class: 'wm-omd', 'text-anchor': 'middle' });
   omd.textContent = 'OMD';
-  const studio = shape('text', { x: '2', y: '52', class: 'wm-studio' });
+  const studio = shape('text', { x: '79', y: '52', class: 'wm-studio', 'text-anchor': 'middle' });
   studio.textContent = 'STUDIO';
   svg.appendChild(omd);
   svg.appendChild(studio);
