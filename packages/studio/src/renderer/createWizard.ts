@@ -1,20 +1,20 @@
 /**
  * The Create Disc wizard.
  *
- * A five-step flow (Select -> Package -> Label -> Burn -> Done) over the main
- * process IPC. It owns its own state and re-renders into a host element; the
- * shell resets it whenever the Create Disc view is (re-)opened. Burning is
+ * A five-step flow (Select Album -> Package -> Label -> Burn -> Done) over the
+ * main process IPC. It owns its own state and re-renders into a host element;
+ * the shell resets it whenever the Create Disc view is (re-)opened. Burning is
  * destructive and only ever runs on an explicit, confirmed click.
  */
 
 import type { StudioBurnResult, StudioDrive, StudioPackageSummary } from '../shared/types';
-import { clearChildren, el, svgIcon } from './dom';
+import { clearChildren, el, svgIcon, type IconName } from './dom';
 
 interface WizardOptions {
   onOpenPlayer: (source: string) => void;
 }
 
-const STEPS = ['Select', 'Package', 'Label', 'Burn', 'Done'] as const;
+const STEPS = ['Select Album', 'Package', 'Label', 'Burn', 'Done'] as const;
 
 interface WizardState {
   step: number;
@@ -81,30 +81,17 @@ function setState(patch: Partial<WizardState>): void {
 
 function render(): void {
   clearChildren(host);
-  host.append(
-    el('div', { class: 'view-head' }, [
-      el('h1', { class: 'view-title', text: 'Create Disc' }),
-      el('p', {
-        class: 'view-lead',
-        text: 'Turn a FLAC album folder into a verified, burned 8cm mini DVD-RW.',
-      }),
-    ]),
-    stepper(),
-    stepContent(),
-  );
+  host.append(stepper(), stepContent());
   if (state.error) host.append(el('p', { class: 'wizard-error', text: state.error }));
 }
 
 function stepper(): HTMLElement {
   const row = el('div', { class: 'stepper' });
   STEPS.forEach((label, index) => {
-    const status = index === state.step ? 'is-active' : index < state.step ? 'is-done' : '';
-    row.append(
-      el('div', { class: `step ${status}` }, [
-        el('span', { class: 'step-dot', text: String(index + 1) }),
-        el('span', { class: 'step-label', text: label }),
-      ]),
-    );
+    const status = index === state.step ? 'is-active' : index < state.step ? 'is-done' : 'is-future';
+    const dot = el('span', { class: 'step-dot' }, [el('span', { class: 'step-num', text: String(index + 1) })]);
+    if (index < state.step) dot.append(el('span', { class: 'step-check' }, [svgIcon('check', 12)]));
+    row.append(el('div', { class: `step ${status}` }, [dot, el('span', { class: 'step-label', text: label })]));
   });
   return row;
 }
@@ -126,10 +113,16 @@ function stepContent(): HTMLElement {
 
 /* Step 1: Select */
 function selectStep(): HTMLElement {
-  return el('div', {}, [
-    card('Select an album', [
-      el('p', { class: 'muted', text: 'Choose a folder of FLAC files, with optional cover art.' }),
-      el('div', { class: 'wizard-actions' }, [
+  return stepPanel({
+    title: 'Select an album',
+    lead: 'Turn a FLAC album folder into a verified, burned 8cm mini DVD-RW.',
+    body: [
+      el('div', { class: 'select-hero' }, [
+        el('span', { class: 'select-icon' }, [svgIcon('create', 46)]),
+        el('p', {
+          class: 'muted',
+          text: 'Choose a folder of FLAC files, with optional cover art. It will be packaged and validated into an OMD build.',
+        }),
         primaryButton('Select folder...', async () => {
           const dir = await window.omd.selectAlbumFolder();
           if (!dir) return;
@@ -139,10 +132,10 @@ function selectStep(): HTMLElement {
           render();
           await runPackage(false);
         }),
+        ...(state.sourceDir ? [el('p', { class: 'muted small', text: state.sourceDir })] : []),
       ]),
-      ...(state.sourceDir ? [el('p', { class: 'muted small', text: state.sourceDir })] : []),
-    ]),
-  ]);
+    ],
+  });
 }
 
 /* Step 2: Package */
@@ -169,65 +162,39 @@ async function runPackage(overwrite: boolean): Promise<void> {
 
 function packageStep(): HTMLElement {
   if (state.busy || !state.pkg) {
-    return card('Packaging', [spinner('Packaging and validating...')]);
+    return stepPanel({
+      title: 'Packaging',
+      lead: 'Packaging and validating your album.',
+      body: [spinner('Packaging and validating...')],
+      back: { onClick: () => setState({ step: 0 }) },
+    });
   }
   const pkg = state.pkg;
-  const cover = pkg.coverDataUri
-    ? el('img', { class: 'cover', src: pkg.coverDataUri, alt: 'Cover art' })
-    : el('div', { class: 'cover cover-empty' }, [svgIcon('create', 40)]);
-
-  const meta = el('div', { class: 'pkg-meta' }, [
-    el('div', { class: 'pkg-title', text: pkg.discId }),
-    el('div', { class: 'muted', text: `${pkg.artist} - ${pkg.album}` }),
-    el('div', {
-      class: 'muted small',
-      text: `${pkg.trackCount} tracks - ${formatBytes(pkg.totalSizeBytes)}`,
-    }),
-    el('span', {
-      class: `pill ${pkg.valid ? 'pill-ok' : 'pill-bad'}`,
-      text: pkg.valid ? 'VALID' : 'INVALID',
-    }),
-  ]);
-
-  const tracks = el(
-    'ol',
-    { class: 'tracks' },
-    pkg.tracks.map((track) =>
-      el('li', {}, [
-        el('span', { class: 'track-title', text: track.title }),
-        el('span', {
-          class: 'muted small',
-          text: track.durationSeconds !== undefined ? formatDuration(track.durationSeconds) : '',
-        }),
-      ]),
-    ),
-  );
-
   const issues = [...pkg.errors, ...pkg.warnings];
-  const issuesCard = issues.length
-    ? card(
-        'Issues',
+  const issuesBlock = issues.length
+    ? el(
+        'div',
+        { class: 'wizard-issues' },
         issues.map((issue) =>
           el('div', { class: `issue issue-${issue.severity}`, text: `[${issue.code}] ${issue.message}` }),
         ),
       )
     : undefined;
 
-  return el('div', {}, [
-    card('Package', [el('div', { class: 'pkg' }, [cover, meta]), tracks]),
-    ...(issuesCard ? [issuesCard] : []),
-    el('div', { class: 'wizard-actions' }, [
-      secondaryButton('Back', () => setState({ step: 0 })),
-      primaryButton(
-        'Continue',
-        () => {
-          setState({ step: 2 });
-          void runLabel();
-        },
-        { disabled: !pkg.valid },
-      ),
-    ]),
-  ]);
+  return stepPanel({
+    title: 'Review package',
+    lead: `${pkg.artist} - ${pkg.album}`,
+    body: [cols([albumSummary(pkg)], [trackTable(pkg)]), ...(issuesBlock ? [issuesBlock] : [])],
+    back: { onClick: () => setState({ step: 0 }) },
+    next: {
+      label: 'Continue',
+      disabled: !pkg.valid,
+      onClick: () => {
+        setState({ step: 2 });
+        void runLabel();
+      },
+    },
+  });
 }
 
 /* Step 3: Label */
@@ -255,30 +222,34 @@ function labelStep(): HTMLElement {
     );
   } else if (state.labelSvg) {
     body.push(
-      el('img', {
-        class: 'label-preview',
-        src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(state.labelSvg)}`,
-        alt: 'Label sheet preview',
-      }),
+      el('div', { class: 'label-stage' }, [
+        el('img', {
+          class: 'label-preview',
+          src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(state.labelSvg)}`,
+          alt: 'Label sheet preview',
+        }),
+      ]),
     );
   }
-
-  const actions: HTMLElement[] = [secondaryButton('Back', () => setState({ step: 1 }))];
   if (state.labelSvg) {
-    actions.push(
-      secondaryButton('Save label sheet...', async () => {
-        const saved = await window.omd.saveLabel(state.pkg!.outDir);
-        if (saved) setState({ notice: `Saved to ${saved}` });
-      }),
+    body.push(
+      el('div', { class: 'label-actions' }, [
+        secondaryButton('Save label sheet...', async () => {
+          const saved = await window.omd.saveLabel(state.pkg!.outDir);
+          if (saved) setState({ notice: `Saved to ${saved}` });
+        }),
+        ...(state.notice ? [el('span', { class: 'muted small', text: state.notice })] : []),
+      ]),
     );
   }
-  actions.push(primaryButton('Continue', () => setState({ step: 3 })));
 
-  return el('div', {}, [
-    card('Label', body),
-    ...(state.notice ? [el('p', { class: 'muted small', text: state.notice })] : []),
-    el('div', { class: 'wizard-actions' }, actions),
-  ]);
+  return stepPanel({
+    title: 'Label sheet',
+    lead: 'Print-ready artwork for your disc and case.',
+    body,
+    back: { onClick: () => setState({ step: 1 }) },
+    next: { label: 'Continue', onClick: () => setState({ step: 3 }) },
+  });
 }
 
 /* Step 4: Burn */
@@ -311,18 +282,38 @@ async function runBurn(): Promise<void> {
 }
 
 function burnStep(): HTMLElement {
-  if (state.burnResult && !state.burnResult.ok) return burnFailedCard();
-  if (state.burning) {
-    return card('Burning', [
-      spinner(state.burnLog[state.burnLog.length - 1] ?? 'Working...'),
-      el(
-        'ul',
-        { class: 'burn-log' },
-        state.burnLog.map((line) => el('li', { text: line })),
-      ),
-    ]);
+  const left: (Node | string)[] = state.pkg ? [albumSummary(state.pkg), trackTable(state.pkg, 4)] : [];
+
+  if (state.burnResult && !state.burnResult.ok) {
+    const failed = [
+      el('div', { class: 'burn-console' }, [
+        el('div', { class: 'console-title', text: 'Burn console' }),
+        el('span', { class: 'pill pill-bad', text: 'FAILED' }),
+        el('p', {
+          class: 'muted',
+          text: state.burnResult.error ?? 'Verification did not pass. The disc was left in the drive.',
+        }),
+      ]),
+    ];
+    return stepPanel({
+      title: 'Burn failed',
+      lead: 'The disc was left in the drive.',
+      body: [cols(left, failed)],
+      back: { onClick: () => setState({ step: 2, burnResult: undefined, burnLog: [] }) },
+      next: { label: 'Try again', onClick: () => setState({ burnResult: undefined, burnLog: [] }) },
+    });
   }
 
+  return stepPanel({
+    title: 'Burn to Disc',
+    lead: 'Writing your album to 8cm mini DVD-RW.',
+    body: [cols(left, [state.burning ? burnConsoleActive() : burnConsoleIdle()])],
+    back: state.burning ? undefined : { onClick: () => setState({ step: 2 }) },
+    next: { label: 'Next', onClick: () => undefined, disabled: true },
+  });
+}
+
+function burnConsoleIdle(): HTMLElement {
   const driveSelect = el('select', {
     class: 'drive-select',
     onchange: (event: Event) => {
@@ -343,43 +334,59 @@ function burnStep(): HTMLElement {
   if (state.selectedDrive) driveSelect.value = state.selectedDrive;
 
   const canBurn = state.drives.length > 0 && Boolean(state.selectedDrive);
-  return el('div', {}, [
-    card('Burn to Disc', [
-      el('label', { class: 'field' }, [
-        el('span', { class: 'muted small', text: 'Drive' }),
+  return el('div', { class: 'burn-console' }, [
+    el('div', { class: 'console-title', text: 'Burn console' }),
+    el('div', { class: 'console-drive' }, [
+      el('span', { class: 'console-drive-icon' }, [svgIcon('drive', 24)]),
+      el('div', { class: 'console-drive-info' }, [
+        el('div', { class: 'console-label', text: 'DRIVE' }),
         driveSelect,
+        el('div', { class: 'muted small', text: '8cm mini DVD-RW' }),
       ]),
-      el('div', { class: 'burn-opts' }, [
-        toggle('Blank a rewritable disc first', state.blank, (v) => (state.blank = v)),
-        toggle('Verify after writing', state.verify, (v) => (state.verify = v)),
-        toggle('Eject when done', state.eject, (v) => (state.eject = v)),
-      ]),
-      el('p', {
-        class: 'muted small',
-        text: 'Burning erases a rewritable disc, writes this package, then verifies it. Windows (IMAPI2) only.',
-      }),
     ]),
-    el('div', { class: 'wizard-actions' }, [
-      secondaryButton('Back', () => setState({ step: 2 })),
-      primaryButton('Burn to Disc', () => void runBurn(), { disabled: !canBurn, danger: true }),
+    el('div', { class: 'console-opts' }, [
+      toggle('Blank a rewritable disc first', state.blank, (v) => (state.blank = v)),
+      toggle('Verify after writing', state.verify, (v) => (state.verify = v)),
+      toggle('Eject when done', state.eject, (v) => (state.eject = v)),
     ]),
+    el('p', {
+      class: 'muted small console-note',
+      text: 'Burning erases a rewritable disc, writes this package, then verifies it. Windows (IMAPI2) only.',
+    }),
+    el(
+      'button',
+      { class: 'btn btn-primary btn-burn', disabled: canBurn ? null : true, onclick: () => void runBurn() },
+      [svgIcon('create', 20), el('span', { text: 'Burn to Disc' })],
+    ),
   ]);
 }
 
-function burnFailedCard(): HTMLElement {
-  const result = state.burnResult;
-  return el('div', {}, [
-    card('Burn failed', [
-      el('span', { class: 'pill pill-bad', text: 'FAILED' }),
-      el('p', {
-        class: 'muted',
-        text: result?.error ?? 'Verification did not pass. The disc was left in the drive.',
-      }),
+function burnConsoleActive(): HTMLElement {
+  const status = state.burnLog[state.burnLog.length - 1] ?? 'Working...';
+  return el('div', { class: 'burn-console' }, [
+    el('div', { class: 'console-title', text: 'Burn console' }),
+    el('div', { class: 'console-drive console-drive-static' }, [
+      el('span', { class: 'console-drive-icon' }, [svgIcon('drive', 24)]),
+      el('div', { class: 'console-drive-info' }, [
+        el('div', { class: 'console-label', text: 'DRIVE' }),
+        el('div', { class: 'console-drive-name', text: state.selectedDrive ?? '' }),
+        el('div', { class: 'muted small', text: '8cm mini DVD-RW' }),
+      ]),
     ]),
-    el('div', { class: 'wizard-actions' }, [
-      secondaryButton('Back', () => setState({ step: 2, burnResult: undefined, burnLog: [] })),
-      primaryButton('Try again', () => setState({ burnResult: undefined, burnLog: [] })),
+    el('div', { class: 'console-section' }, [
+      el('div', { class: 'console-label', text: 'STATUS' }),
+      el('div', { class: 'console-status', text: status }),
+      el('div', { class: 'muted small', text: 'Please do not eject or close the application.' }),
     ]),
+    el('div', { class: 'console-section' }, [
+      el('div', { class: 'console-label', text: 'PROGRESS' }),
+      el('div', { class: 'progress' }, [el('div', { class: 'progress-fill' })]),
+    ]),
+    el(
+      'ul',
+      { class: 'burn-log' },
+      state.burnLog.map((line) => el('li', { text: line })),
+    ),
   ]);
 }
 
@@ -389,30 +396,162 @@ function doneStep(): HTMLElement {
   const detail = result
     ? `${result.verified ? 'Burned and verified.' : 'Burned.'}${result.ejected ? ' Ejected.' : ''}`
     : 'Package ready.';
-  return el('div', {}, [
-    card('Done', [
+  return stepPanel({
+    title: 'All done',
+    lead: 'Your OMD disc is ready to play.',
+    body: [
       el('div', { class: 'done-hero' }, [
-        el('span', { class: 'done-check' }, [svgIcon('check', 34)]),
-        el('div', {}, [
+        el('span', { class: 'done-check' }, [svgIcon('check', 40)]),
+        el('div', { class: 'done-info' }, [
           el('div', { class: 'pkg-title', text: state.pkg?.discId ?? 'Disc created' }),
           el('div', { class: 'muted', text: detail }),
         ]),
       ]),
-    ]),
-    el('div', { class: 'wizard-actions' }, [
-      secondaryButton('Create another', () => {
+    ],
+    back: {
+      label: 'Create another',
+      onClick: () => {
         state = initialState();
         render();
         void loadDrives();
+      },
+    },
+    next: { label: 'Open in Player', onClick: () => options.onOpenPlayer(state.pkg?.outDir ?? '') },
+  });
+}
+
+/* Shared bits */
+interface GuideNext {
+  label: string;
+  onClick: () => void | Promise<void>;
+  disabled?: boolean;
+  danger?: boolean;
+}
+
+interface GuideBack {
+  label?: string;
+  onClick: () => void | Promise<void>;
+}
+
+/** A step's glass content panel: header, body, and Back/Next guide buttons. */
+function stepPanel(opts: {
+  title: string;
+  lead: string;
+  body: (Node | string)[];
+  back?: GuideBack;
+  next?: GuideNext;
+}): HTMLElement {
+  const children: (Node | string)[] = [
+    el('div', { class: 'wizard-head' }, [
+      el('div', { class: 'wizard-step-count', text: `Step ${state.step + 1} of ${STEPS.length}` }),
+      el('h1', { class: 'wizard-title', text: opts.title }),
+      el('p', { class: 'wizard-lead', text: opts.lead }),
+    ]),
+    el('div', { class: 'wizard-body' }, opts.body),
+  ];
+  if (opts.back || opts.next) {
+    children.push(
+      el('div', { class: 'wizard-guide' }, [
+        opts.back
+          ? guideButton(opts.back.label ?? 'Back', 'back', opts.back.onClick)
+          : el('span', { class: 'guide-spacer' }),
+        opts.next
+          ? guideButton(opts.next.label, 'next', opts.next.onClick, {
+              disabled: opts.next.disabled,
+              danger: opts.next.danger,
+              primary: true,
+            })
+          : el('span', { class: 'guide-spacer' }),
+      ]),
+    );
+  }
+  return el('section', { class: 'wizard-panel' }, children);
+}
+
+function guideButton(
+  label: string,
+  dir: 'back' | 'next',
+  onClick: () => void | Promise<void>,
+  opts: { disabled?: boolean; danger?: boolean; primary?: boolean } = {},
+): HTMLElement {
+  const cls = `btn guide-btn guide-${dir}${opts.primary ? ' btn-primary' : ''}${opts.danger ? ' btn-danger' : ''}`;
+  const text = el('span', { class: 'guide-label', text: label });
+  const children =
+    dir === 'back' ? [svgIcon('chevron-left', 18), text] : [text, svgIcon('chevron-right', 18)];
+  return el(
+    'button',
+    { class: cls, disabled: opts.disabled ? true : null, onclick: () => void onClick() },
+    children,
+  );
+}
+
+function cols(left: (Node | string)[], right: (Node | string)[]): HTMLElement {
+  return el('div', { class: 'wizard-cols' }, [
+    el('div', { class: 'wizard-col' }, left),
+    el('div', { class: 'wizard-col' }, right),
+  ]);
+}
+
+/** Cover art + album facts, shared by the Package and Burn steps. */
+function albumSummary(pkg: StudioPackageSummary): HTMLElement {
+  const cover = pkg.coverDataUri
+    ? el('img', { class: 'album-cover', src: pkg.coverDataUri, alt: 'Cover art' })
+    : el('div', { class: 'album-cover album-cover-empty' }, [svgIcon('create', 44)]);
+  return el('div', { class: 'album-summary' }, [
+    cover,
+    el('div', { class: 'album-meta' }, [
+      el('div', { class: 'album-title', text: pkg.album }),
+      el('div', { class: 'album-artist', text: pkg.artist }),
+      metaLine('catalog', pkg.discId),
+      metaLine('note', `${pkg.trackCount} tracks`),
+      metaLine('wave', `FLAC - ${formatBytes(pkg.totalSizeBytes)}`),
+      el('span', {
+        class: `pill ${pkg.valid ? 'pill-ok' : 'pill-bad'}`,
+        text: pkg.valid ? 'VALID' : 'INVALID',
       }),
-      primaryButton('Open in Player', () => options.onOpenPlayer(state.pkg?.outDir ?? '')),
     ]),
   ]);
 }
 
-/* Shared bits */
-function card(title: string, children: (Node | string)[]): HTMLElement {
-  return el('section', { class: 'card' }, [el('h2', { class: 'card-title', text: title }), ...children]);
+function metaLine(icon: IconName, text: string): HTMLElement {
+  return el('div', { class: 'meta-line' }, [
+    el('span', { class: 'meta-line-icon' }, [svgIcon(icon, 15)]),
+    el('span', { class: 'meta-line-text', text }),
+  ]);
+}
+
+function trackTable(pkg: StudioPackageSummary, max?: number): HTMLElement {
+  const rows: HTMLElement[] = [
+    el('div', { class: 'track-row track-row-head' }, [
+      el('span', { class: 'track-num', text: '#' }),
+      el('span', { class: 'track-name', text: 'TRACK TITLE' }),
+      el('span', { class: 'track-dur', text: 'DURATION' }),
+    ]),
+  ];
+  const shown = max ? pkg.tracks.slice(0, max) : pkg.tracks;
+  shown.forEach((track, index) => {
+    rows.push(
+      el('div', { class: 'track-row' }, [
+        el('span', { class: 'track-num', text: String(index + 1) }),
+        el('span', { class: 'track-name', text: track.title }),
+        el('span', {
+          class: 'track-dur',
+          text: track.durationSeconds !== undefined ? formatDuration(track.durationSeconds) : '',
+        }),
+      ]),
+    );
+  });
+  if (max && pkg.tracks.length > max) {
+    const remaining = pkg.tracks.length - max;
+    rows.push(
+      el('div', { class: 'track-row track-row-more' }, [
+        el('span', { class: 'track-num', text: '' }),
+        el('span', { class: 'track-name', text: `+ ${remaining} more track${remaining === 1 ? '' : 's'}` }),
+        el('span', { class: 'track-dur', text: '' }),
+      ]),
+    );
+  }
+  return el('div', { class: 'track-table' }, rows);
 }
 
 function primaryButton(

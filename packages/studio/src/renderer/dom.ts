@@ -62,7 +62,10 @@ export type IconName =
   | 'volume'
   | 'note'
   | 'wave'
-  | 'check';
+  | 'check'
+  | 'chevron-left'
+  | 'chevron-right'
+  | 'drive';
 
 const FILL = { fill: 'currentColor', stroke: 'none' };
 
@@ -133,6 +136,16 @@ function iconShapes(name: IconName): SVGElement[] {
       ];
     case 'check':
       return [shape('polyline', { points: '5,12 10,17 19,7' })];
+    case 'chevron-left':
+      return [shape('polyline', { points: '15,6 9,12 15,18' })];
+    case 'chevron-right':
+      return [shape('polyline', { points: '9,6 15,12 9,18' })];
+    case 'drive':
+      return [
+        shape('rect', { x: '4', y: '8', width: '16', height: '9', rx: '2' }),
+        shape('circle', { cx: '9', cy: '12.5', r: '1.4', ...FILL }),
+        shape('line', { x1: '13', y1: '12.5', x2: '17', y2: '12.5' }),
+      ];
     case 'note':
       return [
         shape('circle', { cx: '8', cy: '17', r: '2.6', ...FILL }),
