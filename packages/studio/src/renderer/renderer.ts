@@ -605,7 +605,10 @@ function buildShell(): void {
   const brand = el('div', { class: 'brand' }, [
     el('div', { class: 'brand-mark' }, [svgIcon('create', 30)]),
     el('div', { class: 'brand-text' }, [
-      el('div', { class: 'brand-name', text: 'OMD Studio' }),
+      el('div', { class: 'brand-wordmark' }, [
+        el('span', { class: 'brand-omd', text: 'OMD' }),
+        el('span', { class: 'brand-studio', text: 'Studio' }),
+      ]),
       el('div', {
         class: 'brand-tag',
         text: 'Turn FLAC albums into real, playable 8cm mini DVD-RW discs.',

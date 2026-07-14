@@ -117,31 +117,74 @@ input {
 }
 
 .brand-mark {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 50px;
-  height: 50px;
+  width: 54px;
+  height: 54px;
   flex: none;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, #2b3a42 0 4px, rgba(255, 255, 255, 0.9) 4.5px 7px, transparent 7.5px),
-    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.95), transparent 38%),
-    conic-gradient(from 200deg, #b884f7, #55c7f2, #00d4e7, #36d17a, #ffdf6e, #ff92c2, #b884f7);
+    radial-gradient(circle at 50% 50%,
+      rgba(38, 52, 61, 0.9) 0 3px,
+      #ffffff 3.6px 5px,
+      #a6bcc8 5.4px 6.6px,
+      transparent 7px),
+    radial-gradient(circle at 50% 50%, transparent 0 20px, rgba(255, 255, 255, 0.5) 20.5px 21.4px, transparent 22px),
+    radial-gradient(circle at 33% 27%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.18) 42%, rgba(255, 255, 255, 0) 66%),
+    conic-gradient(from 205deg, #b98cf0, #66c6ef, #22d0e6, #4ad699, #ffe07a, #ff9ec6, #b98cf0);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
-    0 6px 16px -6px color-mix(in srgb, var(--omd-accent, #00d4e7) 70%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+    0 0 0 1px rgba(60, 90, 110, 0.25),
+    0 7px 16px -6px color-mix(in srgb, var(--omd-accent, #00d4e7) 65%, transparent);
 }
 
 .brand-mark svg {
   display: none;
 }
 
-.brand-name {
+.brand-wordmark {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.9;
+}
+
+.brand-omd {
   font-family: var(--omd-typography-display-font, inherit);
   font-weight: 800;
-  font-size: 20px;
-  letter-spacing: -0.01em;
+  font-size: 30px;
+  letter-spacing: 0.004em;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #dcefff 40%,
+    #a9d7f6 48%,
+    #3f97dd 52%,
+    #1f74c4 80%,
+    #175aa4 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.6px rgba(18, 64, 116, 0.5);
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.75)) drop-shadow(0 2px 3px rgba(20, 60, 110, 0.32));
+}
+
+.brand-studio {
+  margin-top: 3px;
+  font-family: var(--omd-typography-display-font, inherit);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.46em;
+  text-indent: 0.46em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 0%, #cfe8fb 46%, #4f9bdd 56%, #216fbf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.35px rgba(18, 64, 116, 0.35);
 }
 
 .brand-tag {
