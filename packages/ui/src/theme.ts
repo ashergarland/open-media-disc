@@ -25,6 +25,14 @@ export interface ThemeTokens {
   'shape.radius': string;
   'shape.borderStyle': string;
   'shape.glow': string;
+  /** Theme personality: full CSS value strings so a theme can restyle surfaces, not just recolor them. */
+  'background.scene': string;
+  'surface.glass': string;
+  'surface.border': string;
+  'surface.shadow': string;
+  'surface.rim': string;
+  'effect.gloss': string;
+  'effect.glow': string;
 }
 
 /** Every token key, in a stable order. */
@@ -45,6 +53,13 @@ export const THEME_TOKEN_KEYS: readonly (keyof ThemeTokens)[] = [
   'shape.radius',
   'shape.borderStyle',
   'shape.glow',
+  'background.scene',
+  'surface.glass',
+  'surface.border',
+  'surface.shadow',
+  'surface.rim',
+  'effect.gloss',
+  'effect.glow',
 ];
 
 export type ThemeType = 'light' | 'dark';
@@ -88,11 +103,23 @@ export const AQUA_TOKENS: ThemeTokens = {
   'progress.fill': '#00D4E7',
   'vu.low': '#36D17A',
   'vu.high': '#FF5A5F',
-  'typography.uiFont': "'Frutiger Next', 'Segoe UI', system-ui, -apple-system, sans-serif",
-  'typography.displayFont': "'Omnes', 'Segoe UI', system-ui, -apple-system, sans-serif",
+  'typography.uiFont': "'Nunito Sans', 'Segoe UI', system-ui, -apple-system, sans-serif",
+  'typography.displayFont': "'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif",
   'shape.radius': '12px',
   'shape.borderStyle': 'solid',
   'shape.glow': '0 0 12px rgba(0, 212, 231, 0.35)',
+  'background.scene':
+    'radial-gradient(1300px 720px at 6% -14%, color-mix(in srgb, #00D4E7 60%, transparent), transparent 56%), radial-gradient(1200px 720px at 118% 4%, color-mix(in srgb, #7AA8FF 50%, transparent), transparent 52%), radial-gradient(1300px 900px at 50% 130%, color-mix(in srgb, #55C7F2 66%, transparent), transparent 60%), radial-gradient(900px 520px at 50% 8%, rgba(255, 255, 255, 0.6), transparent 60%), linear-gradient(180deg, #D6F0FF 0%, #A5DAF3 42%, #74C2EC 100%)',
+  'surface.glass':
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.16) 92px, rgba(255, 255, 255, 0.02) 98px), linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(190, 233, 251, 0.62))',
+  'surface.border': 'rgba(255, 255, 255, 0.88)',
+  'surface.shadow':
+    '0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 2px 2px -1px rgba(255, 255, 255, 0.7) inset, 0 0 0 1px rgba(120, 170, 205, 0.16), 0 26px 50px -26px rgba(24, 70, 108, 0.55), 0 4px 12px -8px rgba(24, 70, 108, 0.3)',
+  'surface.rim':
+    'conic-gradient(from 210deg, rgba(184, 132, 247, 0.9), rgba(85, 199, 242, 0.9), rgba(0, 212, 231, 0.9), rgba(54, 209, 122, 0.9), rgba(255, 224, 122, 0.9), rgba(255, 146, 194, 0.9), rgba(184, 132, 247, 0.9))',
+  'effect.gloss':
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.4) 38%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0) 52%)',
+  'effect.glow': '0 10px 26px -10px color-mix(in srgb, #00D4E7 70%, transparent)',
 };
 
 /** Default dark tokens, used as the fallback base for dark themes. */
@@ -108,11 +135,23 @@ export const MIDNIGHT_TOKENS: ThemeTokens = {
   'progress.fill': '#00D4E7',
   'vu.low': '#36D17A',
   'vu.high': '#FF5A5F',
-  'typography.uiFont': "'Frutiger Next', 'Segoe UI', system-ui, -apple-system, sans-serif",
-  'typography.displayFont': "'Omnes', 'Segoe UI', system-ui, -apple-system, sans-serif",
+  'typography.uiFont': "'Nunito Sans', 'Segoe UI', system-ui, -apple-system, sans-serif",
+  'typography.displayFont': "'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif",
   'shape.radius': '12px',
   'shape.borderStyle': 'solid',
   'shape.glow': '0 0 12px rgba(0, 212, 231, 0.30)',
+  'background.scene':
+    'radial-gradient(1200px 700px at 10% -10%, color-mix(in srgb, #00D4E7 22%, transparent), transparent 55%), radial-gradient(1100px 700px at 115% 5%, color-mix(in srgb, #6C5CE7 22%, transparent), transparent 55%), linear-gradient(180deg, #10161B 0%, #0B1116 100%)',
+  'surface.glass':
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 92px), linear-gradient(180deg, rgba(27, 39, 48, 0.86), rgba(16, 22, 27, 0.7))',
+  'surface.border': 'rgba(255, 255, 255, 0.14)',
+  'surface.shadow':
+    '0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 0 0 1px rgba(0, 0, 0, 0.4), 0 26px 50px -26px rgba(0, 0, 0, 0.7)',
+  'surface.rim':
+    'conic-gradient(from 210deg, rgba(184, 132, 247, 0.9), rgba(85, 199, 242, 0.9), rgba(0, 212, 231, 0.9), rgba(54, 209, 122, 0.9), rgba(255, 224, 122, 0.9), rgba(255, 146, 194, 0.9), rgba(184, 132, 247, 0.9))',
+  'effect.gloss':
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0) 52%)',
+  'effect.glow': '0 10px 26px -10px color-mix(in srgb, #00D4E7 55%, transparent)',
 };
 
 /** The shipped default theme. */

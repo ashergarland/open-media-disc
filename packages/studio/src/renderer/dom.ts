@@ -167,3 +167,37 @@ export function svgIcon(name: IconName, size = 20): SVGElement {
   for (const child of iconShapes(name)) svg.appendChild(child);
   return svg;
 }
+
+/** The "OMD STUDIO" wordmark as self-contained SVG artwork (not layout text). */
+export function svgWordmark(): SVGElement {
+  const svg = shape('svg', {
+    viewBox: '0 0 158 58',
+    width: '158',
+    height: '58',
+    class: 'brand-wordmark-svg',
+    role: 'img',
+    'aria-label': 'OMD Studio',
+  });
+  const defs = shape('defs', {});
+  const grad = shape('linearGradient', { id: 'omdWordmarkFill', x1: '0', y1: '0', x2: '0', y2: '1' });
+  const stops: [string, string][] = [
+    ['0', '#eaf5ff'],
+    ['0.34', '#c3e3fb'],
+    ['0.5', '#5aa2e3'],
+    ['0.62', '#1f6fc4'],
+    ['1', '#164f92'],
+  ];
+  for (const [offset, color] of stops) {
+    grad.appendChild(shape('stop', { offset, 'stop-color': color }));
+  }
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  const omd = shape('text', { x: '0', y: '35', class: 'wm-omd' });
+  omd.textContent = 'OMD';
+  const studio = shape('text', { x: '2', y: '52', class: 'wm-studio' });
+  studio.textContent = 'STUDIO';
+  svg.appendChild(omd);
+  svg.appendChild(studio);
+  return svg;
+}

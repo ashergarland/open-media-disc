@@ -48,10 +48,9 @@ await build({
 await cp('src/renderer/index.html', 'dist/renderer/index.html');
 await cp('src/renderer/styles.css', 'dist/renderer/styles.css');
 
-// Optional local Frutiger Aero fonts (Omnes + Frutiger Next). Not committed
-// (licensed); when absent the theme falls back to Segoe UI.
-if (existsSync('src/renderer/fonts')) {
-  await cp('src/renderer/fonts', 'dist/renderer/fonts', { recursive: true });
+// Static renderer assets (logo art, etc.).
+if (existsSync('src/renderer/assets')) {
+  await cp('src/renderer/assets', 'dist/renderer/assets', { recursive: true });
 }
 
 console.log('OMD Studio bundled to dist/.');

@@ -7,57 +7,6 @@
  * layout is fixed; only the theme changes.
  */
 
-/* Bundled Frutiger Aero fonts: Omnes (display/logo) + Frutiger Next LT (body). */
-@font-face {
-  font-family: 'Omnes';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('fonts/Omnes-Regular.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Omnes';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('fonts/Omnes-Medium.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Omnes';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('fonts/Omnes-SemiBold.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Omnes';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('fonts/Omnes-Bold.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Frutiger Next';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('fonts/FrutigerNext-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Frutiger Next';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('fonts/FrutigerNext-Medium.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Frutiger Next';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('fonts/FrutigerNext-Bold.woff2') format('woff2');
-}
-
 :root {
   color-scheme: light;
   --sidebar-width: 256px;
@@ -67,25 +16,23 @@
   --btn-radius: 13px;
   --line: color-mix(in srgb, var(--omd-text-primary, #2b3a42) 10%, transparent);
   --panel: color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, var(--omd-app-background, #f7fdff));
-  /* Aqua glass: bright frosted body + a strong specular highlight along the top edge. */
-  --glass-bg:
+  /* Theme-driven surfaces: the active theme supplies these (see @open-album-cartridge/ui). */
+  --glass-bg: var(--omd-surface-glass,
     linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.16) 92px, rgba(255, 255, 255, 0.02) 98px),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, #fff 86%, transparent),
-      color-mix(in srgb, var(--omd-surface-background, #bee9fb) 62%, transparent)
-    );
-  --glass-border: color-mix(in srgb, #fff 88%, transparent);
-  --glass-shadow:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(190, 233, 251, 0.62)));
+  --glass-border: var(--omd-surface-border, rgba(255, 255, 255, 0.88));
+  --glass-shadow: var(--omd-surface-shadow,
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
     0 2px 2px -1px rgba(255, 255, 255, 0.7) inset,
     0 0 0 1px rgba(120, 170, 205, 0.16),
     0 26px 50px -26px rgba(24, 70, 108, 0.55),
-    0 4px 12px -8px rgba(24, 70, 108, 0.3);
+    0 4px 12px -8px rgba(24, 70, 108, 0.3));
+  --rim: var(--omd-surface-rim,
+    conic-gradient(from 210deg, rgba(184, 132, 247, 0.9), rgba(85, 199, 242, 0.9), rgba(0, 212, 231, 0.9), rgba(54, 209, 122, 0.9), rgba(255, 224, 122, 0.9), rgba(255, 146, 194, 0.9), rgba(184, 132, 247, 0.9)));
   --sheen: linear-gradient(180deg, color-mix(in srgb, #fff 55%, transparent), transparent 50%);
-  /* Glossy aqua gel dome: bright top, soft fade, crisp break near the middle. */
-  --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.4) 38%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0) 52%);
-  --glow: 0 10px 26px -10px color-mix(in srgb, var(--omd-accent, #00d4e7) 70%, transparent);
+  --gloss: var(--omd-effect-gloss,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.4) 38%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0) 52%));
+  --glow: var(--omd-effect-glow, 0 10px 26px -10px color-mix(in srgb, var(--omd-accent, #00d4e7) 70%, transparent));
 }
 
 * {
@@ -99,15 +46,18 @@ body {
 }
 
 body {
-  font-family: var(--omd-typography-ui-font, system-ui, -apple-system, Segoe UI, sans-serif);
+  font-family: var(--omd-typography-ui-font, 'Segoe UI', system-ui, -apple-system, sans-serif);
   color: var(--omd-text-primary, #2b3a42);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  background:
-    radial-gradient(1300px 720px at 6% -14%, color-mix(in srgb, var(--omd-accent, #00d4e7) 60%, transparent), transparent 56%),
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: var(--omd-background-scene,
+    radial-gradient(1300px 720px at 6% -14%, color-mix(in srgb, #00d4e7 60%, transparent), transparent 56%),
     radial-gradient(1200px 720px at 118% 4%, color-mix(in srgb, #7aa8ff 50%, transparent), transparent 52%),
-    radial-gradient(1300px 900px at 50% 130%, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 66%, transparent), transparent 60%),
+    radial-gradient(1300px 900px at 50% 130%, color-mix(in srgb, #55c7f2 66%, transparent), transparent 60%),
     radial-gradient(900px 520px at 50% 8%, rgba(255, 255, 255, 0.6), transparent 60%),
-    linear-gradient(180deg, #d6f0ff 0%, #a5daf3 42%, #74c2ec 100%);
+    linear-gradient(180deg, #d6f0ff 0%, #a5daf3 42%, #74c2ec 100%));
   background-attachment: fixed;
 }
 
@@ -222,73 +172,35 @@ input[type='range']::-webkit-slider-thumb:hover {
 }
 
 .brand-mark {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 62px;
+  height: 62px;
   flex: none;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%,
-      rgba(38, 52, 61, 0.9) 0 3px,
-      #ffffff 3.6px 5px,
-      #a6bcc8 5.4px 6.6px,
-      transparent 7px),
-    radial-gradient(circle at 50% 50%, transparent 0 20px, rgba(255, 255, 255, 0.5) 20.5px 21.4px, transparent 22px),
-    radial-gradient(circle at 33% 27%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 40%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.12) 40%, rgba(255, 255, 255, 0) 60%),
-    conic-gradient(from 205deg, #a86bf0, #49bff2, #12cfe6, #3fd68f, #ffd95e, #ff86bd, #a86bf0);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset,
-    0 0 0 1px rgba(60, 90, 110, 0.25),
-    0 7px 16px -6px color-mix(in srgb, var(--omd-accent, #00d4e7) 65%, transparent);
+  object-fit: contain;
+  filter: drop-shadow(0 5px 10px rgba(24, 70, 108, 0.3));
 }
 
-.brand-mark svg {
-  display: none;
+.brand-wordmark-svg {
+  display: block;
+  height: 50px;
+  width: auto;
+  margin-top: 2px;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7)) drop-shadow(0 2px 3px rgba(18, 60, 110, 0.28));
 }
 
-.brand-wordmark {
-  display: flex;
-  flex-direction: column;
-  line-height: 0.9;
-}
-
-.brand-omd {
-  font-family: var(--omd-typography-display-font, inherit);
+.wm-omd {
+  font-family: var(--omd-typography-display-font, 'Segoe UI', sans-serif);
   font-weight: 800;
   font-size: 34px;
-  letter-spacing: 0.004em;
-  background: linear-gradient(
-    180deg,
-    #eaf5ff 0%,
-    #c3e3fb 32%,
-    #62aae8 46%,
-    #1f6fc4 60%,
-    #16589f 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.7px rgba(15, 58, 110, 0.6);
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8)) drop-shadow(0 2px 3px rgba(18, 60, 110, 0.35));
+  letter-spacing: -0.01em;
+  fill: url(#omdWordmarkFill);
 }
 
-.brand-studio {
-  margin-top: 4px;
-  font-family: var(--omd-typography-display-font, inherit);
+.wm-studio {
+  font-family: var(--omd-typography-display-font, 'Segoe UI', sans-serif);
   font-weight: 700;
-  font-size: 11.5px;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #93c3ee 0%, #3f8fd6 44%, #1b60ab 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.35px rgba(18, 64, 116, 0.4);
+  font-size: 12.5px;
+  letter-spacing: 0.34em;
+  fill: #2f7cc8;
 }
 
 .brand-tag {
@@ -422,16 +334,7 @@ input[type='range']::-webkit-slider-thumb:hover {
   inset: 0;
   border-radius: inherit;
   padding: 1.5px;
-  background: conic-gradient(
-    from 210deg,
-    rgba(184, 132, 247, 0.9),
-    rgba(85, 199, 242, 0.9),
-    rgba(0, 212, 231, 0.9),
-    rgba(54, 209, 122, 0.9),
-    rgba(255, 224, 122, 0.9),
-    rgba(255, 146, 194, 0.9),
-    rgba(184, 132, 247, 0.9)
-  );
+  background: var(--rim);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;

@@ -23,7 +23,7 @@ import type {
   StudioInfo,
   StudioVerifyResult,
 } from '../shared/types';
-import { clearChildren, el, svgIcon, type IconName } from './dom';
+import { clearChildren, el, svgIcon, svgWordmark, type IconName } from './dom';
 import { renderNowPlaying } from './nowPlaying';
 import { renderCreateWizard } from './createWizard';
 import * as player from './audioController';
@@ -612,12 +612,9 @@ function buildShell(): void {
   clearChildren(root);
 
   const brand = el('div', { class: 'brand' }, [
-    el('div', { class: 'brand-mark' }, [svgIcon('create', 30)]),
+    el('img', { class: 'brand-mark', src: 'assets/omd-disc.png', alt: '' }),
     el('div', { class: 'brand-text' }, [
-      el('div', { class: 'brand-wordmark' }, [
-        el('span', { class: 'brand-omd', text: 'OMD' }),
-        el('span', { class: 'brand-studio', text: 'Studio' }),
-      ]),
+      svgWordmark(),
       el('div', {
         class: 'brand-tag',
         text: 'Turn FLAC albums into real, playable 8cm mini DVD-RW discs.',
