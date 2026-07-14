@@ -165,34 +165,28 @@ input[type='range']::-webkit-slider-thumb:hover {
 }
 
 .brand {
-  --rim-w: 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 14px;
-  padding: 18px 14px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(14px) saturate(1.2);
+  padding: 8px 6px 16px;
   text-align: center;
 }
 
 .brand-mark {
-  width: 96px;
-  height: 96px;
+  width: 128px;
+  height: 128px;
   flex: none;
   object-fit: contain;
-  filter: drop-shadow(0 6px 12px rgba(24, 70, 108, 0.32));
+  filter: drop-shadow(0 7px 14px rgba(24, 70, 108, 0.34));
 }
 
 .brand-wordmark-svg {
   display: block;
-  height: 54px;
+  height: 66px;
   width: auto;
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7)) drop-shadow(0 2px 3px rgba(18, 60, 110, 0.28));
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 2px 3px rgba(18, 60, 110, 0.24));
 }
 
 .wm-omd {
@@ -1249,8 +1243,7 @@ input[type='range']::-webkit-slider-thumb:hover {
    from --rim-1/2/3, whose defaults derive from the theme accent. */
 .btn,
 .badge,
-.np-btn-primary,
-.brand {
+.np-btn-primary {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -1258,8 +1251,7 @@ input[type='range']::-webkit-slider-thumb:hover {
 
 .btn::before,
 .badge::before,
-.np-btn-primary::before,
-.brand::before {
+.np-btn-primary::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1315,8 +1307,7 @@ input[type='range']::-webkit-slider-thumb:hover {
 
 .btn > *,
 .badge > *,
-.np-btn-primary > *,
-.brand > * {
+.np-btn-primary > * {
   position: relative;
   z-index: 2;
 }

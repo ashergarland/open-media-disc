@@ -181,11 +181,9 @@ export function svgWordmark(): SVGElement {
   const defs = shape('defs', {});
   const grad = shape('linearGradient', { id: 'omdWordmarkFill', x1: '0', y1: '0', x2: '0', y2: '1' });
   const stops: [string, string][] = [
-    ['0', '#eaf5ff'],
-    ['0.34', '#c3e3fb'],
-    ['0.5', '#5aa2e3'],
-    ['0.62', '#1f6fc4'],
-    ['1', '#164f92'],
+    ['0', '#5695d2'],
+    ['0.5', '#1f6dba'],
+    ['1', '#134a8a'],
   ];
   for (const [offset, color] of stops) {
     grad.appendChild(shape('stop', { offset, 'stop-color': color }));
