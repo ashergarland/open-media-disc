@@ -11,23 +11,20 @@ import {
   AQUA_THEME,
   BUILTIN_THEMES,
   applyTheme,
-  createPlayerState,
-  currentTrack,
-  cycleRepeat,
   getBuiltinTheme,
-  next,
-  previous,
   resolveTheme,
-  setElapsed,
-  setVolume,
-  toggleShuffle,
-  togglePlay,
-  type PlayerState,
 } from '@open-album-cartridge/ui';
-import type { OmdStudioApi, StudioDrive, StudioInfo } from '../shared/types';
+import type {
+  OmdStudioApi,
+  StudioDiscInfo,
+  StudioDrive,
+  StudioInfo,
+  StudioVerifyResult,
+} from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 import { renderNowPlaying } from './nowPlaying';
 import { renderCreateWizard } from './createWizard';
+import * as player from './audioController';
 
 declare global {
   interface Window {
@@ -54,21 +51,25 @@ const NAV: NavItem[] = [
 interface AppState {
   view: ViewId;
   themeId: string;
-  player: PlayerState;
   info?: StudioInfo;
   drives?: StudioDrive[];
+  disc?: StudioDiscInfo;
+  discLoading: boolean;
+  discError?: string;
+  verify?: StudioVerifyResult;
 }
 
 const state: AppState = {
   view: 'create',
   themeId: AQUA_THEME.id,
-  player: createPlayerState([]),
+  discLoading: false,
 };
 
 const navButtons = new Map<ViewId, HTMLElement>();
 let mainEl: HTMLElement;
 let nowPlayingHost: HTMLElement;
 let versionLabel: HTMLElement;
+let lastPlayerKey = '';
 
 function applyThemeById(id: string): void {
   const theme = getBuiltinTheme(id) ?? AQUA_THEME;
@@ -92,24 +93,25 @@ function renderMain(): void {
 function renderNowPlayingBar(): void {
   clearChildren(nowPlayingHost);
   nowPlayingHost.append(
-    renderNowPlaying(state.player, {
-      onTogglePlay: () => update(togglePlay(state.player)),
-      onNext: () => update(next(state.player)),
-      onPrevious: () => update(previous(state.player)),
-      onToggleShuffle: () => update(toggleShuffle(state.player)),
-      onCycleRepeat: () => update(cycleRepeat(state.player)),
-      onVolume: (value) => update(setVolume(state.player, value)),
-      onSeek: (fraction) => {
-        const duration = currentTrack(state.player)?.durationSeconds ?? 0;
-        update(setElapsed(state.player, fraction * duration));
-      },
+    renderNowPlaying(player.getState(), {
+      onTogglePlay: () => player.togglePlayPause(),
+      onNext: () => player.next(),
+      onPrevious: () => player.previous(),
+      onToggleShuffle: () => player.toggleShuffle(),
+      onCycleRepeat: () => player.cycleRepeat(),
+      onVolume: (value) => player.setVolume(value),
+      onSeek: (fraction) => player.seekFraction(fraction),
     }),
   );
 }
 
-function update(player: PlayerState): void {
-  state.player = player;
+function onPlayerChange(): void {
   renderNowPlayingBar();
+  const pstate = player.getState();
+  const key = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
+  if (state.view === 'player' && key !== lastPlayerKey) {
+    renderMain();
+  }
 }
 
 function card(title: string, children: (Node | string)[]): HTMLElement {
@@ -229,17 +231,200 @@ function settingsView(): HTMLElement {
   ]);
 }
 
+function loadDiscIntoPlayer(disc: StudioDiscInfo): void {
+  state.disc = disc;
+  state.verify = undefined;
+  state.discError = undefined;
+  player.loadDisc(
+    disc.tracks.map((track) => ({
+      number: track.number,
+      title: track.title,
+      src: track.src,
+      artist: disc.artist,
+      ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
+    })),
+  );
+}
+
+async function detectDisc(): Promise<void> {
+  state.discLoading = true;
+  state.discError = undefined;
+  renderMain();
+  try {
+    const disc = await window.omd.detectDisc();
+    if (disc) loadDiscIntoPlayer(disc);
+    else state.discError = 'No OMD disc detected. Insert a disc or open a package folder.';
+  } catch (err) {
+    state.discError = (err as Error).message;
+  }
+  state.discLoading = false;
+  if (state.view === 'player') renderMain();
+}
+
+async function openFolder(): Promise<void> {
+  state.discLoading = true;
+  state.discError = undefined;
+  renderMain();
+  try {
+    const disc = await window.omd.openPackageFolder();
+    if (disc) loadDiscIntoPlayer(disc);
+    else state.discError = 'That folder is not an OMD package.';
+  } catch (err) {
+    state.discError = (err as Error).message;
+  }
+  state.discLoading = false;
+  if (state.view === 'player') renderMain();
+}
+
+async function openDiscByPath(source: string): Promise<void> {
+  setView('player');
+  if (!source) return;
+  state.discLoading = true;
+  state.discError = undefined;
+  renderMain();
+  try {
+    const disc = await window.omd.openDisc(source);
+    if (disc) loadDiscIntoPlayer(disc);
+    else state.discError = 'Could not open the package.';
+  } catch (err) {
+    state.discError = (err as Error).message;
+  }
+  state.discLoading = false;
+  if (state.view === 'player') renderMain();
+}
+
+async function reverify(): Promise<void> {
+  if (!state.disc) return;
+  state.verify = undefined;
+  renderMain();
+  try {
+    state.verify = await window.omd.verifyDisc(state.disc.source);
+  } catch (err) {
+    state.discError = (err as Error).message;
+  }
+  if (state.view === 'player') renderMain();
+}
+
+function formatClock(seconds: number): string {
+  const total = Math.floor(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function playerView(): HTMLElement {
+  const pstate = player.getState();
+  lastPlayerKey = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
+
+  const head = el('div', { class: 'view-head' }, [
+    el('h1', { class: 'view-title', text: 'Player' }),
+    el('p', { class: 'view-lead', text: 'Play a mounted OMD disc with verified, lossless FLAC.' }),
+  ]);
+
+  if (!state.disc) {
+    const body: (Node | string)[] = [
+      el('p', {
+        class: 'muted',
+        text: 'Insert a burned OMD disc and detect it, or open a package folder on disk.',
+      }),
+      el('div', { class: 'wizard-actions' }, [
+        el('button', { class: 'btn btn-primary', onclick: () => void detectDisc() }, ['Detect disc']),
+        el('button', { class: 'btn', onclick: () => void openFolder() }, ['Open folder...']),
+      ]),
+    ];
+    if (state.discLoading) {
+      body.push(
+        el('div', { class: 'spinner-row' }, [
+          el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+          el('span', { text: 'Looking for a disc...' }),
+        ]),
+      );
+    }
+    if (state.discError) body.push(el('p', { class: 'wizard-error', text: state.discError }));
+    return el('div', { class: 'view' }, [head, card('No disc loaded', body)]);
+  }
+
+  const disc = state.disc;
+  const currentIndex = pstate.order[pstate.position] ?? -1;
+  const playing = pstate.status === 'playing';
+
+  const cover = disc.coverDataUri
+    ? el('img', { class: 'player-cover', src: disc.coverDataUri, alt: 'Cover art' })
+    : el('div', { class: 'player-cover cover-empty' }, [svgIcon('create', 64)]);
+
+  const verified = state.verify ? state.verify.valid : disc.valid;
+  const badges = el('div', { class: 'player-badges' }, [
+    el('span', { class: `badge ${verified ? 'badge-verified' : 'badge-bad'}` }, [
+      svgIcon('check', 14),
+      el('span', { text: verified ? 'Verified' : 'Not verified' }),
+    ]),
+    el('span', { class: 'badge badge-flac', text: 'FLAC lossless' }),
+  ]);
+
+  const meta = el('div', { class: 'player-meta' }, [
+    el('div', { class: 'player-title', text: disc.discId }),
+    el('div', { class: 'muted', text: `${disc.artist} - ${disc.album}` }),
+    el('div', {
+      class: 'muted small',
+      text: `${disc.trackCount} tracks - ${formatClock(disc.totalDurationSeconds)}`,
+    }),
+    badges,
+    el('div', { class: 'player-actions' }, [
+      el('button', { class: 'btn btn-primary', onclick: () => player.togglePlayPause() }, [
+        playing ? 'Pause' : 'Play',
+      ]),
+      el('button', { class: 'btn', onclick: () => void reverify() }, ['Re-verify']),
+      el(
+        'button',
+        {
+          class: 'btn',
+          onclick: () => {
+            state.disc = undefined;
+            state.verify = undefined;
+            renderMain();
+          },
+        },
+        ['Close'],
+      ),
+    ]),
+  ]);
+
+  const trackList = el(
+    'ol',
+    { class: 'player-tracks' },
+    disc.tracks.map((track, index) =>
+      el(
+        'li',
+        {
+          class: `track-row${index === currentIndex ? ' is-current' : ''}`,
+          onclick: () => player.playTrack(index),
+        },
+        [
+          el('span', {
+            class: 'track-num',
+            text: index === currentIndex && playing ? '\u25b6' : String(track.number),
+          }),
+          el('span', { class: 'track-title', text: track.title }),
+          el('span', {
+            class: 'muted small',
+            text: track.durationSeconds !== undefined ? formatClock(track.durationSeconds) : '',
+          }),
+        ],
+      ),
+    ),
+  );
+
+  return el('div', { class: 'view' }, [
+    head,
+    el('div', { class: 'player-top' }, [cover, meta]),
+    card('Tracks', [trackList]),
+  ]);
+}
+
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
     case 'create':
-      return renderCreateWizard({ onOpenPlayer: () => setView('player') });
+      return renderCreateWizard({ onOpenPlayer: (source) => void openDiscByPath(source) });
     case 'player':
-      return placeholderView('Player', 'Play a mounted OMD disc with verified, lossless FLAC.', [
-        'Auto-detect a mounted disc',
-        'Show cover, tracks, and integrity badges',
-        'Transport, seek, and volume',
-        'Re-verify against the manifest',
-      ]);
+      return playerView();
     case 'catalog':
       return placeholderView('Catalog', 'Browse the discs you have created and ripped.', [
         'List packaged and ripped albums',
@@ -293,6 +478,8 @@ function buildShell(): void {
 async function init(): Promise<void> {
   buildShell();
   applyThemeById(state.themeId);
+  player.initPlayer();
+  player.subscribe(onPlayerChange);
   setView(state.view);
   renderNowPlayingBar();
 

@@ -21,6 +21,10 @@ const api: OmdStudioApi = {
       .invoke('omd:burn', request)
       .finally(() => ipcRenderer.removeListener('omd:burn:progress', listener));
   },
+  detectDisc: () => ipcRenderer.invoke('omd:detectDisc'),
+  openPackageFolder: () => ipcRenderer.invoke('omd:openPackageFolder'),
+  openDisc: (source) => ipcRenderer.invoke('omd:openDisc', source),
+  verifyDisc: (source) => ipcRenderer.invoke('omd:verifyDisc', source),
 };
 
 contextBridge.exposeInMainWorld('omd', api);

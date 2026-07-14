@@ -1,28 +1,66 @@
 import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
 import {
   OMD_FORMAT,
   OMD_VERSION,
   OutputExistsError,
   burnPackage,
   createPackage,
+  inspectPackage,
   resolveBurnBackend,
   slugifyForPath,
+  validatePackage,
 } from '@open-album-cartridge/core';
 import { buildPackageLabelSheet } from '@open-album-cartridge/label';
 import type {
   StudioBurnRequest,
   StudioBurnResult,
+  StudioDiscInfo,
   StudioDrive,
   StudioInfo,
   StudioLabel,
   StudioPackageResponse,
   StudioValidationFinding,
+  StudioVerifyResult,
 } from '../shared/types';
 
 /** OMD Studio app version (independent of the disc format version). */
 const STUDIO_VERSION = '0.1.0';
+
+// A privileged custom scheme lets the renderer stream local FLAC files through
+// the strict CSP (media-src 'self' omd-audio:), with range support for seeking.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'omd-audio',
+    privileges: {
+      standard: true,
+      secure: true,
+      stream: true,
+      supportFetchAPI: true,
+    },
+  },
+]);
+
+/** Directories whose files omd-audio:// is allowed to serve (opened discs). */
+const allowedMediaBases = new Set<string>();
+
+function allowMediaBase(dir: string): void {
+  allowedMediaBases.add(path.resolve(dir));
+}
+
+function isAllowedMediaPath(filePath: string): boolean {
+  const resolved = path.resolve(filePath);
+  for (const base of allowedMediaBases) {
+    if (resolved === base || resolved.startsWith(base + path.sep)) return true;
+  }
+  return false;
+}
+
+/** An omd-audio:// URL that streams a local file through the custom protocol. */
+function audioUrl(absPath: string): string {
+  return `omd-audio://media/?p=${encodeURIComponent(absPath)}`;
+}
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -94,6 +132,34 @@ async function readCoverDataUri(packageDir: string, coverArt?: string): Promise<
   } catch {
     return undefined;
   }
+}
+
+async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
+  let inspection;
+  try {
+    inspection = await inspectPackage(source);
+  } catch {
+    return null;
+  }
+  allowMediaBase(source);
+  const validation = await validatePackage(source);
+  const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
+  return {
+    source,
+    discId: inspection.discId,
+    artist: inspection.artist,
+    album: inspection.album,
+    trackCount: inspection.trackCount,
+    totalDurationSeconds: inspection.totalDurationSeconds,
+    valid: validation.valid,
+    ...(coverDataUri ? { coverDataUri } : {}),
+    tracks: inspection.tracks.map((track) => ({
+      number: track.number,
+      title: track.title,
+      ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
+      src: audioUrl(path.resolve(source, ...track.filename.split('/'))),
+    })),
+  };
 }
 
 ipcMain.handle('omd:selectAlbumFolder', async (): Promise<string | null> => {
@@ -189,7 +255,85 @@ ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<St
   }
 });
 
+ipcMain.handle('omd:detectDisc', async (): Promise<StudioDiscInfo | null> => {
+  const backend = resolveBurnBackend();
+  if (!(await backend.isAvailable())) return null;
+  let drives: { mountPath: string }[];
+  try {
+    drives = await backend.listDrives();
+  } catch {
+    return null;
+  }
+  for (const drive of drives) {
+    const info = await buildDiscInfo(drive.mountPath);
+    if (info) return info;
+  }
+  return null;
+});
+
+ipcMain.handle('omd:openPackageFolder', async (): Promise<StudioDiscInfo | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Open an OMD package or disc',
+    properties: ['openDirectory'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return buildDiscInfo(result.filePaths[0]!);
+});
+
+ipcMain.handle('omd:verifyDisc', async (_event, source: string): Promise<StudioVerifyResult> => {
+  const validation = await validatePackage(source);
+  return { valid: validation.valid, errors: validation.errors.map(toFinding) };
+});
+
+ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {
+  return buildDiscInfo(source);
+});
+
 void app.whenReady().then(() => {
+  protocol.handle('omd-audio', async (request) => {
+    const requested = new URL(request.url).searchParams.get('p');
+    if (!requested || !isAllowedMediaPath(requested)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+    try {
+      const data = await readFile(requested);
+      const lower = requested.toLowerCase();
+      const type = lower.endsWith('.flac')
+        ? 'audio/flac'
+        : lower.endsWith('.png')
+          ? 'image/png'
+          : lower.endsWith('.jpg') || lower.endsWith('.jpeg')
+            ? 'image/jpeg'
+            : 'application/octet-stream';
+      const range = request.headers.get('range');
+      if (range) {
+        const match = /bytes=(\d+)-(\d*)/.exec(range);
+        const start = match ? Number(match[1]) : 0;
+        const end = match && match[2] ? Number(match[2]) : data.length - 1;
+        const chunk = data.subarray(start, end + 1);
+        return new Response(chunk, {
+          status: 206,
+          headers: {
+            'Content-Type': type,
+            'Content-Range': `bytes ${start}-${end}/${data.length}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': String(chunk.length),
+          },
+        });
+      }
+      return new Response(data, {
+        status: 200,
+        headers: {
+          'Content-Type': type,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': String(data.length),
+        },
+      });
+    } catch {
+      return new Response('Not found', { status: 404 });
+    }
+  });
+
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

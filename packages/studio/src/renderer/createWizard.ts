@@ -11,7 +11,7 @@ import type { StudioBurnResult, StudioDrive, StudioPackageSummary } from '../sha
 import { clearChildren, el, svgIcon } from './dom';
 
 interface WizardOptions {
-  onOpenPlayer: () => void;
+  onOpenPlayer: (source: string) => void;
 }
 
 const STEPS = ['Select', 'Package', 'Label', 'Burn', 'Done'] as const;
@@ -405,7 +405,7 @@ function doneStep(): HTMLElement {
         render();
         void loadDrives();
       }),
-      primaryButton('Open in Player', () => options.onOpenPlayer()),
+      primaryButton('Open in Player', () => options.onOpenPlayer(state.pkg?.outDir ?? '')),
     ]),
   ]);
 }

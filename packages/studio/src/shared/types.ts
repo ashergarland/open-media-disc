@@ -101,6 +101,34 @@ export interface StudioBurnResult {
   error?: string;
 }
 
+/** A track on a mounted disc or opened package, ready to play. */
+export interface StudioDiscTrack {
+  number: number;
+  title: string;
+  durationSeconds?: number;
+  /** An `omd-audio://` URL the renderer can feed to an `<audio>` element. */
+  src: string;
+}
+
+/** A mounted OMD disc (or opened package) for the player. */
+export interface StudioDiscInfo {
+  source: string;
+  discId: string;
+  artist: string;
+  album: string;
+  trackCount: number;
+  totalDurationSeconds: number;
+  valid: boolean;
+  coverDataUri?: string;
+  tracks: StudioDiscTrack[];
+}
+
+/** The result of re-verifying a disc. */
+export interface StudioVerifyResult {
+  valid: boolean;
+  errors: StudioValidationFinding[];
+}
+
 /** The API exposed to the renderer on `window.omd` via the preload bridge. */
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
@@ -113,4 +141,8 @@ export interface OmdStudioApi {
     request: StudioBurnRequest,
     onProgress: (progress: StudioBurnProgress) => void,
   ): Promise<StudioBurnResult>;
+  detectDisc(): Promise<StudioDiscInfo | null>;
+  openPackageFolder(): Promise<StudioDiscInfo | null>;
+  openDisc(source: string): Promise<StudioDiscInfo | null>;
+  verifyDisc(source: string): Promise<StudioVerifyResult>;
 }
