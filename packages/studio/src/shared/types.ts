@@ -129,6 +129,16 @@ export interface StudioVerifyResult {
   errors: StudioValidationFinding[];
 }
 
+/** A package found while scanning a library folder. */
+export interface CatalogEntry {
+  source: string;
+  discId: string;
+  artist: string;
+  album: string;
+  trackCount: number;
+  coverDataUri?: string;
+}
+
 /** The API exposed to the renderer on `window.omd` via the preload bridge. */
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
@@ -145,4 +155,8 @@ export interface OmdStudioApi {
   openPackageFolder(): Promise<StudioDiscInfo | null>;
   openDisc(source: string): Promise<StudioDiscInfo | null>;
   verifyDisc(source: string): Promise<StudioVerifyResult>;
+  chooseLibraryFolder(): Promise<string | null>;
+  scanLibrary(dir: string): Promise<CatalogEntry[]>;
+  revealInFolder(target: string): Promise<void>;
+  importThemeFile(): Promise<string | null>;
 }

@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { readFile, writeFile } from 'node:fs/promises';
-import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
   OMD_FORMAT,
   OMD_VERSION,
@@ -14,6 +14,7 @@ import {
 } from '@open-album-cartridge/core';
 import { buildPackageLabelSheet } from '@open-album-cartridge/label';
 import type {
+  CatalogEntry,
   StudioBurnRequest,
   StudioBurnResult,
   StudioDiscInfo,
@@ -287,6 +288,63 @@ ipcMain.handle('omd:verifyDisc', async (_event, source: string): Promise<StudioV
 
 ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {
   return buildDiscInfo(source);
+});
+
+ipcMain.handle('omd:chooseLibraryFolder', async (): Promise<string | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Choose a library folder',
+    properties: ['openDirectory'],
+  });
+  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]!;
+});
+
+ipcMain.handle('omd:scanLibrary', async (_event, dir: string): Promise<CatalogEntry[]> => {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const catalog: CatalogEntry[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const source = path.join(dir, entry.name);
+    let inspection;
+    try {
+      inspection = await inspectPackage(source);
+    } catch {
+      continue;
+    }
+    const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
+    catalog.push({
+      source,
+      discId: inspection.discId,
+      artist: inspection.artist,
+      album: inspection.album,
+      trackCount: inspection.trackCount,
+      ...(coverDataUri ? { coverDataUri } : {}),
+    });
+  }
+  catalog.sort((a, b) => a.discId.localeCompare(b.discId));
+  return catalog;
+});
+
+ipcMain.handle('omd:revealInFolder', (_event, target: string): void => {
+  shell.showItemInFolder(path.resolve(target));
+});
+
+ipcMain.handle('omd:importThemeFile', async (): Promise<string | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Import a theme',
+    properties: ['openFile'],
+    filters: [{ name: 'Theme JSON', extensions: ['json'] }],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  try {
+    return await readFile(result.filePaths[0]!, 'utf8');
+  } catch {
+    return null;
+  }
 });
 
 void app.whenReady().then(() => {

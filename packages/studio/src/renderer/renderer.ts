@@ -11,10 +11,12 @@ import {
   AQUA_THEME,
   BUILTIN_THEMES,
   applyTheme,
-  getBuiltinTheme,
   resolveTheme,
+  validateTheme,
+  type OmdTheme,
 } from '@open-album-cartridge/ui';
 import type {
+  CatalogEntry,
   OmdStudioApi,
   StudioDiscInfo,
   StudioDrive,
@@ -57,12 +59,18 @@ interface AppState {
   discLoading: boolean;
   discError?: string;
   verify?: StudioVerifyResult;
+  libraryDir?: string;
+  catalog?: CatalogEntry[];
+  catalogLoading: boolean;
+  catalogError?: string;
+  themeError?: string;
 }
 
 const state: AppState = {
   view: 'create',
   themeId: AQUA_THEME.id,
   discLoading: false,
+  catalogLoading: false,
 };
 
 const navButtons = new Map<ViewId, HTMLElement>();
@@ -71,8 +79,14 @@ let nowPlayingHost: HTMLElement;
 let versionLabel: HTMLElement;
 let lastPlayerKey = '';
 
+const importedThemes: OmdTheme[] = [];
+
+function allThemes(): OmdTheme[] {
+  return [...BUILTIN_THEMES, ...importedThemes];
+}
+
 function applyThemeById(id: string): void {
-  const theme = getBuiltinTheme(id) ?? AQUA_THEME;
+  const theme = allThemes().find((entry) => entry.id === id) ?? AQUA_THEME;
   applyTheme(document.documentElement, resolveTheme(theme));
   state.themeId = theme.id;
 }
@@ -147,7 +161,7 @@ function placeholderView(title: string, lead: string, steps: string[]): HTMLElem
 
 function themesView(): HTMLElement {
   const grid = el('div', { class: 'theme-grid' });
-  for (const theme of BUILTIN_THEMES) {
+  for (const theme of allThemes()) {
     const resolved = resolveTheme(theme);
     const swatch = el('div', { class: 'theme-swatch', 'aria-hidden': 'true' });
     for (const token of [
@@ -183,7 +197,7 @@ function themesView(): HTMLElement {
       ),
     );
   }
-  return el('div', { class: 'view' }, [
+  const children: (Node | string)[] = [
     el('div', { class: 'view-head' }, [
       el('h1', { class: 'view-title', text: 'Themes' }),
       el('p', {
@@ -192,7 +206,12 @@ function themesView(): HTMLElement {
       }),
     ]),
     grid,
-  ]);
+    el('div', { class: 'wizard-actions' }, [
+      el('button', { class: 'btn', onclick: () => void importTheme() }, ['Import theme...']),
+    ]),
+  ];
+  if (state.themeError) children.push(el('p', { class: 'wizard-error', text: state.themeError }));
+  return el('div', { class: 'view' }, children);
 }
 
 function settingsRow(label: string, value: string): HTMLElement {
@@ -227,7 +246,12 @@ function settingsView(): HTMLElement {
       el('p', { class: 'view-lead', text: 'Environment and detected hardware.' }),
     ]),
     about,
-    card('Optical drives', driveChildren),
+    card('Optical drives', [
+      ...driveChildren,
+      el('div', { class: 'wizard-actions' }, [
+        el('button', { class: 'btn', onclick: () => void rescanDrives() }, ['Rescan drives']),
+      ]),
+    ]),
   ]);
 }
 
@@ -419,6 +443,143 @@ function playerView(): HTMLElement {
   ]);
 }
 
+function spinnerRow(text: string): HTMLElement {
+  return el('div', { class: 'spinner-row' }, [
+    el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+    el('span', { text }),
+  ]);
+}
+
+async function rescanDrives(): Promise<void> {
+  state.drives = undefined;
+  renderMain();
+  try {
+    state.drives = await window.omd.listDrives();
+  } catch {
+    state.drives = [];
+  }
+  if (state.view === 'settings') renderMain();
+}
+
+async function importTheme(): Promise<void> {
+  state.themeError = undefined;
+  const text = await window.omd.importThemeFile();
+  if (!text) return;
+  let theme: OmdTheme;
+  try {
+    theme = JSON.parse(text) as OmdTheme;
+  } catch {
+    state.themeError = 'That file is not valid JSON.';
+    renderMain();
+    return;
+  }
+  const issues = validateTheme(theme);
+  if (issues.length > 0) {
+    state.themeError = `Invalid theme: ${issues.join('; ')}`;
+    renderMain();
+    return;
+  }
+  const existing = importedThemes.findIndex((entry) => entry.id === theme.id);
+  if (existing >= 0) importedThemes[existing] = theme;
+  else importedThemes.push(theme);
+  try {
+    applyThemeById(theme.id);
+  } catch (err) {
+    state.themeError = (err as Error).message;
+  }
+  renderMain();
+}
+
+async function chooseLibrary(): Promise<void> {
+  const dir = await window.omd.chooseLibraryFolder();
+  if (!dir) return;
+  state.libraryDir = dir;
+  await rescanLibrary();
+}
+
+async function rescanLibrary(): Promise<void> {
+  if (!state.libraryDir) return;
+  state.catalogLoading = true;
+  state.catalogError = undefined;
+  renderMain();
+  try {
+    state.catalog = await window.omd.scanLibrary(state.libraryDir);
+  } catch (err) {
+    state.catalogError = (err as Error).message;
+  }
+  state.catalogLoading = false;
+  if (state.view === 'catalog') renderMain();
+}
+
+function catalogCard(entry: CatalogEntry): HTMLElement {
+  const cover = entry.coverDataUri
+    ? el('img', { class: 'catalog-cover', src: entry.coverDataUri, alt: 'Cover art' })
+    : el('div', { class: 'catalog-cover cover-empty' }, [svgIcon('create', 36)]);
+  return el('div', { class: 'catalog-card' }, [
+    cover,
+    el('div', { class: 'catalog-info' }, [
+      el('div', { class: 'catalog-title', text: entry.discId }),
+      el('div', { class: 'muted small', text: `${entry.artist} - ${entry.album}` }),
+      el('div', { class: 'muted small', text: `${entry.trackCount} tracks` }),
+    ]),
+    el('div', { class: 'catalog-actions' }, [
+      el('button', { class: 'btn btn-primary btn-sm', onclick: () => void openDiscByPath(entry.source) }, [
+        'Open in Player',
+      ]),
+      el('button', { class: 'btn btn-sm', onclick: () => void window.omd.revealInFolder(entry.source) }, [
+        'Show in folder',
+      ]),
+    ]),
+  ]);
+}
+
+function catalogView(): HTMLElement {
+  const children: (Node | string)[] = [
+    el('div', { class: 'view-head' }, [
+      el('h1', { class: 'view-title', text: 'Catalog' }),
+      el('p', { class: 'view-lead', text: 'Browse the OMD packages you have created and ripped.' }),
+    ]),
+    el('div', { class: 'wizard-actions' }, [
+      el('button', { class: 'btn btn-primary', onclick: () => void chooseLibrary() }, [
+        'Choose library folder...',
+      ]),
+      ...(state.libraryDir
+        ? [el('button', { class: 'btn', onclick: () => void rescanLibrary() }, ['Rescan'])]
+        : []),
+    ]),
+  ];
+  if (state.libraryDir) children.push(el('p', { class: 'muted small', text: state.libraryDir }));
+
+  if (state.catalogLoading) {
+    children.push(spinnerRow('Scanning...'));
+  } else if (state.catalogError) {
+    children.push(el('p', { class: 'wizard-error', text: state.catalogError }));
+  } else if (state.catalog) {
+    if (state.catalog.length === 0) {
+      children.push(
+        card('No packages', [
+          el('p', {
+            class: 'muted',
+            text: 'No OMD packages here. Choose a folder that contains package subfolders (for example your build output).',
+          }),
+        ]),
+      );
+    } else {
+      const grid = el('div', { class: 'catalog-grid' });
+      for (const entry of state.catalog) grid.append(catalogCard(entry));
+      children.push(grid);
+    }
+  } else {
+    children.push(
+      el('p', {
+        class: 'muted',
+        text: 'Choose a folder that contains OMD package subfolders to list them here.',
+      }),
+    );
+  }
+  return el('div', { class: 'view' }, children);
+}
+
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
     case 'create':
@@ -426,11 +587,7 @@ function viewFor(view: ViewId): HTMLElement {
     case 'player':
       return playerView();
     case 'catalog':
-      return placeholderView('Catalog', 'Browse the discs you have created and ripped.', [
-        'List packaged and ripped albums',
-        'Search and filter',
-        'Open in the player or re-burn',
-      ]);
+      return catalogView();
     case 'themes':
       return themesView();
     case 'settings':

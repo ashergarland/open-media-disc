@@ -25,6 +25,10 @@ const api: OmdStudioApi = {
   openPackageFolder: () => ipcRenderer.invoke('omd:openPackageFolder'),
   openDisc: (source) => ipcRenderer.invoke('omd:openDisc', source),
   verifyDisc: (source) => ipcRenderer.invoke('omd:verifyDisc', source),
+  chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
+  scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
+  revealInFolder: (target) => ipcRenderer.invoke('omd:revealInFolder', target),
+  importThemeFile: () => ipcRenderer.invoke('omd:importThemeFile'),
 };
 
 contextBridge.exposeInMainWorld('omd', api);
