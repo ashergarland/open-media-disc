@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.mjs",
     "start": "electron .",
+    "watch": "node build.mjs --watch",
     "dev": "node build.mjs && electron .",
     "clean": "rimraf dist"
   },

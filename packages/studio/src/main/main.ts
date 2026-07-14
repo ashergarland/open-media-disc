@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { watch } from 'node:fs';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
@@ -80,6 +81,23 @@ function createWindow(): void {
   window.removeMenu();
   window.once('ready-to-show', () => window.show());
   void window.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+
+  // Dev-only live reload: when the built renderer files change (run the `watch`
+  // script alongside `start`), reload the window so edits appear immediately.
+  if (!app.isPackaged) {
+    const rendererDir = path.join(__dirname, '..', 'renderer');
+    let reloadTimer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      watch(rendererDir, { recursive: true }, () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => {
+          if (!window.isDestroyed()) window.webContents.reloadIgnoringCache();
+        }, 150);
+      });
+    } catch {
+      // File watching is best-effort; ignore when unavailable.
+    }
+  }
 }
 
 ipcMain.handle(
