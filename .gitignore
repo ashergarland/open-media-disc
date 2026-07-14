@@ -21,3 +21,7 @@ pnpm-debug.log*
 
 # Coverage
 coverage/
+
+# Licensed Frutiger Aero fonts (Omnes, Frutiger Next). Supplied locally per
+# machine; the build falls back to Segoe UI when absent. Do not commit these.
+packages/studio/src/renderer/fonts/

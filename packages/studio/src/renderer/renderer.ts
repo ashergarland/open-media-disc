@@ -383,13 +383,22 @@ function playerView(): HTMLElement {
     el('span', { class: 'badge badge-flac', text: 'FLAC lossless' }),
   ]);
 
+  const facts = el('div', { class: 'player-facts' }, [
+    el('div', { class: 'meta-row' }, [svgIcon('create', 16), el('span', { text: disc.album })]),
+    el('div', { class: 'meta-row' }, [
+      svgIcon('note', 16),
+      el('span', { text: `${disc.trackCount} tracks \u00b7 ${formatClock(disc.totalDurationSeconds)}` }),
+    ]),
+    el('div', { class: 'meta-row' }, [
+      svgIcon('wave', 16),
+      el('span', { text: 'FLAC \u00b7 8cm mini DVD-RW' }),
+    ]),
+  ]);
+
   const meta = el('div', { class: 'player-meta' }, [
     el('div', { class: 'player-title', text: disc.discId }),
-    el('div', { class: 'muted', text: `${disc.artist} - ${disc.album}` }),
-    el('div', {
-      class: 'muted small',
-      text: `${disc.trackCount} tracks - ${formatClock(disc.totalDurationSeconds)}`,
-    }),
+    el('div', { class: 'player-subtitle', text: disc.artist }),
+    facts,
     badges,
     el('div', { class: 'player-actions' }, [
       el('button', { class: 'btn btn-primary', onclick: () => player.togglePlayPause() }, [

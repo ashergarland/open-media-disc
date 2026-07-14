@@ -350,9 +350,9 @@ function burnStep(): HTMLElement {
         driveSelect,
       ]),
       el('div', { class: 'burn-opts' }, [
-        checkbox('Blank a rewritable disc first', state.blank, (v) => (state.blank = v)),
-        checkbox('Verify after writing', state.verify, (v) => (state.verify = v)),
-        checkbox('Eject when done', state.eject, (v) => (state.eject = v)),
+        toggle('Blank a rewritable disc first', state.blank, (v) => (state.blank = v)),
+        toggle('Verify after writing', state.verify, (v) => (state.verify = v)),
+        toggle('Eject when done', state.eject, (v) => (state.eject = v)),
       ]),
       el('p', {
         class: 'muted small',
@@ -435,10 +435,10 @@ function secondaryButton(label: string, onClick: () => void | Promise<void>): HT
   return el('button', { class: 'btn', onclick: () => void onClick() }, [label]);
 }
 
-function checkbox(label: string, checked: boolean, onChange: (value: boolean) => void): HTMLElement {
+function toggle(label: string, checked: boolean, onChange: (value: boolean) => void): HTMLElement {
   const input = el('input', { type: 'checkbox', checked: checked ? true : null }) as HTMLInputElement;
   input.addEventListener('change', () => onChange(input.checked));
-  return el('label', { class: 'checkbox' }, [input, el('span', { text: label })]);
+  return el('label', { class: 'toggle' }, [input, el('span', { class: 'toggle-label', text: label })]);
 }
 
 function spinner(text: string): HTMLElement {

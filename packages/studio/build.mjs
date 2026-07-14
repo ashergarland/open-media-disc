@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { cp, mkdir, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 
 /**
  * Bundle OMD Studio with esbuild.
@@ -46,5 +47,11 @@ await build({
 
 await cp('src/renderer/index.html', 'dist/renderer/index.html');
 await cp('src/renderer/styles.css', 'dist/renderer/styles.css');
+
+// Optional local Frutiger Aero fonts (Omnes + Frutiger Next). Not committed
+// (licensed); when absent the theme falls back to Segoe UI.
+if (existsSync('src/renderer/fonts')) {
+  await cp('src/renderer/fonts', 'dist/renderer/fonts', { recursive: true });
+}
 
 console.log('OMD Studio bundled to dist/.');

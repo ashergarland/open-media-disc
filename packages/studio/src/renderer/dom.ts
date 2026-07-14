@@ -60,6 +60,8 @@ export type IconName =
   | 'next'
   | 'repeat'
   | 'volume'
+  | 'note'
+  | 'wave'
   | 'check';
 
 const FILL = { fill: 'currentColor', stroke: 'none' };
@@ -131,6 +133,19 @@ function iconShapes(name: IconName): SVGElement[] {
       ];
     case 'check':
       return [shape('polyline', { points: '5,12 10,17 19,7' })];
+    case 'note':
+      return [
+        shape('circle', { cx: '8', cy: '17', r: '2.6', ...FILL }),
+        shape('path', { d: 'M10.6 17 V5 L17 7' }),
+      ];
+    case 'wave':
+      return [
+        shape('line', { x1: '4', y1: '10', x2: '4', y2: '14' }),
+        shape('line', { x1: '8', y1: '7', x2: '8', y2: '17' }),
+        shape('line', { x1: '12', y1: '9', x2: '12', y2: '15' }),
+        shape('line', { x1: '16', y1: '6', x2: '16', y2: '18' }),
+        shape('line', { x1: '20', y1: '10', x2: '20', y2: '14' }),
+      ];
     default:
       return [];
   }

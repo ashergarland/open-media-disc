@@ -55,15 +55,37 @@ function transportButton(
   );
 }
 
-function vuChannel(live: boolean): HTMLElement {
-  const channel = el('div', { class: `vu-channel${live ? ' is-live' : ''}` });
-  for (let i = 0; i < 10; i++) {
-    const seg = el('span', { class: 'vu-seg' });
-    // CSSOM (not a style attribute) so the strict CSP is respected.
-    seg.style.setProperty('--i', String(i));
-    channel.append(seg);
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag: string, attrs: Record<string, string>): SVGElement {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  return node;
+}
+
+/** A small skeuomorphic analog VU meter (decorative; the needle wobbles while playing). */
+function vuMeter(live: boolean, label: string): HTMLElement {
+  const svg = svgEl('svg', { class: 'vu-svg', viewBox: '0 0 72 46' });
+  svg.append(svgEl('path', { class: 'vu-arc', d: 'M 10 27 A 30 30 0 0 1 57.2 20.8' }));
+  svg.append(svgEl('path', { class: 'vu-arc-red', d: 'M 48.7 14.8 A 30 30 0 0 1 57.2 20.8' }));
+  for (const angle of [-58, -38, -18, 2, 22, 42]) {
+    const rad = (angle * Math.PI) / 180;
+    svg.append(
+      svgEl('line', {
+        class: 'vu-tick',
+        x1: (36 + 30 * Math.sin(rad)).toFixed(1),
+        y1: (42 - 30 * Math.cos(rad)).toFixed(1),
+        x2: (36 + 25 * Math.sin(rad)).toFixed(1),
+        y2: (42 - 25 * Math.cos(rad)).toFixed(1),
+      }),
+    );
   }
-  return channel;
+  svg.append(svgEl('line', { class: 'vu-needle', x1: '36', y1: '42', x2: '36', y2: '13' }));
+  svg.append(svgEl('circle', { class: 'vu-hub', cx: '36', cy: '42', r: '3' }));
+  return el('div', { class: `vu-meter${live ? ' is-live' : ''}`, 'aria-hidden': 'true' }, [
+    svg,
+    el('span', { class: 'vu-label', text: label }),
+  ]);
 }
 
 /** Build the Now Playing bar for the given player state. */
@@ -131,8 +153,8 @@ export function renderNowPlaying(state: PlayerState, handlers: NowPlayingHandler
   volume.style.setProperty('--fill', String(state.volume));
 
   const meters = el('div', { class: 'np-vu', 'aria-hidden': 'true' }, [
-    vuChannel(playing),
-    vuChannel(playing),
+    vuMeter(playing, 'L'),
+    vuMeter(playing, 'R'),
   ]);
 
   const badges = el('div', { class: `np-badges${hasTrack ? '' : ' is-dim'}` }, [
