@@ -16,20 +16,25 @@
   --btn-radius: 13px;
   --line: color-mix(in srgb, var(--omd-text-primary, #2b3a42) 10%, transparent);
   --panel: color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, var(--omd-app-background, #f7fdff));
-  /* Aqua glass: translucent body + a bright specular highlight along the top edge. */
+  /* Aqua glass: bright frosted body + a strong specular highlight along the top edge. */
   --glass-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.06) 84px, rgba(255, 255, 255, 0) 90px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.16) 92px, rgba(255, 255, 255, 0.02) 98px),
     linear-gradient(
       180deg,
-      color-mix(in srgb, #fff 74%, transparent),
-      color-mix(in srgb, var(--omd-surface-background, #bee9fb) 48%, transparent)
+      color-mix(in srgb, #fff 86%, transparent),
+      color-mix(in srgb, var(--omd-surface-background, #bee9fb) 62%, transparent)
     );
-  --glass-border: color-mix(in srgb, #fff 72%, transparent);
-  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 40px -20px rgba(43, 58, 66, 0.45);
-  --sheen: linear-gradient(180deg, color-mix(in srgb, #fff 46%, transparent), transparent 48%);
-  /* Crisp XP-aqua button gloss: bright upper half, hard cutoff. */
-  --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.16) 44%, rgba(255, 255, 255, 0) 47%);
-  --glow: 0 8px 22px -8px color-mix(in srgb, var(--omd-accent, #00d4e7) 60%, transparent);
+  --glass-border: color-mix(in srgb, #fff 88%, transparent);
+  --glass-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 2px 2px -1px rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px rgba(120, 170, 205, 0.16),
+    0 26px 50px -26px rgba(24, 70, 108, 0.55),
+    0 4px 12px -8px rgba(24, 70, 108, 0.3);
+  --sheen: linear-gradient(180deg, color-mix(in srgb, #fff 55%, transparent), transparent 50%);
+  /* Glossy aqua gel dome: bright top, soft fade, crisp break near the middle. */
+  --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.4) 38%, rgba(255, 255, 255, 0.08) 49%, rgba(255, 255, 255, 0) 52%);
+  --glow: 0 10px 26px -10px color-mix(in srgb, var(--omd-accent, #00d4e7) 70%, transparent);
 }
 
 * {
@@ -48,10 +53,10 @@ body {
   -webkit-font-smoothing: antialiased;
   background:
     url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><defs><radialGradient id='d' cx='38%25' cy='30%25' r='72%25'><stop offset='0' stop-color='white' stop-opacity='.65'/><stop offset='45%25' stop-color='white' stop-opacity='.06'/><stop offset='100%25' stop-color='%237fb9d8' stop-opacity='.22'/></radialGradient></defs><g fill='url(%23d)' stroke='%23bfe3f5' stroke-opacity='.55' stroke-width='.6'><circle cx='42' cy='58' r='10'/><circle cx='162' cy='34' r='6'/><circle cx='206' cy='128' r='12'/><circle cx='96' cy='158' r='7'/><circle cx='30' cy='196' r='5'/><circle cx='182' cy='204' r='9'/></g><g fill='white' fill-opacity='.9'><circle cx='38.5' cy='53' r='1.7'/><circle cx='202' cy='122' r='1.9'/><circle cx='93' cy='154' r='1.3'/></g></svg>"),
-    radial-gradient(1100px 620px at 12% -12%, color-mix(in srgb, var(--omd-accent, #00d4e7) 26%, transparent), transparent 60%),
-    radial-gradient(900px 520px at 112% 6%, color-mix(in srgb, #b884f7 20%, transparent), transparent 55%),
-    radial-gradient(760px 520px at 50% 118%, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 22%, transparent), transparent 60%),
-    linear-gradient(180deg, #eaf7fe, var(--omd-surface-background, #bee9fb));
+    radial-gradient(1200px 680px at 8% -12%, color-mix(in srgb, var(--omd-accent, #00d4e7) 45%, transparent), transparent 58%),
+    radial-gradient(1000px 600px at 116% 2%, color-mix(in srgb, #b884f7 34%, transparent), transparent 54%),
+    radial-gradient(1000px 700px at 50% 122%, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 46%, transparent), transparent 62%),
+    radial-gradient(140% 130% at 50% 0%, #ecf9ff 0%, #cbebfb 42%, #a3d8f2 78%, #8bccec 100%);
   background-attachment: fixed;
 }
 
@@ -132,8 +137,8 @@ input {
       transparent 7px),
     radial-gradient(circle at 50% 50%, transparent 0 20px, rgba(255, 255, 255, 0.5) 20.5px 21.4px, transparent 22px),
     radial-gradient(circle at 33% 27%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 40%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.18) 42%, rgba(255, 255, 255, 0) 66%),
-    conic-gradient(from 205deg, #b98cf0, #66c6ef, #22d0e6, #4ad699, #ffe07a, #ff9ec6, #b98cf0);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.12) 40%, rgba(255, 255, 255, 0) 60%),
+    conic-gradient(from 205deg, #a86bf0, #49bff2, #12cfe6, #3fd68f, #ffd95e, #ff86bd, #a86bf0);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
     0 0 0 1px rgba(255, 255, 255, 0.6) inset,
@@ -154,37 +159,36 @@ input {
 .brand-omd {
   font-family: var(--omd-typography-display-font, inherit);
   font-weight: 800;
-  font-size: 30px;
+  font-size: 34px;
   letter-spacing: 0.004em;
   background: linear-gradient(
     180deg,
-    #ffffff 0%,
-    #dcefff 40%,
-    #a9d7f6 48%,
-    #3f97dd 52%,
-    #1f74c4 80%,
-    #175aa4 100%
+    #eaf5ff 0%,
+    #c3e3fb 32%,
+    #62aae8 46%,
+    #1f6fc4 60%,
+    #16589f 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.6px rgba(18, 64, 116, 0.5);
-  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.75)) drop-shadow(0 2px 3px rgba(20, 60, 110, 0.32));
+  -webkit-text-stroke: 0.7px rgba(15, 58, 110, 0.6);
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.8)) drop-shadow(0 2px 3px rgba(18, 60, 110, 0.35));
 }
 
 .brand-studio {
-  margin-top: 3px;
+  margin-top: 4px;
   font-family: var(--omd-typography-display-font, inherit);
   font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.46em;
-  text-indent: 0.46em;
+  font-size: 11.5px;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
   text-transform: uppercase;
-  background: linear-gradient(180deg, #ffffff 0%, #cfe8fb 46%, #4f9bdd 56%, #216fbf 100%);
+  background: linear-gradient(180deg, #93c3ee 0%, #3f8fd6 44%, #1b60ab 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.35px rgba(18, 64, 116, 0.35);
+  -webkit-text-stroke: 0.35px rgba(18, 64, 116, 0.4);
 }
 
 .brand-tag {
@@ -205,12 +209,13 @@ input {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: transparent;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.28));
   color: var(--omd-text-primary, #2b3a42);
   text-align: left;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 6px 14px -12px rgba(24, 70, 108, 0.4);
   transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
@@ -222,15 +227,20 @@ input {
 }
 
 .nav-item:hover {
-  background: linear-gradient(180deg, color-mix(in srgb, #fff 65%, transparent), color-mix(in srgb, #fff 30%, transparent));
-  border-color: color-mix(in srgb, #fff 60%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, #fff 82%, transparent), color-mix(in srgb, #fff 45%, transparent));
+  border-color: color-mix(in srgb, #fff 78%, transparent);
+  transform: translateY(-1px);
 }
 
 .nav-item.is-active {
   color: #fff;
-  background: var(--gloss), linear-gradient(180deg, var(--omd-transport-button, #55c7f2), var(--omd-accent, #00d4e7));
-  border-color: color-mix(in srgb, var(--omd-accent, #00d4e7) 55%, #fff);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, var(--glow);
+  text-shadow: 0 1px 1.5px rgba(3, 60, 80, 0.35);
+  background: var(--gloss), linear-gradient(180deg, #7fe0f4 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%);
+  border-color: color-mix(in srgb, var(--omd-accent, #00d4e7) 60%, #fff);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -8px 14px -10px color-mix(in srgb, var(--omd-accent, #00d4e7) 80%, #036) inset,
+    var(--glow);
 }
 
 .nav-item.is-active::after {
@@ -678,14 +688,17 @@ input {
 }
 
 .btn {
-  padding: 10px 18px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--btn-radius);
+  padding: 12px 24px;
+  border: 1px solid color-mix(in srgb, #fff 88%, transparent);
+  border-radius: 999px;
   background: var(--gloss),
-    linear-gradient(180deg, color-mix(in srgb, #fff 82%, transparent), color-mix(in srgb, var(--omd-surface-background, #bee9fb) 45%, transparent));
-  color: var(--omd-text-primary, #2b3a42);
-  font-weight: 600;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 14px -10px rgba(43, 58, 66, 0.45);
+    linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 42%, #fff) 100%);
+  color: color-mix(in srgb, var(--omd-text-primary, #2b3a42) 82%, var(--omd-accent, #00d4e7));
+  font-weight: 700;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -7px 12px -8px rgba(120, 170, 205, 0.55) inset,
+    0 8px 16px -9px rgba(24, 70, 108, 0.35);
   backdrop-filter: blur(8px);
   transition: transform 0.1s, box-shadow 0.15s, filter 0.15s, border-color 0.15s;
 }
@@ -706,15 +719,16 @@ input {
 }
 
 .btn-primary {
-  border: 1px solid color-mix(in srgb, var(--omd-accent, #00d4e7) 55%, #fff);
+  border: 1px solid color-mix(in srgb, var(--omd-accent, #00d4e7) 62%, #fff);
   color: #fff;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  text-shadow: 0 1px 1.5px rgba(3, 60, 80, 0.4);
   background: var(--gloss),
-    linear-gradient(180deg, var(--omd-transport-button, #55c7f2), var(--omd-accent, #00d4e7));
+    linear-gradient(180deg, #82e2f5 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 -7px 12px -8px color-mix(in srgb, var(--omd-accent, #00d4e7) 70%, transparent) inset,
-    var(--glow);
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -9px 15px -8px color-mix(in srgb, var(--omd-accent, #00d4e7) 85%, #024) inset,
+    var(--glow),
+    0 3px 6px -3px rgba(3, 60, 80, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
