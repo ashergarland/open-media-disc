@@ -111,6 +111,7 @@ export function renderNowPlaying(state: PlayerState, handlers: NowPlayingHandler
     'aria-label': 'Seek',
   }) as HTMLInputElement;
   scrubber.addEventListener('input', () => handlers.onSeek(Number(scrubber.value) / 1000));
+  scrubber.style.setProperty('--fill', String(fraction));
 
   const progress = el('div', { class: 'np-progress' }, [
     el('span', { class: 'np-time', text: formatTime(elapsed) }),
@@ -127,6 +128,7 @@ export function renderNowPlaying(state: PlayerState, handlers: NowPlayingHandler
     'aria-label': 'Volume',
   }) as HTMLInputElement;
   volume.addEventListener('input', () => handlers.onVolume(Number(volume.value) / 100));
+  volume.style.setProperty('--fill', String(state.volume));
 
   const meters = el('div', { class: 'np-vu', 'aria-hidden': 'true' }, [
     vuChannel(playing),
