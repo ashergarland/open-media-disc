@@ -25,7 +25,7 @@ import type {
 } from '../shared/types';
 import { clearChildren, el, svgIcon, svgWordmark, type IconName } from './dom';
 import { renderNowPlaying } from './nowPlaying';
-import { renderCreateWizard } from './createWizard';
+import { renderBurnView } from './burnView';
 import * as player from './audioController';
 
 declare global {
@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-type ViewId = 'create' | 'player' | 'catalog' | 'themes' | 'settings';
+type ViewId = 'burn' | 'player' | 'catalog' | 'themes' | 'settings';
 
 interface NavItem {
   id: ViewId;
@@ -43,7 +43,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'create', label: 'Create Disc', icon: 'create' },
+  { id: 'burn', label: 'Burn', icon: 'create' },
   { id: 'player', label: 'Player', icon: 'player' },
   { id: 'catalog', label: 'Catalog', icon: 'catalog' },
   { id: 'themes', label: 'Themes', icon: 'themes' },
@@ -67,7 +67,7 @@ interface AppState {
 }
 
 const state: AppState = {
-  view: 'create',
+  view: 'burn',
   themeId: AQUA_THEME.id,
   discLoading: false,
   catalogLoading: false,
@@ -591,8 +591,8 @@ function catalogView(): HTMLElement {
 
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
-    case 'create':
-      return renderCreateWizard({ onOpenPlayer: (source) => void openDiscByPath(source) });
+    case 'burn':
+      return renderBurnView({ onOpenPlayer: (source) => void openDiscByPath(source) });
     case 'player':
       return playerView();
     case 'catalog':

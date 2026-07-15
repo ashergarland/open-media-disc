@@ -103,7 +103,7 @@ export function renderNowPlaying(state: PlayerState, handlers: NowPlayingHandler
       el('div', { class: 'np-title', text: track ? track.title : 'Nothing playing' }),
       el('div', {
         class: 'np-artist',
-        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Player or Create Disc'),
+        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Player or Burn'),
       }),
     ]),
   ]);

@@ -65,7 +65,8 @@ export type IconName =
   | 'check'
   | 'chevron-left'
   | 'chevron-right'
-  | 'drive';
+  | 'drive'
+  | 'label';
 
 const FILL = { fill: 'currentColor', stroke: 'none' };
 
@@ -145,6 +146,11 @@ function iconShapes(name: IconName): SVGElement[] {
         shape('rect', { x: '4', y: '8', width: '16', height: '9', rx: '2' }),
         shape('circle', { cx: '9', cy: '12.5', r: '1.4', ...FILL }),
         shape('line', { x1: '13', y1: '12.5', x2: '17', y2: '12.5' }),
+      ];
+    case 'label':
+      return [
+        shape('path', { d: 'M13 4 H19 A1 1 0 0 1 20 5 V11 L11 20 L4 13 Z' }),
+        shape('circle', { cx: '16', cy: '8', r: '1.4', ...FILL }),
       ];
     case 'note':
       return [
