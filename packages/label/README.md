@@ -32,13 +32,17 @@ Print `label.svg` from any browser or from OMD Studio at 100% scale on US Letter
 | Export | Purpose |
 | --- | --- |
 | `buildPackageLabelSheet(options)` | Read an OMD package and render a label sheet from its cover art. |
-| `renderLabelSheet(options)` | Render a sheet from raw label items (image href + size + fit). |
-| `layoutLabels(items, page)` | Pack labels into rows within the page margins. |
+| `buildPackagesLabelSheet(options)` | Read many packages and lay their covers across as many pages as needed. |
+| `renderLabelSheet(options)` | Render a single sheet from raw label items (image href + size + fit). |
+| `renderLabelSheets(options)` | Render label items across multiple pages when they overflow one sheet. |
+| `layoutLabels(items, page)` | Pack labels into rows within the page margins (single page). |
+| `paginateLabels(items, page)` | Split labels across pages, packing each page in turn. |
 | `DEFAULT_PAGE` | US Letter page defaults (0.5 in margin, 0.25 in gap). |
 | `MINI_CD_LABEL` | Mini CD jewel-case label size (3.4375 x 3.3125 in). |
 
 Fit modes: `fill` (center-crop, default), `fit` (letterbox), `stretch`. Crop marks
-are drawn by default.
+are drawn by default. Use `buildPackagesLabelSheet` / `renderLabelSheets` for batch
+sheets that overflow onto additional pages.
 
 ## License
 

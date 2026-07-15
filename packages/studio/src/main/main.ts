@@ -10,10 +10,9 @@ import {
   createPackage,
   inspectPackage,
   resolveBurnBackend,
-  slugifyForPath,
   validatePackage,
 } from '@open-album-cartridge/core';
-import { buildPackageLabelSheet } from '@open-album-cartridge/label';
+import { buildPackagesLabelSheet } from '@open-album-cartridge/label';
 import type {
   CatalogEntry,
   StudioBurnRequest,
@@ -21,7 +20,8 @@ import type {
   StudioDiscInfo,
   StudioDrive,
   StudioInfo,
-  StudioLabel,
+  StudioLabelSheetRequest,
+  StudioLabelSheetResult,
   StudioPackageResponse,
   StudioValidationFinding,
   StudioVerifyResult,
@@ -226,22 +226,89 @@ ipcMain.handle(
   },
 );
 
-ipcMain.handle('omd:buildLabel', async (_event, packageDir: string): Promise<StudioLabel> => {
-  const sheet = await buildPackageLabelSheet({ packageDir });
-  return { svg: sheet.svg, discId: sheet.discId, artist: sheet.artist, album: sheet.album };
-});
+function labelOptions(request: StudioLabelSheetRequest) {
+  return {
+    packages: request.packages.map((entry) => ({ packageDir: entry.source, copies: entry.copies })),
+    ...(request.widthIn !== undefined ? { widthIn: request.widthIn } : {}),
+    ...(request.heightIn !== undefined ? { heightIn: request.heightIn } : {}),
+    ...(request.fit ? { fit: request.fit } : {}),
+  };
+}
 
-ipcMain.handle('omd:saveLabel', async (_event, packageDir: string): Promise<string | null> => {
-  const sheet = await buildPackageLabelSheet({ packageDir });
-  const result = await dialog.showSaveDialog({
-    title: 'Save label sheet',
-    defaultPath: `${slugifyForPath(sheet.discId)}-label.svg`,
-    filters: [{ name: 'SVG image', extensions: ['svg'] }],
-  });
-  if (result.canceled || !result.filePath) return null;
-  await writeFile(result.filePath, sheet.svg, 'utf8');
-  return result.filePath;
-});
+/** Print a batch of SVG pages through a hidden window at true Letter size. */
+async function printSheets(svgPages: string[]): Promise<boolean> {
+  if (svgPages.length === 0) return false;
+  const body = svgPages
+    .map(
+      (svg) =>
+        `<div class="page"><img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"/></div>`,
+    )
+    .join('');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    @page { size: Letter; margin: 0; }
+    html, body { margin: 0; padding: 0; }
+    .page { width: 8.5in; height: 11in; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    img { display: block; width: 8.5in; height: 11in; }
+  </style></head><body>${body}</body></html>`;
+
+  const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  try {
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    return await new Promise<boolean>((resolve) => {
+      win.webContents.print({ silent: false, printBackground: true }, (success) => resolve(success));
+    });
+  } finally {
+    if (!win.isDestroyed()) win.close();
+  }
+}
+
+ipcMain.handle(
+  'omd:buildLabelSheet',
+  async (_event, request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult> => {
+    const result = await buildPackagesLabelSheet(labelOptions(request));
+    return {
+      pages: result.pages.map((page) => page.svg),
+      packageCount: result.packageCount,
+      labelCount: result.labelCount,
+      skipped: result.skipped,
+    };
+  },
+);
+
+ipcMain.handle(
+  'omd:saveLabelSheet',
+  async (_event, request: StudioLabelSheetRequest): Promise<string | null> => {
+    const result = await buildPackagesLabelSheet(labelOptions(request));
+    const save = await dialog.showSaveDialog({
+      title: 'Save label sheet',
+      defaultPath: 'omd-labels.svg',
+      filters: [{ name: 'SVG image', extensions: ['svg'] }],
+    });
+    if (save.canceled || !save.filePath) return null;
+    if (result.pages.length === 1) {
+      await writeFile(save.filePath, result.pages[0]!.svg, 'utf8');
+      return save.filePath;
+    }
+    const parsed = path.parse(save.filePath);
+    const ext = parsed.ext || '.svg';
+    let first: string | null = null;
+    for (let i = 0; i < result.pages.length; i += 1) {
+      const target = path.join(parsed.dir, `${parsed.name}-${i + 1}${ext}`);
+      await writeFile(target, result.pages[i]!.svg, 'utf8');
+      if (first === null) first = target;
+    }
+    return first;
+  },
+);
+
+ipcMain.handle(
+  'omd:printLabelSheet',
+  async (_event, request: StudioLabelSheetRequest): Promise<boolean> => {
+    const result = await buildPackagesLabelSheet(labelOptions(request));
+    return printSheets(result.pages.map((page) => page.svg));
+  },
+);
 
 ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<StudioBurnResult> => {
   try {

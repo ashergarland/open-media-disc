@@ -139,6 +139,61 @@ export function layoutLabels(items: LabelItem[], page: LabelPage): LabelPlacemen
   return placements;
 }
 
+/**
+ * Split labels across as many pages as needed, packing each page left-to-right.
+ * Unlike {@link layoutLabels}, this never throws for overflow: it starts a new
+ * page whenever the next label would not fit. It still throws if a single label
+ * is larger than the usable page area.
+ */
+export function paginateLabels(items: LabelItem[], page: LabelPage): LabelItem[][] {
+  if (page.marginIn * 2 >= page.widthIn || page.marginIn * 2 >= page.heightIn) {
+    throw new Error('Margins are too large for the page size.');
+  }
+
+  const maxX = page.widthIn - page.marginIn;
+  const maxY = page.heightIn - page.marginIn;
+  const usableWidth = page.widthIn - page.marginIn * 2;
+  const usableHeight = page.heightIn - page.marginIn * 2;
+
+  const pages: LabelItem[][] = [];
+  let current: LabelItem[] = [];
+  let x = page.marginIn;
+  let y = page.marginIn;
+  let rowHeight = 0;
+
+  for (const item of items) {
+    if (item.widthIn <= 0 || item.heightIn <= 0) {
+      throw new Error('Label dimensions must be greater than zero.');
+    }
+    if (item.widthIn > usableWidth + 1e-4) {
+      throw new Error(`Label is too wide for the page: ${item.widthIn} in.`);
+    }
+    if (item.heightIn > usableHeight + 1e-4) {
+      throw new Error(`Label is too tall for the page: ${item.heightIn} in.`);
+    }
+
+    if (x + item.widthIn > maxX + 1e-4) {
+      x = page.marginIn;
+      y += rowHeight + page.gapIn;
+      rowHeight = 0;
+    }
+    if (y + item.heightIn > maxY + 1e-4) {
+      if (current.length > 0) pages.push(current);
+      current = [];
+      x = page.marginIn;
+      y = page.marginIn;
+      rowHeight = 0;
+    }
+
+    current.push(item);
+    x += item.widthIn + page.gapIn;
+    rowHeight = Math.max(rowHeight, item.heightIn);
+  }
+
+  if (current.length > 0) pages.push(current);
+  return pages;
+}
+
 function cropMarksSvg(x: number, y: number, w: number, h: number): string {
   const tick = 'stroke="#3a3a3a" stroke-width="0.5"';
   return [
@@ -194,4 +249,24 @@ export function renderLabelSheet(options: RenderLabelSheetOptions): LabelSheet {
 
   parts.push('</svg>');
   return { svg: parts.join('\n'), page, placements };
+}
+
+/**
+ * Render label sheets across as many pages as the items require. Each returned
+ * sheet is a full, self-contained SVG page; use this instead of
+ * {@link renderLabelSheet} when a batch may overflow a single page.
+ */
+export function renderLabelSheets(options: RenderLabelSheetOptions): LabelSheet[] {
+  if (options.items.length === 0) {
+    throw new Error('At least one label is required.');
+  }
+  const page: LabelPage = { ...DEFAULT_PAGE, ...(options.page ?? {}) };
+  const pages = paginateLabels(options.items, page);
+  return pages.map((items) =>
+    renderLabelSheet({
+      items,
+      page,
+      ...(options.cropMarks !== undefined ? { cropMarks: options.cropMarks } : {}),
+    }),
+  );
 }

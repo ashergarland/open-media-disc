@@ -3,7 +3,9 @@ import {
   DEFAULT_PAGE,
   MINI_CD_LABEL,
   layoutLabels,
+  paginateLabels,
   renderLabelSheet,
+  renderLabelSheets,
   type LabelItem,
 } from '../src/index.js';
 
@@ -81,5 +83,37 @@ describe('layoutLabels', () => {
       heightIn: MINI_CD_LABEL.heightIn,
     }));
     expect(() => layoutLabels(many, DEFAULT_PAGE)).toThrow(/do not fit/i);
+  });
+});
+
+describe('paginateLabels', () => {
+  it('splits a batch that overflows one page across multiple pages', () => {
+    const many = Array.from({ length: 20 }, () => coverItem());
+    const pages = paginateLabels(many, DEFAULT_PAGE);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.reduce((total, group) => total + group.length, 0)).toBe(20);
+    expect(pages[0]).toHaveLength(4);
+  });
+
+  it('keeps a small batch on a single page', () => {
+    const pages = paginateLabels([coverItem(), coverItem(), coverItem()], DEFAULT_PAGE);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toHaveLength(3);
+  });
+});
+
+describe('renderLabelSheets', () => {
+  it('renders one full SVG page per paginated page', () => {
+    const many = Array.from({ length: 20 }, () => coverItem());
+    const sheets = renderLabelSheets({ items: many });
+    expect(sheets).toHaveLength(paginateLabels(many, DEFAULT_PAGE).length);
+    for (const sheet of sheets) {
+      expect(sheet.svg).toContain('width="8.5in"');
+      expect(sheet.svg).toContain('<image ');
+    }
+  });
+
+  it('throws when no items are provided', () => {
+    expect(() => renderLabelSheets({ items: [] })).toThrow(/at least one/i);
   });
 });

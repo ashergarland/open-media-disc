@@ -59,11 +59,27 @@ export interface StudioPackageExists {
 export type StudioPackageResponse = StudioPackageSummary | StudioPackageExists;
 
 /** A rendered label sheet. */
-export interface StudioLabel {
-  svg: string;
-  discId: string;
-  artist: string;
-  album: string;
+/** One package chosen for a batch label sheet, with how many copies to place. */
+export interface StudioLabelSelection {
+  source: string;
+  copies: number;
+}
+
+/** A request to build a batch label sheet from one or more packages. */
+export interface StudioLabelSheetRequest {
+  packages: StudioLabelSelection[];
+  widthIn?: number;
+  heightIn?: number;
+  fit?: 'fill' | 'fit' | 'stretch';
+}
+
+/** A rendered batch label sheet: one SVG string per printable page. */
+export interface StudioLabelSheetResult {
+  pages: string[];
+  packageCount: number;
+  labelCount: number;
+  /** Sources skipped because they had no usable cover art. */
+  skipped: string[];
 }
 
 /** A phase of a burn, mirrored from the core burn backend. */
@@ -145,8 +161,9 @@ export interface OmdStudioApi {
   listDrives(): Promise<StudioDrive[]>;
   selectAlbumFolder(): Promise<string | null>;
   createPackage(sourceDir: string, overwrite?: boolean): Promise<StudioPackageResponse>;
-  buildLabel(packageDir: string): Promise<StudioLabel>;
-  saveLabel(packageDir: string): Promise<string | null>;
+  buildLabelSheet(request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult>;
+  saveLabelSheet(request: StudioLabelSheetRequest): Promise<string | null>;
+  printLabelSheet(request: StudioLabelSheetRequest): Promise<boolean>;
   burn(
     request: StudioBurnRequest,
     onProgress: (progress: StudioBurnProgress) => void,

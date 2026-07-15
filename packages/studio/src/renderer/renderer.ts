@@ -26,6 +26,7 @@ import type {
 import { clearChildren, el, svgIcon, svgWordmark, type IconName } from './dom';
 import { renderNowPlaying } from './nowPlaying';
 import { renderBurnView } from './burnView';
+import { renderLabelsView } from './labelsView';
 import * as player from './audioController';
 
 declare global {
@@ -34,7 +35,7 @@ declare global {
   }
 }
 
-type ViewId = 'burn' | 'player' | 'catalog' | 'themes' | 'settings';
+type ViewId = 'burn' | 'labels' | 'player' | 'catalog' | 'themes' | 'settings';
 
 interface NavItem {
   id: ViewId;
@@ -44,6 +45,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { id: 'burn', label: 'Burn', icon: 'create' },
+  { id: 'labels', label: 'Labels', icon: 'label' },
   { id: 'player', label: 'Player', icon: 'player' },
   { id: 'catalog', label: 'Catalog', icon: 'catalog' },
   { id: 'themes', label: 'Themes', icon: 'themes' },
@@ -593,6 +595,8 @@ function viewFor(view: ViewId): HTMLElement {
   switch (view) {
     case 'burn':
       return renderBurnView({ onOpenPlayer: (source) => void openDiscByPath(source) });
+    case 'labels':
+      return renderLabelsView();
     case 'player':
       return playerView();
     case 'catalog':

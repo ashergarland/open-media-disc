@@ -11,8 +11,9 @@ const api: OmdStudioApi = {
   selectAlbumFolder: () => ipcRenderer.invoke('omd:selectAlbumFolder'),
   createPackage: (sourceDir, overwrite) =>
     ipcRenderer.invoke('omd:createPackage', sourceDir, overwrite),
-  buildLabel: (packageDir) => ipcRenderer.invoke('omd:buildLabel', packageDir),
-  saveLabel: (packageDir) => ipcRenderer.invoke('omd:saveLabel', packageDir),
+  buildLabelSheet: (request) => ipcRenderer.invoke('omd:buildLabelSheet', request),
+  saveLabelSheet: (request) => ipcRenderer.invoke('omd:saveLabelSheet', request),
+  printLabelSheet: (request) => ipcRenderer.invoke('omd:printLabelSheet', request),
   burn: (request, onProgress) => {
     const listener = (_event: IpcRendererEvent, progress: StudioBurnProgress): void =>
       onProgress(progress);
