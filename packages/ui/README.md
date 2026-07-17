@@ -10,13 +10,14 @@ logic.
 A theme is data only: named design tokens plus optional local assets. Themes
 never ship CSS, JavaScript, or layout. Tokens resolve to CSS custom properties
 (for example `accent` becomes `--omd-accent`) that the shell and player read.
-The default theme is **Aqua** (a light Y2K / Frutiger Aero palette); `Midnight`
-is a built-in dark counterpart.
+Four themes ship built in: **Frutiger Aero** (the default cool aqua glass),
+**DORFic** (warm amber), **Technozen** (sage green), and **Dark Aero** (neon
+cyan on a dark canvas).
 
 ```ts
-import { AQUA_THEME, resolveTheme, applyTheme } from '@open-album-cartridge/ui';
+import { FRUTIGER_AERO_THEME, resolveTheme, applyTheme } from '@open-album-cartridge/ui';
 
-const resolved = resolveTheme(AQUA_THEME);
+const resolved = resolveTheme(FRUTIGER_AERO_THEME);
 applyTheme(document.documentElement, resolved); // sets --omd-* variables
 ```
 

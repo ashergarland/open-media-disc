@@ -199,7 +199,7 @@ input[type='range']::-webkit-slider-thumb:hover {
   font-weight: 800;
   font-size: 34px;
   letter-spacing: -0.01em;
-  fill: url(#omdWordmarkFill);
+  fill: var(--omd-text-primary, #134a8a);
 }
 
 .wm-studio {
@@ -207,7 +207,7 @@ input[type='range']::-webkit-slider-thumb:hover {
   font-weight: 700;
   font-size: 12.5px;
   letter-spacing: 0.34em;
-  fill: #2f7cc8;
+  fill: color-mix(in srgb, var(--omd-accent, #2f7cc8) 45%, var(--omd-text-muted, #6e8794));
 }
 
 .brand-tag {
@@ -230,9 +230,9 @@ input[type='range']::-webkit-slider-thumb:hover {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, #fff 55%, transparent));
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.28));
+  background: var(--omd-control-surface, linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.28)));
   color: var(--omd-text-primary, #2b3a42);
   text-align: left;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 6px 14px -12px rgba(24, 70, 108, 0.4);
@@ -255,7 +255,7 @@ input[type='range']::-webkit-slider-thumb:hover {
 .nav-item.is-active {
   color: #fff;
   text-shadow: 0 1px 1.5px rgba(3, 60, 80, 0.35);
-  background: var(--gloss), linear-gradient(180deg, #7fe0f4 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%);
+  background: var(--gloss), var(--omd-button-primary, linear-gradient(180deg, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 55%, #fff) 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%));
   border-color: color-mix(in srgb, var(--omd-accent, #00d4e7) 60%, #fff);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
@@ -522,9 +522,9 @@ input[type='range']::-webkit-slider-thumb:hover {
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 1px solid color-mix(in srgb, #fff 55%, transparent);
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, #fff 55%, transparent));
   border-radius: 50%;
-  background: linear-gradient(180deg, color-mix(in srgb, #fff 78%, transparent), color-mix(in srgb, var(--omd-surface-background, #bee9fb) 42%, transparent));
+  background: var(--omd-control-surface, linear-gradient(180deg, color-mix(in srgb, #fff 78%, transparent), color-mix(in srgb, var(--omd-surface-background, #bee9fb) 42%, transparent)));
   color: var(--omd-text-primary, #2b3a42);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
   transition: background 0.15s, color 0.15s, transform 0.1s;
@@ -545,12 +545,13 @@ input[type='range']::-webkit-slider-thumb:hover {
 }
 
 .np-btn-primary {
+  --rim-2: var(--omd-rim-primary, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 82%, #fff));
   width: 48px;
   height: 48px;
   color: #fff;
   border-color: color-mix(in srgb, var(--omd-accent, #00d4e7) 55%, #fff);
   background: var(--gloss),
-    linear-gradient(180deg, var(--omd-transport-button, #55c7f2), var(--omd-transport-button-active, #00d4e7));
+    var(--omd-button-primary, linear-gradient(180deg, var(--omd-transport-button, #55c7f2), var(--omd-transport-button-active, #00d4e7)));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, var(--glow);
 }
 
@@ -611,10 +612,10 @@ input[type='range']::-webkit-slider-thumb:hover {
   width: 46px;
   padding: 3px 3px 2px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--omd-control-border, rgba(255, 255, 255, 0.75));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.35) 45%),
-    linear-gradient(180deg, #eef7fb, #cfe6f2);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12) 45%),
+    var(--omd-control-surface, linear-gradient(180deg, #eef7fb, #cfe6f2));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 3px 8px -5px rgba(24, 70, 108, 0.5);
 }
 
@@ -861,7 +862,7 @@ input[type='range']::-webkit-slider-thumb:hover {
   border-radius: 20px;
   border: 1px solid var(--glass-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.1) 130px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.03) 120px),
     var(--glass-bg);
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(14px) saturate(1.15);
@@ -947,10 +948,10 @@ input[type='range']::-webkit-slider-thumb:hover {
 .btn {
   padding: 11px 20px;
   white-space: nowrap;
-  border: 1px solid color-mix(in srgb, #fff 88%, transparent);
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, #fff 88%, transparent));
   border-radius: 14px;
   background: var(--gloss),
-    linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 42%, #fff) 100%);
+    var(--omd-control-surface, linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 42%, #fff) 100%));
   color: color-mix(in srgb, var(--omd-text-primary, #2b3a42) 82%, var(--omd-accent, #00d4e7));
   font-weight: 700;
   box-shadow:
@@ -977,13 +978,12 @@ input[type='range']::-webkit-slider-thumb:hover {
 }
 
 .btn-primary {
-  --rim-2: color-mix(in srgb, var(--omd-transport-button, #55c7f2) 82%, #fff);
-  --rim-3: color-mix(in srgb, var(--omd-accent, #00d4e7) 88%, #023);
+  --rim-2: var(--omd-rim-primary, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 82%, #fff));
   border: 1px solid color-mix(in srgb, var(--omd-accent, #00d4e7) 62%, #fff);
   color: #fff;
   text-shadow: 0 1px 1.5px rgba(3, 60, 80, 0.4);
   background: var(--gloss),
-    linear-gradient(180deg, #82e2f5 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%);
+    var(--omd-button-primary, linear-gradient(180deg, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 52%, #fff) 0%, var(--omd-transport-button, #55c7f2) 42%, var(--omd-accent, #00d4e7) 100%));
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
     0 -9px 15px -8px color-mix(in srgb, var(--omd-accent, #00d4e7) 85%, #024) inset,
@@ -1190,8 +1190,8 @@ input[type='range']::-webkit-slider-thumb:hover {
   border-radius: 16px;
   border: 1px solid var(--glass-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08) 90px),
-    color-mix(in srgb, var(--omd-surface-background, #bee9fb) 24%, #fff);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04) 90px),
+    var(--omd-control-surface, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 24%, #fff));
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
     0 12px 26px -18px rgba(24, 70, 108, 0.55);
@@ -1219,8 +1219,8 @@ input[type='range']::-webkit-slider-thumb:hover {
   flex: none;
   border-radius: 12px;
   color: var(--omd-accent, #00d4e7);
-  background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, #fff));
-  border: 1px solid color-mix(in srgb, #fff 75%, transparent);
+  background: var(--omd-control-surface, linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, #fff)));
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, #fff 75%, transparent));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 12px -8px rgba(24, 70, 108, 0.5);
 }
 
@@ -1329,8 +1329,8 @@ input[type='range']::-webkit-slider-thumb:hover {
   height: 64px;
   border-radius: 18px;
   color: var(--omd-accent, #00d4e7);
-  background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 45%, #fff));
-  border: 1px solid color-mix(in srgb, #fff 75%, transparent);
+  background: var(--omd-control-surface, linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 45%, #fff)));
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, #fff 75%, transparent));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 16px -10px rgba(24, 70, 108, 0.5);
 }
 
@@ -1420,8 +1420,8 @@ input[type='range']::-webkit-slider-thumb:hover {
   gap: 12px;
   padding: 8px 10px;
   border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--omd-border, #cfe6f2) 55%, transparent);
-  background: color-mix(in srgb, #fff 45%, transparent);
+  border: 1px solid var(--omd-control-border, color-mix(in srgb, var(--omd-border, #cfe6f2) 55%, transparent));
+  background: var(--omd-control-surface, color-mix(in srgb, #fff 45%, transparent));
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -1484,7 +1484,7 @@ input[type='range']::-webkit-slider-thumb:hover {
   height: 26px;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--omd-accent, #00d4e7) 40%, #fff);
-  background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, #fff));
+  background: var(--omd-control-surface, linear-gradient(180deg, #fff, color-mix(in srgb, var(--omd-surface-background, #bee9fb) 40%, #fff)));
   color: var(--omd-accent, #00d4e7);
   font-size: 15px;
   font-weight: 800;
@@ -1865,6 +1865,16 @@ input[type='range']::-webkit-slider-thumb:hover {
    pseudo-elements so future themes inherit it. The rim only paints the border
    band (mask-composite: exclude) so it never covers content. Rim colors come
    from --rim-1/2/3, whose defaults derive from the theme accent. */
+.btn,
+.badge,
+.np-btn-primary,
+.sidebar,
+.now-playing {
+  --rim-2: var(--omd-rim-secondary, color-mix(in srgb, var(--omd-transport-button, #55c7f2) 62%, #fff));
+  --rim-1: color-mix(in srgb, var(--rim-2) 36%, #fff);
+  --rim-3: color-mix(in srgb, var(--rim-2) 60%, #0a3a52);
+}
+
 .btn,
 .badge,
 .np-btn-primary {

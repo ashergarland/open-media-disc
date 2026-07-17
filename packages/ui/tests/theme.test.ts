@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AQUA_THEME,
+  BUILTIN_THEMES,
+  DEFAULT_THEME,
+  FRUTIGER_AERO_THEME,
   AQUA_TOKENS,
   MIDNIGHT_TOKENS,
   applyTheme,
@@ -23,11 +25,14 @@ describe('tokenToCssVar', () => {
 });
 
 describe('resolveTheme', () => {
-  it('produces CSS variables for the Aqua palette', () => {
-    const resolved = resolveTheme(AQUA_THEME);
+  it('produces CSS variables for the Frutiger Aero palette', () => {
+    const resolved = resolveTheme(FRUTIGER_AERO_THEME);
     expect(resolved.cssVariables['--omd-accent']).toBe('#00D4E7');
     expect(resolved.cssVariables['--omd-app-background']).toBe('#F7FDFF');
     expect(resolved.cssVariables['--omd-transport-button-active']).toBe('#00D4E7');
+    expect(resolved.cssVariables['--omd-control-surface']).toBeDefined();
+    expect(resolved.cssVariables['--omd-button-primary']).toBeDefined();
+    expect(resolved.cssVariables['--omd-rim-primary']).toBeDefined();
     expect(resolved.visualizer).toBe('bars');
   });
 
@@ -95,7 +100,7 @@ describe('applyTheme', () => {
   it('writes every CSS variable onto the target', () => {
     const set: Record<string, string> = {};
     const target: StyleTarget = { style: { setProperty: (k, v) => (set[k] = v) } };
-    const resolved = resolveTheme(AQUA_THEME);
+    const resolved = resolveTheme(FRUTIGER_AERO_THEME);
     applyTheme(target, resolved);
     expect(set['--omd-accent']).toBe('#00D4E7');
     expect(Object.keys(set).length).toBe(Object.keys(resolved.cssVariables).length);
@@ -104,7 +109,7 @@ describe('applyTheme', () => {
 
 describe('validateTheme', () => {
   it('accepts a valid theme', () => {
-    expect(validateTheme(AQUA_THEME)).toEqual([]);
+    expect(validateTheme(FRUTIGER_AERO_THEME)).toEqual([]);
   });
 
   it('reports empty id, bad type, and remote texture', () => {
@@ -120,8 +125,31 @@ describe('validateTheme', () => {
 });
 
 describe('getBuiltinTheme', () => {
-  it('finds Aqua and returns undefined for unknown ids', () => {
-    expect(getBuiltinTheme('aqua')).toBe(AQUA_THEME);
+  it('finds Frutiger Aero and returns undefined for unknown ids', () => {
+    expect(getBuiltinTheme('frutiger-aero')).toBe(FRUTIGER_AERO_THEME);
     expect(getBuiltinTheme('nope')).toBeUndefined();
+  });
+});
+
+describe('BUILTIN_THEMES', () => {
+  it('ships the four Frutiger Aero family themes with Frutiger Aero as default', () => {
+    expect(BUILTIN_THEMES.map((theme) => theme.id)).toEqual([
+      'frutiger-aero',
+      'dorfic',
+      'technozen',
+      'dark-aero',
+    ]);
+    expect(DEFAULT_THEME.id).toBe('frutiger-aero');
+  });
+
+  it('resolves every built-in theme to a complete variable set', () => {
+    for (const theme of BUILTIN_THEMES) {
+      expect(validateTheme(theme)).toEqual([]);
+      const resolved = resolveTheme(theme);
+      expect(resolved.cssVariables['--omd-accent']).toBeDefined();
+      expect(resolved.cssVariables['--omd-control-surface']).toBeDefined();
+      expect(resolved.cssVariables['--omd-button-primary']).toBeDefined();
+      expect(resolved.cssVariables['--omd-rim-secondary']).toBeDefined();
+    }
   });
 });

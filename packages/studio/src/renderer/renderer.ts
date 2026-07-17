@@ -8,8 +8,8 @@
  */
 
 import {
-  AQUA_THEME,
   BUILTIN_THEMES,
+  DEFAULT_THEME,
   applyTheme,
   resolveTheme,
   validateTheme,
@@ -68,9 +68,20 @@ interface AppState {
   themeError?: string;
 }
 
+const THEME_STORAGE_KEY = 'omd.themeId';
+
+/** The persisted theme id, or the default when none is stored. */
+function loadThemeId(): string {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) ?? DEFAULT_THEME.id;
+  } catch {
+    return DEFAULT_THEME.id;
+  }
+}
+
 const state: AppState = {
   view: 'burn',
-  themeId: AQUA_THEME.id,
+  themeId: loadThemeId(),
   discLoading: false,
   catalogLoading: false,
 };
@@ -88,9 +99,14 @@ function allThemes(): OmdTheme[] {
 }
 
 function applyThemeById(id: string): void {
-  const theme = allThemes().find((entry) => entry.id === id) ?? AQUA_THEME;
+  const theme = allThemes().find((entry) => entry.id === id) ?? DEFAULT_THEME;
   applyTheme(document.documentElement, resolveTheme(theme));
   state.themeId = theme.id;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+  } catch {
+    // Persisting the theme choice is best-effort.
+  }
 }
 
 function setView(view: ViewId): void {
