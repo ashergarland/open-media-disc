@@ -83,7 +83,10 @@ function createWindow(): void {
   });
 
   window.removeMenu();
-  window.once('ready-to-show', () => window.show());
+  window.once('ready-to-show', () => {
+    window.maximize();
+    window.show();
+  });
   void window.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
   // Dev-only live reload: when the built renderer files change (run the `watch`
