@@ -332,6 +332,18 @@ body {
   margin: 8px 0 4px;
 }
 
+/* Inline rip-to-catalog status under the Disc album actions. */
+.rip-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.rip-status-text {
+  font: 400 13px/1.4 var(--font);
+  color: var(--ink-muted);
+}
+
 /* Catalog tile cover fallback. */
 img.ct-cover {
   object-fit: cover;

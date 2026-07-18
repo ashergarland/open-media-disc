@@ -27,7 +27,7 @@ declare global {
   }
 }
 
-type ViewId = 'burn' | 'labels' | 'player' | 'catalog' | 'themes' | 'settings';
+type ViewId = 'burn' | 'labels' | 'disc' | 'catalog' | 'themes' | 'settings';
 
 interface NavItem {
   id: ViewId;
@@ -36,7 +36,8 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'player', label: 'Player', icon: 'player' },
+  { id: 'disc', label: 'Disc', icon: 'disc' },
+  { id: 'catalog', label: 'Catalog', icon: 'catalog' },
   { id: 'burn', label: 'Burn', icon: 'create' },
   { id: 'labels', label: 'Labels', icon: 'label' },
   { id: 'themes', label: 'Themes', icon: 'themes' },
@@ -49,9 +50,11 @@ interface AppState {
   info?: StudioInfo;
   drives?: StudioDrive[];
   disc?: StudioDiscInfo;
+  discSourceKind?: 'disc' | 'package';
   discLoading: boolean;
   discError?: string;
   verify?: StudioVerifyResult;
+  ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
   libraryDir?: string;
   catalog?: CatalogEntry[];
   catalogLoading: boolean;
@@ -93,9 +96,31 @@ function loadThemeId(): string {
   }
 }
 
+const CATALOG_STORAGE_KEY = 'omd.catalogDir';
+
+/** The persisted catalog folder, if the user has chosen one. */
+function loadCatalogDir(): string | undefined {
+  try {
+    return localStorage.getItem(CATALOG_STORAGE_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Remember the catalog folder (shared by the Disc rip action and the Catalog view). */
+function setCatalogDir(dir: string): void {
+  state.libraryDir = dir;
+  try {
+    localStorage.setItem(CATALOG_STORAGE_KEY, dir);
+  } catch {
+    // Persisting the catalog folder is best-effort.
+  }
+}
+
 const state: AppState = {
-  view: 'burn',
+  view: 'disc',
   themeId: loadThemeId(),
+  libraryDir: loadCatalogDir(),
   discLoading: false,
   catalogLoading: false,
 };
@@ -182,7 +207,7 @@ function onPlayerChange(): void {
     updateNowPlaying(nowPlayingHost, pstate);
   }
   const key = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
-  if (state.view === 'player' && key !== lastPlayerKey) {
+  if (state.view === 'disc' && key !== lastPlayerKey) {
     renderMain();
   }
 }
@@ -380,10 +405,12 @@ function settingsView(): HTMLElement {
   ]);
 }
 
-function loadDiscIntoPlayer(disc: StudioDiscInfo): void {
+function loadDiscIntoPlayer(disc: StudioDiscInfo, kind: 'disc' | 'package'): void {
   state.disc = disc;
+  state.discSourceKind = kind;
   state.verify = undefined;
   state.discError = undefined;
+  state.ripStatus = undefined;
   player.loadDisc(
     disc.tracks.map((track) => ({
       number: track.number,
@@ -401,13 +428,13 @@ async function detectDisc(): Promise<void> {
   renderMain();
   try {
     const disc = await window.omd.detectDisc();
-    if (disc) loadDiscIntoPlayer(disc);
+    if (disc) loadDiscIntoPlayer(disc, 'disc');
     else state.discError = 'No OMD disc detected. Insert a disc or open a package folder.';
   } catch (err) {
     state.discError = (err as Error).message;
   }
   state.discLoading = false;
-  if (state.view === 'player') renderMain();
+  if (state.view === 'disc') renderMain();
 }
 
 async function openFolder(): Promise<void> {
@@ -416,30 +443,30 @@ async function openFolder(): Promise<void> {
   renderMain();
   try {
     const disc = await window.omd.openPackageFolder();
-    if (disc) loadDiscIntoPlayer(disc);
+    if (disc) loadDiscIntoPlayer(disc, 'package');
     else state.discError = 'That folder is not an OMD package.';
   } catch (err) {
     state.discError = (err as Error).message;
   }
   state.discLoading = false;
-  if (state.view === 'player') renderMain();
+  if (state.view === 'disc') renderMain();
 }
 
 async function openDiscByPath(source: string): Promise<void> {
-  setView('player');
+  setView('disc');
   if (!source) return;
   state.discLoading = true;
   state.discError = undefined;
   renderMain();
   try {
     const disc = await window.omd.openDisc(source);
-    if (disc) loadDiscIntoPlayer(disc);
+    if (disc) loadDiscIntoPlayer(disc, 'package');
     else state.discError = 'Could not open the package.';
   } catch (err) {
     state.discError = (err as Error).message;
   }
   state.discLoading = false;
-  if (state.view === 'player') renderMain();
+  if (state.view === 'disc') renderMain();
 }
 
 async function reverify(): Promise<void> {
@@ -451,7 +478,80 @@ async function reverify(): Promise<void> {
   } catch (err) {
     state.discError = (err as Error).message;
   }
-  if (state.view === 'player') renderMain();
+  if (state.view === 'disc') renderMain();
+}
+
+/** Rip the loaded disc into the catalog folder (choosing one the first time). */
+async function ripToCatalog(): Promise<void> {
+  if (!state.disc) return;
+  let dir = state.libraryDir;
+  if (!dir) {
+    const chosen = await window.omd.chooseRipDestination();
+    if (!chosen) return;
+    setCatalogDir(chosen);
+    dir = chosen;
+  }
+  await runRip(dir, false);
+}
+
+async function runRip(destDir: string, overwrite: boolean): Promise<void> {
+  if (!state.disc) return;
+  state.ripStatus = { busy: true, text: 'Ripping and verifying...' };
+  if (state.view === 'disc') renderMain();
+  try {
+    const result = await window.omd.rip({
+      source: state.disc.source,
+      destDir,
+      mode: 'package',
+      overwrite,
+    });
+    if (result.exists) {
+      const proceed = window.confirm(`A copy already exists at:\n${result.outDir}\n\nOverwrite it?`);
+      if (proceed) {
+        await runRip(destDir, true);
+        return;
+      }
+      state.ripStatus = undefined;
+      if (state.view === 'disc') renderMain();
+      return;
+    }
+    if (!result.ok) {
+      state.ripStatus = { busy: false, ok: false, text: result.error ?? 'Rip failed.' };
+    } else {
+      state.ripStatus = {
+        busy: false,
+        ok: true,
+        text: `${result.verified ? 'Verified' : 'Copied'} ${result.filesMatched ?? 0}/${result.filesTotal ?? 0} tracks to your catalog.`,
+        ...(result.outDir ? { outDir: result.outDir } : {}),
+      };
+      if (state.libraryDir) void rescanLibrary();
+    }
+  } catch (err) {
+    state.ripStatus = { busy: false, ok: false, text: `Rip failed: ${(err as Error).message}` };
+  }
+  if (state.view === 'disc') renderMain();
+}
+
+function ripStatusEl(status: NonNullable<AppState['ripStatus']>): HTMLElement {
+  if (status.busy) return spinnerRow(status.text);
+  const children: (Node | string)[] = [
+    el('span', { class: `status-pill ${status.ok ? 'ok' : 'bad'}` }, [
+      el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
+      status.ok ? 'RIPPED' : 'FAILED',
+    ]),
+    el('span', { class: 'rip-status-text', text: status.text }),
+  ];
+  if (status.ok && status.outDir) {
+    const outDir = status.outDir;
+    children.push(
+      el(
+        'button',
+        { class: 'link-btn', type: 'button', onclick: () => void window.omd.revealInFolder(outDir) },
+        ['Show in folder'],
+      ),
+    );
+  }
+  return el('div', { class: 'rip-status' }, children);
 }
 
 function formatClock(seconds: number): string {
@@ -639,7 +739,7 @@ function playerView(): HTMLElement {
   lastPlayerKey = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
 
   const head = el('div', { class: 'view-head' }, [
-    el('h1', { class: 'view-title', text: 'Player' }),
+    el('h1', { class: 'view-title', text: 'Disc' }),
     el('p', { class: 'view-lead', text: 'Play a mounted OMD disc with verified, lossless FLAC.' }),
   ]);
 
@@ -694,13 +794,19 @@ function playerView(): HTMLElement {
           primary: true,
           icon: playing ? 'pause' : 'play',
         }),
+        ...(state.discSourceKind === 'disc'
+          ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip' })]
+          : []),
         btn('Re-verify', () => void reverify()),
         btn('Close', () => {
           state.disc = undefined;
           state.verify = undefined;
+          state.discSourceKind = undefined;
+          state.ripStatus = undefined;
           renderMain();
         }),
       ]),
+      ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
     ]),
   ]);
 
@@ -751,7 +857,7 @@ async function rescanDrives(): Promise<void> {
 async function chooseLibrary(): Promise<void> {
   const dir = await window.omd.chooseLibraryFolder();
   if (!dir) return;
-  state.libraryDir = dir;
+  setCatalogDir(dir);
   await rescanLibrary();
 }
 
@@ -841,7 +947,7 @@ function viewFor(view: ViewId): HTMLElement {
       return renderBurnView({ onOpenPlayer: (source) => void openDiscByPath(source) });
     case 'labels':
       return renderLabelsView();
-    case 'player':
+    case 'disc':
       return playerView();
     case 'catalog':
       return catalogView();

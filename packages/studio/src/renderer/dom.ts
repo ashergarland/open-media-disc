@@ -67,6 +67,8 @@ export type IconName =
   | 'chevron-right'
   | 'drive'
   | 'folder'
+  | 'rip'
+  | 'disc'
   | 'label';
 
 interface IconDef {
@@ -199,6 +201,24 @@ function iconDef(name: IconName): IconDef {
         shapes: [
           shape('path', { d: 'M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h7A1.5 1.5 0 0 1 19 8.5V9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
           shape('path', { d: 'M2.6 10.5A1.4 1.4 0 0 1 4 9h16a1.4 1.4 0 0 1 1.35 1.76l-1.6 6A1.6 1.6 0 0 1 18.2 18H4.8a1.6 1.6 0 0 1-1.55-1.2l-1.2-4.8A1.4 1.4 0 0 1 2.6 10.5Z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
+        ],
+      };
+    case 'rip': // Rip disc to disk (disc + down arrow)
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('circle', { cx: '12', cy: '8', r: '5.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+          shape('circle', { cx: '12', cy: '8', r: '1.5', fill: 'currentColor' }),
+          shape('path', { d: 'M12 15.5V21M9.3 18.3 12 21l2.7-2.7', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+        ],
+      };
+    case 'disc': // Optical disc
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+          shape('circle', { cx: '12', cy: '12', r: '2.4', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+          shape('path', { d: 'M8.4 5.2A7.2 7.2 0 0 1 12 4.4', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' }),
         ],
       };
     case 'note': // Tracks (music note)

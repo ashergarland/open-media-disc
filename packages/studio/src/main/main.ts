@@ -10,6 +10,8 @@ import {
   createPackage,
   inspectPackage,
   resolveBurnBackend,
+  ripPackage,
+  slugifyForPath,
   validatePackage,
 } from '@open-album-cartridge/core';
 import { buildPackagesLabelSheet } from '@open-album-cartridge/label';
@@ -23,6 +25,8 @@ import type {
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
   StudioPackageResponse,
+  StudioRipRequest,
+  StudioRipResult,
   StudioValidationFinding,
   StudioVerifyResult,
 } from '../shared/types';
@@ -369,6 +373,41 @@ ipcMain.handle('omd:openPackageFolder', async (): Promise<StudioDiscInfo | null>
 ipcMain.handle('omd:verifyDisc', async (_event, source: string): Promise<StudioVerifyResult> => {
   const validation = await validatePackage(source);
   return { valid: validation.valid, errors: validation.errors.map(toFinding) };
+});
+
+ipcMain.handle('omd:chooseRipDestination', async (): Promise<string | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Choose your catalog folder',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]!;
+});
+
+ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<StudioRipResult> => {
+  try {
+    const { manifest } = await inspectPackage(request.source);
+    const outDir = path.join(request.destDir, slugifyForPath(manifest.discId));
+    const result = await ripPackage({
+      sourceDir: request.source,
+      mode: request.mode,
+      outDir,
+      ...(request.overwrite !== undefined ? { overwrite: request.overwrite } : {}),
+    });
+    return {
+      ok: true,
+      outDir: result.outDir,
+      discId: result.manifest.discId,
+      mode: result.mode,
+      filesMatched: result.filesMatched,
+      filesTotal: result.filesTotal,
+      verified: result.verified,
+    };
+  } catch (err) {
+    if (err instanceof OutputExistsError) {
+      return { ok: false, exists: true, outDir: err.outDir };
+    }
+    return { ok: false, error: (err as Error).message };
+  }
 });
 
 ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {

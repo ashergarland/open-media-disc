@@ -127,7 +127,7 @@ export function renderNowPlaying(
       el('span', { class: 'npd-title', text: track ? track.title : 'Nothing playing' }),
       el('span', {
         class: 'npd-artist',
-        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Player or Burn'),
+        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Disc or Catalog'),
       }),
     ]),
   ]);

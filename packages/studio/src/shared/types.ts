@@ -145,6 +145,32 @@ export interface StudioVerifyResult {
   errors: StudioValidationFinding[];
 }
 
+/** A request to rip a mounted OMD disc (or package folder) back to disk. */
+export interface StudioRipRequest {
+  /** The mounted disc's mount path, or a package folder on disk. */
+  source: string;
+  /** Parent folder the ripped copy is written into (as `<destDir>/<disc slug>`). */
+  destDir: string;
+  /** `package` = re-burnable clone; `album` = friendly FLAC listening folder. */
+  mode: 'package' | 'album';
+  /** Overwrite the output folder if it already exists. */
+  overwrite?: boolean;
+}
+
+/** The outcome of a rip. */
+export interface StudioRipResult {
+  ok: boolean;
+  /** True when the output folder already exists and overwrite was not set. */
+  exists?: boolean;
+  outDir?: string;
+  discId?: string;
+  mode?: 'package' | 'album';
+  filesMatched?: number;
+  filesTotal?: number;
+  verified?: boolean;
+  error?: string;
+}
+
 /** A package found while scanning a library folder. */
 export interface CatalogEntry {
   source: string;
@@ -172,6 +198,8 @@ export interface OmdStudioApi {
   openPackageFolder(): Promise<StudioDiscInfo | null>;
   openDisc(source: string): Promise<StudioDiscInfo | null>;
   verifyDisc(source: string): Promise<StudioVerifyResult>;
+  rip(request: StudioRipRequest): Promise<StudioRipResult>;
+  chooseRipDestination(): Promise<string | null>;
   chooseLibraryFolder(): Promise<string | null>;
   scanLibrary(dir: string): Promise<CatalogEntry[]>;
   revealInFolder(target: string): Promise<void>;
