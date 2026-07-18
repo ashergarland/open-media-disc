@@ -110,8 +110,11 @@ let lastDockKey = '';
 
 function applyThemeById(id: string): void {
   const themeId = THEME_OPTIONS.some((entry) => entry.id === id) ? id : DEFAULT_THEME_ID;
+  // Every theme stylesheet stays loaded and parsed; a non-matching `media` keeps
+  // the inactive ones from applying. Switching just flips `media`, which applies
+  // an already-parsed sheet instantly — no fetch/parse gap, so no unstyled flash.
   document.querySelectorAll<HTMLLinkElement>('link[data-theme]').forEach((link) => {
-    link.disabled = link.dataset.theme !== themeId;
+    link.media = link.dataset.theme === themeId ? 'all' : 'not all';
   });
   document.documentElement.setAttribute('data-theme', themeId);
   state.themeId = themeId;

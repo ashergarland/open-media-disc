@@ -162,6 +162,37 @@ Amp, Hi-Fi Silver, Cassette, CRT). Every theme must still pass contrast and
 hit-target checks, so retro never means unusable. If community themes bundle
 fonts, mind font licensing; the safest option is a curated, bundled font set.
 
+### Implementation status: built-in stylesheets now, token imports later
+
+The token model above is the **target** for *importable* community themes. The
+current Studio implementation is a deliberate intermediate step:
+
+- **Built-in themes ship as full CSS.** The four first-party themes (Frutiger
+  Aero, DORFic, Technozen, Dark Aero) are authored as complete stylesheets in
+  `packages/studio/src/renderer/themes/<id>.css` (synced verbatim from the visual
+  showcases by `sync-themes.mjs`). They are trusted, first-party code — not the
+  data-only token contract — which is why they can render the full glassmorphism
+  (masked rims, layered highlights, per-theme decoration) that ~20 tokens cannot
+  express. `shell.css` holds layout only; components read the theme stylesheet.
+- **Switching is flash-free.** All four theme stylesheets are loaded and parsed
+  up front; the inactive ones carry `media="not all"` so they are fetched and
+  parsed but not applied. Switching a theme only flips `media` to `all`/`not all`
+  between already-parsed sheets, so there is no fetch/parse gap and no unstyled
+  flash. (A `disabled` link is *not* loaded until enabled, which is what caused
+  the earlier flash.)
+- **Importable token themes are a future milestone.** When we add user/community
+  themes, they stay **data-only** per the v1 contract above (JSON token maps →
+  `--omd-*` variables, validated, no CSS/JS, no remote URLs). To make the built-in
+  glass looks reachable from tokens, the plan is to (a) collapse the four
+  near-duplicate stylesheets into **one shared, richly-structured components
+  stylesheet** that reads every value from `--omd-*` (promoting today's per-theme
+  hardcoded values — colors, gradients, shadows, rim widths/blur — into an
+  expanded token vocabulary), and (b) express **decoration** as the `texture`
+  image token (a per-theme background image on the scene/panel) rather than
+  bespoke animated DOM. That keeps the current look, makes imported themes safe
+  by construction, and makes every switch a variable swap (inherently flash-free).
+  Until then, users pick from the four curated built-ins.
+
 ### Default theme: Aqua (Y2K / Frutiger Aero)
 
 **Aqua** is the default theme shipped with OMD Studio. Its starting token values
