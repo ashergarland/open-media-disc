@@ -10,6 +10,7 @@
 import type {
   CatalogEntry,
   OmdStudioApi,
+  StudioBurnResult,
   StudioDiscInfo,
   StudioDrive,
   StudioInfo,
@@ -55,6 +56,13 @@ interface AppState {
   discError?: string;
   verify?: StudioVerifyResult;
   ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
+  albumBurn?: {
+    drives: StudioDrive[];
+    selectedDrive?: string;
+    burning: boolean;
+    phase?: string;
+    result?: StudioBurnResult;
+  };
   libraryDir?: string;
   catalog?: CatalogEntry[];
   catalogLoading: boolean;
@@ -554,6 +562,193 @@ function ripStatusEl(status: NonNullable<AppState['ripStatus']>): HTMLElement {
   return el('div', { class: 'rip-status' }, children);
 }
 
+/* Burn the loaded catalog package to a disc, inline in the album view. */
+const RESULT_CHECK_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 12.4l2.6 2.6L16 9.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const RESULT_CROSS_SVG =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>';
+
+function statusPill(kind: 'ok' | 'bad' | 'neutral', label: string): HTMLElement {
+  return el('span', { class: `status-pill ${kind}` }, [
+    el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
+    label,
+  ]);
+}
+
+function burnPhaseLabel(phase: string): string {
+  switch (phase) {
+    case 'building':
+      return 'Building disc image...';
+    case 'probing':
+      return 'Probing media...';
+    case 'blanking':
+      return 'Blanking disc...';
+    case 'writing':
+      return 'Writing to disc...';
+    case 'remounting':
+      return 'Remounting disc...';
+    case 'verifying':
+      return 'Verifying...';
+    case 'ejecting':
+      return 'Ejecting...';
+    default:
+      return 'Working...';
+  }
+}
+
+async function openAlbumBurn(): Promise<void> {
+  state.albumBurn = { drives: [], burning: false };
+  renderMain();
+  let drives: StudioDrive[] = [];
+  try {
+    drives = await window.omd.listDrives();
+  } catch {
+    drives = [];
+  }
+  state.albumBurn = { drives, burning: false, ...(drives[0] ? { selectedDrive: drives[0].mountPath } : {}) };
+  if (state.view === 'disc') renderMain();
+}
+
+function driveSelectAlbum(ab: NonNullable<AppState['albumBurn']>): HTMLSelectElement {
+  const select = el('select', {
+    class: 'drive-select',
+    onchange: (event: Event) => {
+      ab.selectedDrive = (event.target as HTMLSelectElement).value;
+    },
+  }) as HTMLSelectElement;
+  for (const drive of ab.drives) {
+    select.append(
+      el('option', {
+        value: drive.mountPath,
+        text: drive.description ? `${drive.mountPath} - ${drive.description}` : drive.mountPath,
+      }),
+    );
+  }
+  if (ab.selectedDrive) select.value = ab.selectedDrive;
+  return select;
+}
+
+function albumBurnPanel(): HTMLElement {
+  const ab = state.albumBurn!;
+
+  if (ab.result) {
+    const good = ab.result.ok;
+    const detail = `${ab.result.verified ? 'Burned and verified.' : 'Burned.'}${ab.result.ejected ? ' Ejected.' : ''}`;
+    return el('div', { class: 'burn-console' }, [
+      el('div', { class: 'bc-head' }, [
+        el('span', { class: 'bc-title', text: 'Burn to Disc' }),
+        statusPill(good ? 'ok' : 'bad', good ? 'DONE' : 'FAILED'),
+      ]),
+      el('div', { class: 'bc-results' }, [
+        el('div', { class: `bc-result ${good ? 'done' : 'failed'}` }, [
+          rawSvg(good ? RESULT_CHECK_SVG : RESULT_CROSS_SVG),
+          el('span', { class: 'bc-result-text' }, [
+            el('span', {
+              class: 'bc-result-title',
+              text: good ? 'Burned and verified' : 'Burn failed',
+            }),
+            el('span', {
+              class: 'bc-result-sub',
+              text: good ? detail : ab.result.error ?? 'The disc was left in the drive.',
+            }),
+          ]),
+        ]),
+      ]),
+      el('div', { class: 'bc-actions' }, [
+        btn('Burn another copy', () => void openAlbumBurn()),
+        btn('Done', () => {
+          state.albumBurn = undefined;
+          renderMain();
+        }),
+      ]),
+    ]);
+  }
+
+  if (ab.burning) {
+    return el('div', { class: 'burn-console' }, [
+      el('div', { class: 'bc-head' }, [
+        el('span', { class: 'bc-title', text: 'Burn to Disc' }),
+        statusPill('neutral', 'WRITING'),
+      ]),
+      el('div', { class: 'bc-status', text: ab.phase ?? 'Working...' }),
+      el('div', { class: 'bc-progress', role: 'progressbar', 'aria-label': 'Burn progress' }, [
+        el('span', { class: 'bc-progress-fill' }),
+      ]),
+    ]);
+  }
+
+  const noDrive = ab.drives.length === 0;
+  return el('div', { class: 'burn-console' }, [
+    el('div', { class: 'bc-head' }, [el('span', { class: 'bc-title', text: 'Burn to Disc' })]),
+    el('div', { class: 'bc-drive' }, [
+      svgIcon('drive', 22),
+      noDrive
+        ? el('span', { class: 'bc-drive-name', text: 'No optical drive detected' })
+        : driveSelectAlbum(ab),
+      el('span', { class: 'bc-media', text: 'DVD-RW · 1.4 GB' }),
+    ]),
+    el('div', {
+      class: 'bc-status',
+      text: noDrive
+        ? 'Insert a rewritable disc in an optical drive. Burning is Windows-only.'
+        : 'Blanks a rewritable disc, writes this album, then verifies it.',
+    }),
+    el('div', { class: 'bc-actions' }, [
+      btn('Burn to Disc', () => void runAlbumBurn(), {
+        primary: true,
+        icon: 'create',
+        disabled: noDrive || !ab.selectedDrive,
+      }),
+      btn('Cancel', () => {
+        state.albumBurn = undefined;
+        renderMain();
+      }),
+    ]),
+  ]);
+}
+
+async function runAlbumBurn(): Promise<void> {
+  const ab = state.albumBurn;
+  if (!ab || !ab.selectedDrive || !state.disc) return;
+  const drive = ab.selectedDrive;
+  const confirmed = window.confirm(
+    `Burn "${state.disc.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
+  );
+  if (!confirmed) return;
+  ab.burning = true;
+  ab.phase = 'Starting...';
+  renderMain();
+  try {
+    const result = await window.omd.burn(
+      { packageDir: state.disc.source, driveMountPath: drive, blank: true, verify: true, eject: true },
+      (progress) => {
+        if (state.albumBurn) {
+          state.albumBurn.phase = burnPhaseLabel(progress.phase);
+          if (state.view === 'disc') renderMain();
+        }
+      },
+    );
+    if (state.albumBurn) {
+      state.albumBurn.burning = false;
+      state.albumBurn.result = result;
+    }
+  } catch (err) {
+    if (state.albumBurn) {
+      state.albumBurn.burning = false;
+      state.albumBurn.result = {
+        ok: false,
+        verified: false,
+        blanked: false,
+        ejected: false,
+        backend: 'unknown',
+        drive,
+        error: (err as Error).message,
+      };
+    }
+  }
+  if (state.view === 'disc') renderMain();
+}
+
 function formatClock(seconds: number): string {
   const total = Math.floor(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -797,12 +992,21 @@ function playerView(): HTMLElement {
         ...(state.discSourceKind === 'disc'
           ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip' })]
           : []),
+        ...(state.discSourceKind === 'package'
+          ? [
+              btn('Burn to Disc', () => void openAlbumBurn(), {
+                icon: 'create',
+                disabled: !disc.valid,
+              }),
+            ]
+          : []),
         btn('Re-verify', () => void reverify()),
         btn('Close', () => {
           state.disc = undefined;
           state.verify = undefined;
           state.discSourceKind = undefined;
           state.ripStatus = undefined;
+          state.albumBurn = undefined;
           renderMain();
         }),
       ]),
@@ -830,6 +1034,7 @@ function playerView(): HTMLElement {
   return el('div', { class: 'view' }, [
     head,
     el('section', { class: 'card' }, [hero]),
+    ...(state.albumBurn ? [el('section', { class: 'card' }, [albumBurnPanel()])] : []),
     el('section', { class: 'card' }, [
       el('div', { class: 'grid cols-2' }, [trackPanel(disc, currentIndex), controls]),
     ]),
