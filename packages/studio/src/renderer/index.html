@@ -7,9 +7,27 @@
       content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' omd-audio:; font-src 'self'"
     />
     <title>OMD Studio</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="themes/frutiger-aero.css" data-theme="frutiger-aero" />
+    <link rel="stylesheet" href="themes/dorfic.css" data-theme="dorfic" disabled />
+    <link rel="stylesheet" href="themes/technozen.css" data-theme="technozen" disabled />
+    <link rel="stylesheet" href="themes/dark-aero.css" data-theme="dark-aero" disabled />
+    <link rel="stylesheet" href="shell.css" />
   </head>
   <body>
+    <!-- Shared SVG defs: metallic gradient for the analog VU needles. -->
+    <svg width="0" height="0" class="svg-defs" aria-hidden="true">
+      <defs>
+        <linearGradient id="needle-glass" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#5b636e" />
+          <stop offset="15%" stop-color="#aeb6c0" />
+          <stop offset="38%" stop-color="#eef2f6" />
+          <stop offset="50%" stop-color="#ffffff" />
+          <stop offset="64%" stop-color="#e2e8ee" />
+          <stop offset="84%" stop-color="#9aa3ae" />
+          <stop offset="100%" stop-color="#4f5762" />
+        </linearGradient>
+      </defs>
+    </svg>
     <div id="app"></div>
     <script type="module" src="renderer.js"></script>
   </body>

@@ -1,0 +1,489 @@
+/*
+ * OMD Studio shell — LAYOUT ONLY.
+ *
+ * All color, component, and typography styling comes from the active theme
+ * stylesheet (themes/<id>.css), synced verbatim from the visual-theme
+ * showcases in sources/ThemeExamples. This file only positions the fixed
+ * app regions (sidebar, main, Now Playing dock) and normalizes the body.
+ * Loaded AFTER the theme links so its body layout rules win.
+ */
+
+html,
+body {
+  height: 100%;
+}
+
+.svg-defs {
+  position: absolute;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'sidebar main'
+    'dock dock';
+  gap: 18px;
+  padding: 18px;
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The sidebar's frosted panel (a theme .card) fills the column; only the nav scrolls. */
+.app-sidebar > .card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+/* Sidebar brand block (layout only; the wordmark/tag colors come from the theme). */
+.app-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.app-brand-disc {
+  width: 138px;
+  height: 138px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
+}
+.app-brand-tag {
+  max-width: 240px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* When the window is short, shrink the brand so the nav keeps usable room. */
+@media (max-height: 820px) {
+  .app-brand-disc {
+    width: 112px;
+    height: 112px;
+  }
+}
+@media (max-height: 700px) {
+  .app-brand {
+    gap: 6px;
+  }
+  .app-brand-disc {
+    width: 84px;
+    height: 84px;
+  }
+  .app-brand .brand-word .omd {
+    font-size: 40px;
+  }
+  .app-brand .brand-word .studio {
+    font-size: 16px;
+  }
+  .app-brand-tag {
+    display: none;
+  }
+}
+.app-version {
+  margin-top: auto;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.nav-list {
+  width: 100%;
+}
+
+/*
+ * Compact the showcase nav items for the app sidebar so all six fit without
+ * scrolling. Only sizing is tuned (via the theme's own custom properties);
+ * the glass look is untouched.
+ */
+.app-sidebar .nav-list {
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px;
+}
+.app-sidebar .nav-item {
+  --nav-height: 56px;
+  --nav-radius: 17px;
+}
+.app-sidebar .nav-content {
+  gap: 13px;
+}
+.app-sidebar .nav-icon {
+  width: 30px;
+  height: 30px;
+}
+.app-sidebar .nav-label {
+  font-size: 19px;
+}
+.app-sidebar .nav-chevron {
+  width: 16px;
+  height: 26px;
+}
+
+.app-main {
+  grid-area: main;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.app-dock {
+  grid-area: dock;
+}
+
+/*
+ * App-composition helpers (not in the showcase): view headers and a few Burn
+ * screen compositions. Colors are driven entirely by the active theme's design
+ * tokens so every theme stays consistent.
+ */
+.view-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.view-title {
+  margin: 0;
+  font: 700 27px/1.15 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--ink-strong);
+}
+.view-lead {
+  margin: 0;
+  font: 400 15px/1.5 var(--font);
+  color: var(--ink-muted);
+}
+
+/* Empty-state hero (Select album folder). */
+.select-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 26px 20px;
+}
+.select-icon {
+  display: inline-flex;
+  color: var(--pal-cyan, var(--ink-strong));
+}
+.select-lead {
+  margin: 0;
+  max-width: 440px;
+  font: 400 14px/1.55 var(--font);
+  color: var(--ink-muted);
+}
+
+/* Source row above the two-column burn layout. */
+.burn-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.burn-source-path {
+  font: 400 12.5px/1.4 var(--font);
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Album summary card content. */
+.album-summary {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.album-cover {
+  width: 118px;
+  height: 118px;
+  flex: none;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  background: var(--surface-1, rgba(255, 255, 255, 0.14));
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.28));
+}
+.album-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+}
+.album-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.album-title {
+  font: 700 19px/1.2 var(--font);
+  color: var(--ink-strong);
+}
+.album-artist {
+  font: 400 14px/1.3 var(--font);
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+.album-meta .kv-list {
+  margin: 2px 0 6px;
+}
+
+/* Burn console options (toggles) and actions. */
+.bc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0;
+}
+.bc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bc-toggle-label {
+  font: 400 13.5px/1.3 var(--font);
+  color: var(--ink);
+}
+.bc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.bc-drive-name {
+  font: 600 13.5px/1.3 var(--font);
+  color: var(--ink-strong);
+}
+
+/* Drive picker select, themed with surface tokens. */
+.drive-select {
+  flex: 1;
+  min-width: 0;
+  font: 500 13px/1.3 var(--font);
+  color: var(--ink-strong);
+  background: var(--surface-1, rgba(255, 255, 255, 0.16));
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.3));
+  border-radius: 9px;
+  padding: 7px 10px;
+}
+
+/* Spinner row. */
+.spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+}
+.spinner-text {
+  font: 400 14px/1.4 var(--font);
+  color: var(--ink-muted);
+}
+
+/* A view is a vertical stack of its header and cards. */
+.app-main .view {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+/* Player hero: cover + meta. */
+.player-hero {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.player-hero .album-cover {
+  width: 168px;
+  height: 168px;
+}
+.player-hero .album-meta {
+  flex: 1;
+}
+.player-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+/* Catalog tile cover fallback. */
+img.ct-cover {
+  object-fit: cover;
+}
+.ct-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+}
+
+/*
+ * Compact dock sliders: the theme's native range thumb is 58px (sized for the
+ * big showcase slider), which makes the tiny dock sliders hard to grab. Shrink
+ * it to the visible size and center the interactive layer over the track.
+ */
+.range-compact .range-input {
+  height: 30px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+.range-compact .range-input::-webkit-slider-thumb {
+  width: 22px;
+  height: 22px;
+}
+.range-compact .range-input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+}
+
+/* Volume readout in the Now Playing dock. */
+.npd-vol {
+  width: 172px;
+}
+.npd-vol-num {
+  min-width: 24px;
+  text-align: right;
+  font: 600 12.5px/1 var(--font);
+  color: var(--ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Generic muted / small text used by a few leftover spots. */
+.app-main .muted {
+  color: var(--ink-muted);
+}
+.app-main .small {
+  font-size: 12px;
+}
+
+/* Labels view compositions. */
+.labels-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.labels-col-tools {
+  display: flex;
+  gap: 12px;
+}
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font: 600 12.5px/1 var(--font);
+  color: var(--pal-cyan, var(--ink-strong));
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.label-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.label-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: var(--surface-1, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--surface-hairline, rgba(255, 255, 255, 0.16));
+}
+.label-pick-row.is-selected {
+  border-color: var(--surface-border, rgba(255, 255, 255, 0.4));
+}
+.label-pick-row.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pick-check {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--pal-cyan, #1d9bd7);
+}
+.pick-cover {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-1, rgba(255, 255, 255, 0.12));
+}
+.pick-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+}
+.pick-info {
+  flex: 1;
+  min-width: 0;
+}
+.pick-title {
+  font: 600 13.5px/1.3 var(--font);
+  color: var(--ink-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.label-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.label-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+.label-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.label-summary-count {
+  font: 700 16px/1 var(--font);
+  color: var(--ink-strong);
+}
+.sheet-page-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}

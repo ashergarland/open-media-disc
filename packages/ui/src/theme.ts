@@ -36,6 +36,9 @@ export interface ThemeTokens {
   /** Control surfaces: secondary/glass buttons, nav items, selects, nested panels. */
   'control.surface': string;
   'control.border': string;
+  /** Draggable knob (slider thumb, toggle): full CSS background, and its edge color. */
+  'control.knob': string;
+  'control.knobEdge': string;
   /** Primary/active control body fill (primary button, active nav). */
   'button.primary': string;
   /** Liquid-rim mid color for secondary and primary controls (Dark Aero makes them differ). */
@@ -70,6 +73,8 @@ export const THEME_TOKEN_KEYS: readonly (keyof ThemeTokens)[] = [
   'effect.glow',
   'control.surface',
   'control.border',
+  'control.knob',
+  'control.knobEdge',
   'button.primary',
   'rim.secondary',
   'rim.primary',
@@ -136,6 +141,9 @@ export const AQUA_TOKENS: ThemeTokens = {
   'control.surface':
     'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, color-mix(in srgb, #BEE9FB 42%, #fff) 100%)',
   'control.border': 'rgba(255, 255, 255, 0.9)',
+  'control.knob':
+    'radial-gradient(circle at 28% 21%, rgba(255,255,255,1) 0%, rgba(255,255,255,.85) 11%, rgba(255,255,255,.2) 31%, transparent 44%), radial-gradient(ellipse at 53% 78%, rgba(255,255,255,.94) 0%, rgba(242,253,255,.53) 34%, transparent 62%), radial-gradient(circle at 74% 62%, rgba(70,207,246,.38) 0%, rgba(96,218,247,.12) 40%, transparent 61%), linear-gradient(145deg, rgba(242,253,255,.97) 0%, rgba(204,241,251,.84) 42%, rgba(163,222,243,.64) 100%)',
+  'control.knobEdge': 'rgba(55,171,221,.72)',
   'button.primary':
     'linear-gradient(180deg, color-mix(in srgb, #55C7F2 52%, #fff) 0%, #55C7F2 42%, #00D4E7 100%)',
   'rim.secondary': 'rgba(91, 186, 225, 0.85)',
@@ -175,6 +183,9 @@ export const MIDNIGHT_TOKENS: ThemeTokens = {
   'control.surface':
     'linear-gradient(180deg, rgba(150, 195, 225, 0.14) 0%, rgba(20, 34, 48, 0.55) 100%)',
   'control.border': 'rgba(150, 195, 225, 0.24)',
+  'control.knob':
+    'radial-gradient(circle at 34% 26%, #ffffff 0%, #eef2f6 12%, #d0d7df 36%, #a9b2bd 62%, #7c8693 84%, #5b636e 100%)',
+  'control.knobEdge': 'rgba(40,48,58,.9)',
   'button.primary':
     'linear-gradient(180deg, color-mix(in srgb, #00D4E7 45%, #0B2230) 0%, color-mix(in srgb, #00D4E7 30%, #0A1A26) 100%)',
   'rim.secondary': 'rgba(150, 168, 180, 0.5)',
@@ -205,6 +216,9 @@ export const DORFIC_TOKENS: ThemeTokens = {
   'effect.glow': '0 10px 26px -10px color-mix(in srgb, #E76F00 65%, transparent)',
   'control.surface':
     'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, color-mix(in srgb, #FBE6BE 50%, #fff) 100%)',
+  'control.knob':
+    'radial-gradient(circle at 28% 21%, rgba(255,255,255,1) 0%, rgba(255,255,255,.85) 11%, rgba(255,255,255,.2) 31%, transparent 44%), radial-gradient(ellipse at 53% 78%, rgba(255,255,255,.94) 0%, rgba(255,251,242,.53) 34%, transparent 62%), radial-gradient(circle at 74% 62%, rgba(246,167,70,.38) 0%, rgba(247,183,96,.12) 40%, transparent 61%), linear-gradient(145deg, rgba(255,251,242,.97) 0%, rgba(251,235,204,.84) 42%, rgba(243,213,163,.64) 100%)',
+  'control.knobEdge': 'rgba(221,141,55,.72)',
   'button.primary':
     'linear-gradient(180deg, color-mix(in srgb, #F2AD55 52%, #fff) 0%, #F2AD55 42%, #E76F00 100%)',
   'rim.secondary': 'rgba(230, 150, 70, 0.85)',
@@ -236,6 +250,9 @@ export const TECHNOZEN_TOKENS: ThemeTokens = {
   'effect.glow': '0 10px 26px -10px color-mix(in srgb, #5DB433 60%, transparent)',
   'control.surface':
     'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, color-mix(in srgb, #DBE8D1 50%, #fff) 100%)',
+  'control.knob':
+    'radial-gradient(circle at 28% 21%, rgba(255,255,255,1) 0%, rgba(255,255,255,.85) 11%, rgba(255,255,255,.2) 31%, transparent 44%), radial-gradient(ellipse at 53% 78%, rgba(255,255,255,.94) 0%, rgba(248,250,247,.53) 34%, transparent 62%), radial-gradient(circle at 74% 62%, rgba(144,207,109,.38) 0%, rgba(161,214,129,.12) 40%, transparent 61%), linear-gradient(145deg, rgba(248,250,247,.97) 0%, rgba(226,236,219,.84) 42%, rgba(199,221,185,.64) 100%)',
+  'control.knobEdge': 'rgba(123,184,92,.72)',
   'button.primary':
     'linear-gradient(180deg, color-mix(in srgb, #98CF78 52%, #fff) 0%, #98CF78 42%, #5DB433 100%)',
   'rim.secondary': 'rgba(140, 190, 110, 0.85)',

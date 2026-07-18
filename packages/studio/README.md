@@ -28,9 +28,10 @@ preload as CommonJS with core bundled in, renderer as a browser ES module).
 ```text
 packages/studio/
   build.mjs            esbuild bundler for main, preload, and renderer
+  sync-themes.mjs      generates renderer/themes/<id>.css from the theme showcases
   src/main/main.ts     Electron main process; reuses core, registers IPC
   src/main/preload.ts  Context-isolated bridge exposing window.omd
-  src/renderer/        The UI (index.html, renderer.ts, styles.css)
+  src/renderer/        The UI (index.html, renderer.ts, shell.css, themes/)
   src/shared/types.ts  Types shared across main, preload, and renderer
 ```
 

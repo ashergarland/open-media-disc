@@ -66,124 +66,194 @@ export type IconName =
   | 'chevron-left'
   | 'chevron-right'
   | 'drive'
+  | 'folder'
   | 'label';
 
-const FILL = { fill: 'currentColor', stroke: 'none' };
+interface IconDef {
+  viewBox: string;
+  shapes: SVGElement[];
+}
 
-function iconShapes(name: IconName): SVGElement[] {
+/** Showcase Icon Library glyphs (paths lifted verbatim from the visual-theme showcases). */
+function iconDef(name: IconName): IconDef {
   switch (name) {
-    case 'create':
-      return [
-        shape('circle', { cx: '12', cy: '12', r: '9' }),
-        shape('circle', { cx: '12', cy: '12', r: '2.6' }),
-      ];
+    case 'create': // Write Disc
+      return {
+        viewBox: '0 0 64 64',
+        shapes: [
+          shape('circle', { cx: '32', cy: '32', r: '24', fill: 'none', stroke: 'currentColor', 'stroke-width': '3.2' }),
+          shape('circle', { cx: '32', cy: '32', r: '7', fill: 'none', stroke: 'currentColor', 'stroke-width': '3.2' }),
+          shape('path', { d: 'M32 8 A24 24 0 0 1 56 32', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.4', 'stroke-linecap': 'round' }),
+        ],
+      };
     case 'player':
-      return [shape('polygon', { points: '9,7 18,12 9,17', ...FILL })];
-    case 'catalog':
-      return [
-        shape('line', { x1: '4', y1: '7', x2: '20', y2: '7' }),
-        shape('line', { x1: '4', y1: '12', x2: '20', y2: '12' }),
-        shape('line', { x1: '4', y1: '17', x2: '14', y2: '17' }),
-      ];
-    case 'themes':
-      return [
-        shape('circle', { cx: '9', cy: '9.5', r: '3.4' }),
-        shape('circle', { cx: '15', cy: '9.5', r: '3.4' }),
-        shape('circle', { cx: '12', cy: '15', r: '3.4' }),
-      ];
-    case 'settings':
-      return [
-        shape('line', { x1: '4', y1: '8', x2: '20', y2: '8' }),
-        shape('circle', { cx: '9', cy: '8', r: '2.3', ...FILL }),
-        shape('line', { x1: '4', y1: '16', x2: '20', y2: '16' }),
-        shape('circle', { cx: '15', cy: '16', r: '2.3', ...FILL }),
-      ];
-    case 'shuffle':
-      return [
-        shape('path', { d: 'M4 7 H9 L17 17 H20' }),
-        shape('path', { d: 'M4 17 H9 L17 7 H20' }),
-        shape('polyline', { points: '17,4 20,7 17,10' }),
-        shape('polyline', { points: '17,14 20,17 17,20' }),
-      ];
-    case 'prev':
-      return [
-        shape('polygon', { points: '16,7 8,12 16,17', ...FILL }),
-        shape('rect', { x: '6', y: '7', width: '1.7', height: '10', ...FILL }),
-      ];
     case 'play':
-      return [shape('polygon', { points: '9,7 18,12 9,17', ...FILL })];
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [shape('path', { d: 'M8 5v14l11-7Z', fill: 'currentColor' })],
+      };
     case 'pause':
-      return [
-        shape('rect', { x: '8', y: '7', width: '2.4', height: '10', ...FILL }),
-        shape('rect', { x: '13.6', y: '7', width: '2.4', height: '10', ...FILL }),
-      ];
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('rect', { x: '5', y: '4', width: '5', height: '16', rx: '1.6', fill: 'currentColor' }),
+          shape('rect', { x: '14', y: '4', width: '5', height: '16', rx: '1.6', fill: 'currentColor' }),
+        ],
+      };
+    case 'prev':
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M7 6v12', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.5', 'stroke-linecap': 'round' }),
+          shape('path', { d: 'M17.5 6l-7 6l7 6V6Z', fill: 'currentColor' }),
+          shape('path', { d: 'M12.3 6l-7 6l7 6V6Z', fill: 'currentColor' }),
+        ],
+      };
     case 'next':
-      return [
-        shape('polygon', { points: '8,7 16,12 8,17', ...FILL }),
-        shape('rect', { x: '16.3', y: '7', width: '1.7', height: '10', ...FILL }),
-      ];
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M17 6v12', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.5', 'stroke-linecap': 'round' }),
+          shape('path', { d: 'M6.5 6l7 6l-7 6V6Z', fill: 'currentColor' }),
+          shape('path', { d: 'M11.7 6l7 6l-7 6V6Z', fill: 'currentColor' }),
+        ],
+      };
+    case 'shuffle':
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M3 7h3c2.3 0 3.6.5 5 2.2L16 15', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M16 7l4 0l-2.5 2.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M3 17h3c2.3 0 3.6-.5 5-2.2L16 9', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M16 17h4l-2.5-2.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+        ],
+      };
     case 'repeat':
-      return [
-        shape('path', { d: 'M7 8 H15 A4 4 0 0 1 19 12' }),
-        shape('polyline', { points: '16,5 19,8 16,11' }),
-        shape('path', { d: 'M17 16 H9 A4 4 0 0 1 5 12' }),
-        shape('polyline', { points: '8,13 5,16 8,19' }),
-      ];
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('polyline', { points: '17 1 21 5 17 9', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M3 11V9a4 4 0 0 1 4-4h14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('polyline', { points: '7 23 3 19 7 15', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M21 13v2a4 4 0 0 1-4 4H3', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+        ],
+      };
     case 'volume':
-      return [
-        shape('polygon', { points: '4,10 7,10 11,6 11,18 7,14 4,14', ...FILL }),
-        shape('path', { d: 'M14 9 A4 4 0 0 1 14 15' }),
-        shape('path', { d: 'M16.5 6.5 A8 8 0 0 1 16.5 17.5' }),
-      ];
-    case 'check':
-      return [shape('polyline', { points: '5,12 10,17 19,7' })];
-    case 'chevron-left':
-      return [shape('polyline', { points: '15,6 9,12 15,18' })];
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M4 9.5h3.2L12 5.5v13l-4.8-4H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z', fill: 'currentColor' }),
+          shape('path', { d: 'M15.5 9a4 4 0 0 1 0 6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
+          shape('path', { d: 'M18 6.5a7.5 7.5 0 0 1 0 11', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
+        ],
+      };
+    case 'catalog': // Library (record shelf)
+      return {
+        viewBox: '0 0 48 48',
+        shapes: [
+          shape('rect', { x: '9', y: '12', width: '6', height: '26', rx: '1.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6' }),
+          shape('rect', { x: '18', y: '9', width: '6', height: '29', rx: '1.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6' }),
+          shape('rect', { x: '27', y: '14', width: '6', height: '24', rx: '1.6', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6' }),
+          shape('path', { d: 'M6 40h37', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6', 'stroke-linecap': 'round' }),
+        ],
+      };
+    case 'themes': // Palette
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M12 3.2c-5 0-9 3.6-9 8 0 3.4 2.8 5.8 6 5.8.9 0 1.6.7 1.6 1.6 0 .4-.2.8-.4 1.1-.2.3-.4.6-.4 1 0 .8.7 1.3 1.6 1.3 4.8 0 8-3.4 8-8.2 0-4.8-4-11-9-11Z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
+          shape('circle', { cx: '7.5', cy: '12', r: '1.1', fill: 'currentColor' }),
+          shape('circle', { cx: '9.5', cy: '8', r: '1.1', fill: 'currentColor' }),
+          shape('circle', { cx: '14.5', cy: '7.6', r: '1.1', fill: 'currentColor' }),
+          shape('circle', { cx: '17', cy: '10.8', r: '1.1', fill: 'currentColor' }),
+        ],
+      };
+    case 'settings': // Gear
+      return {
+        viewBox: '0 0 48 48',
+        shapes: [
+          shape('circle', { cx: '24', cy: '24', r: '6', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.8' }),
+          shape('path', { d: 'M24 8v5M24 35v5M8 24h5M35 24h5M13 13l3.5 3.5M31.5 31.5L35 35M35 13l-3.5 3.5M16.5 31.5L13 35', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6', 'stroke-linecap': 'round' }),
+        ],
+      };
+    case 'label': // Tag
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 3 12.2V5a2 2 0 0 1 2-2h7.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8Z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
+          shape('circle', { cx: '7.8', cy: '7.8', r: '1.5', fill: 'currentColor' }),
+        ],
+      };
+    case 'drive': // Optical Drive
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('rect', { x: '3', y: '6.5', width: '18', height: '11', rx: '2', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+          shape('line', { x1: '7', y1: '12', x2: '13', y2: '12', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
+          shape('circle', { cx: '17', cy: '12', r: '1.2', fill: 'currentColor' }),
+        ],
+      };
+    case 'folder': // Open folder
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h7A1.5 1.5 0 0 1 19 8.5V9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
+          shape('path', { d: 'M2.6 10.5A1.4 1.4 0 0 1 4 9h16a1.4 1.4 0 0 1 1.35 1.76l-1.6 6A1.6 1.6 0 0 1 18.2 18H4.8a1.6 1.6 0 0 1-1.55-1.2l-1.2-4.8A1.4 1.4 0 0 1 2.6 10.5Z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
+        ],
+      };
+    case 'note': // Tracks (music note)
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M9 18V5l10-2v13', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
+          shape('circle', { cx: '6', cy: '18', r: '3', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+          shape('circle', { cx: '16', cy: '16', r: '3', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
+        ],
+      };
+    case 'wave': // FLAC waveform
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('line', { x1: '5', y1: '9', x2: '5', y2: '15', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
+          shape('line', { x1: '9', y1: '5', x2: '9', y2: '19', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
+          shape('line', { x1: '13', y1: '8', x2: '13', y2: '16', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
+          shape('line', { x1: '17', y1: '4', x2: '17', y2: '20', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
+          shape('line', { x1: '21', y1: '9', x2: '21', y2: '15', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
+        ],
+      };
+    case 'check': // Verified
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('circle', { cx: '12', cy: '12', r: '9.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.9' }),
+          shape('path', { d: 'M8 12.4l2.6 2.6L16 9.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.1', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+        ],
+      };
     case 'chevron-right':
-      return [shape('polyline', { points: '9,6 15,12 9,18' })];
-    case 'drive':
-      return [
-        shape('rect', { x: '4', y: '8', width: '16', height: '9', rx: '2' }),
-        shape('circle', { cx: '9', cy: '12.5', r: '1.4', ...FILL }),
-        shape('line', { x1: '13', y1: '12.5', x2: '17', y2: '12.5' }),
-      ];
-    case 'label':
-      return [
-        shape('path', { d: 'M13 4 H19 A1 1 0 0 1 20 5 V11 L11 20 L4 13 Z' }),
-        shape('circle', { cx: '16', cy: '8', r: '1.4', ...FILL }),
-      ];
-    case 'note':
-      return [
-        shape('circle', { cx: '8', cy: '17', r: '2.6', ...FILL }),
-        shape('path', { d: 'M10.6 17 V5 L17 7' }),
-      ];
-    case 'wave':
-      return [
-        shape('line', { x1: '4', y1: '10', x2: '4', y2: '14' }),
-        shape('line', { x1: '8', y1: '7', x2: '8', y2: '17' }),
-        shape('line', { x1: '12', y1: '9', x2: '12', y2: '15' }),
-        shape('line', { x1: '16', y1: '6', x2: '16', y2: '18' }),
-        shape('line', { x1: '20', y1: '10', x2: '20', y2: '14' }),
-      ];
+      return {
+        viewBox: '0 0 24 36',
+        shapes: [shape('path', { d: 'M6 4 L18 18 L6 32', fill: 'none', stroke: 'currentColor', 'stroke-width': '3.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })],
+      };
+    case 'chevron-left':
+      return {
+        viewBox: '0 0 24 36',
+        shapes: [shape('path', { d: 'M18 4 L6 18 L18 32', fill: 'none', stroke: 'currentColor', 'stroke-width': '3.4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })],
+      };
     default:
-      return [];
+      return { viewBox: '0 0 24 24', shapes: [] };
   }
 }
 
-/** Build an inline SVG icon that inherits `currentColor`. */
-export function svgIcon(name: IconName, size = 20): SVGElement {
+/** Build an inline SVG icon (showcase Icon Library glyph) that inherits `currentColor`. */
+export function svgIcon(name: IconName, size = 22): SVGElement {
+  const def = iconDef(name);
   const svg = shape('svg', {
-    viewBox: '0 0 24 24',
+    viewBox: def.viewBox,
     width: String(size),
     height: String(size),
-    fill: 'none',
-    stroke: 'currentColor',
-    'stroke-width': '1.7',
-    'stroke-linecap': 'round',
-    'stroke-linejoin': 'round',
     'aria-hidden': 'true',
   });
-  for (const child of iconShapes(name)) svg.appendChild(child);
+  for (const child of def.shapes) svg.appendChild(child);
   return svg;
 }
 
@@ -210,9 +280,27 @@ export function svgWordmark(): SVGElement {
   defs.appendChild(grad);
   svg.appendChild(defs);
 
-  const omd = shape('text', { x: '79', y: '35', class: 'wm-omd', 'text-anchor': 'middle' });
+  const omd = shape('text', {
+    x: '79',
+    y: '40',
+    'text-anchor': 'middle',
+    fill: 'url(#omdWordmarkFill)',
+    'font-family': "'Segoe UI', system-ui, sans-serif",
+    'font-weight': '800',
+    'font-size': '34',
+    'letter-spacing': '-0.5',
+  });
   omd.textContent = 'OMD';
-  const studio = shape('text', { x: '79', y: '52', class: 'wm-studio', 'text-anchor': 'middle' });
+  const studio = shape('text', {
+    x: '79',
+    y: '54',
+    'text-anchor': 'middle',
+    fill: 'url(#omdWordmarkFill)',
+    'font-family': "'Segoe UI', system-ui, sans-serif",
+    'font-weight': '700',
+    'font-size': '12.5',
+    'letter-spacing': '4',
+  });
   studio.textContent = 'STUDIO';
   svg.appendChild(omd);
   svg.appendChild(studio);

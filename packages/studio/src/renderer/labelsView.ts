@@ -7,7 +7,7 @@
  */
 
 import type { CatalogEntry, StudioLabelSheetRequest } from '../shared/types';
-import { clearChildren, el, svgIcon } from './dom';
+import { clearChildren, el, svgIcon, type IconName } from './dom';
 
 interface LabelSize {
   key: string;
@@ -81,31 +81,24 @@ function render(): void {
         text: 'Print album-art label sheets. Pick albums, set copies, and lay them out across pages.',
       }),
     ]),
-    el('div', { class: 'wizard-actions' }, [
-      primaryButton('Choose folder...', chooseFolder),
-      ...(state.libraryDir ? [secondaryButton('Rescan', rescan)] : []),
-    ]),
   ];
-  if (state.libraryDir) {
-    children.push(el('p', { class: 'muted small', text: state.libraryDir }));
-  }
 
   if (state.loading) {
-    children.push(spinnerRow('Scanning...'));
+    children.push(el('section', { class: 'card' }, [spinnerRow('Scanning...')]));
   } else if (state.error) {
-    children.push(el('p', { class: 'wizard-error', text: state.error }));
+    children.push(el('section', { class: 'card' }, [el('p', { class: 'select-lead', text: state.error })]));
   } else if (state.entries) {
     children.push(state.entries.length === 0 ? emptyPanel() : buildPanel(state.entries));
   } else {
     children.push(
-      el('section', { class: 'wizard-panel' }, [
+      el('section', { class: 'card' }, [
         el('div', { class: 'select-hero' }, [
-          el('span', { class: 'select-icon' }, [svgIcon('label', 46)]),
+          el('span', { class: 'select-icon' }, [svgIcon('label', 54)]),
           el('p', {
-            class: 'muted',
+            class: 'select-lead',
             text: 'Choose a folder of OMD packages to pick which albums to make labels for.',
           }),
-          primaryButton('Choose folder...', chooseFolder),
+          primaryButton('Choose folder...', chooseFolder, 'label'),
         ]),
       ]),
     );
@@ -113,39 +106,54 @@ function render(): void {
   host.append(...children);
 }
 
+/** Path + change/rescan row shown atop the loaded panels. */
+function sourceRow(): HTMLElement {
+  return el('div', { class: 'burn-source' }, [
+    el('span', { class: 'burn-source-path', text: state.libraryDir ?? '' }),
+    el('div', { class: 'bc-actions' }, [
+      secondaryButton('Rescan', rescan),
+      secondaryButton('Change folder...', chooseFolder),
+    ]),
+  ]);
+}
+
 function emptyPanel(): HTMLElement {
-  return el('section', { class: 'wizard-panel' }, [
+  return el('section', { class: 'card' }, [
+    sourceRow(),
     el('p', {
-      class: 'muted',
+      class: 'select-lead',
       text: 'No OMD packages here. Choose a folder that contains package subfolders (for example your build output).',
     }),
   ]);
 }
 
 function buildPanel(entries: CatalogEntry[]): HTMLElement {
-  return el('section', { class: 'wizard-panel' }, [el('div', { class: 'wizard-cols labels-cols' }, [
-    el('div', { class: 'wizard-col' }, [
-      el('div', { class: 'labels-col-head' }, [
-        el('h2', { class: 'labels-col-title', text: 'Albums' }),
-        el('div', { class: 'labels-col-tools' }, [
-          textButton('Select all', () => {
-            for (const entry of entries) {
-              if (entry.coverDataUri && !state.selected.has(entry.source)) {
-                state.selected.set(entry.source, 1);
+  return el('section', { class: 'card' }, [
+    sourceRow(),
+    el('div', { class: 'grid cols-2' }, [
+      el('div', { class: 'stack' }, [
+        el('div', { class: 'labels-col-head' }, [
+          el('p', { class: 'eyebrow', text: 'Albums' }),
+          el('div', { class: 'labels-col-tools' }, [
+            textButton('Select all', () => {
+              for (const entry of entries) {
+                if (entry.coverDataUri && !state.selected.has(entry.source)) {
+                  state.selected.set(entry.source, 1);
+                }
               }
-            }
-            scheduleBuild();
-          }),
-          textButton('Clear', () => {
-            state.selected.clear();
-            scheduleBuild();
-          }),
+              scheduleBuild();
+            }),
+            textButton('Clear', () => {
+              state.selected.clear();
+              scheduleBuild();
+            }),
+          ]),
         ]),
+        el('div', { class: 'label-picker' }, entries.map(pickRow)),
       ]),
-      el('div', { class: 'label-picker' }, entries.map(pickRow)),
+      el('div', { class: 'stack' }, [sheetPanel()]),
     ]),
-    el('div', { class: 'wizard-col' }, [sheetPanel()]),
-  ])]);
+  ]);
 }
 
 function pickRow(entry: CatalogEntry): HTMLElement {
@@ -155,7 +163,7 @@ function pickRow(entry: CatalogEntry): HTMLElement {
 
   const cover = entry.coverDataUri
     ? el('img', { class: 'pick-cover', src: entry.coverDataUri, alt: '' })
-    : el('div', { class: 'pick-cover pick-cover-empty' }, [svgIcon('create', 20)]);
+    : el('div', { class: 'pick-cover pick-cover-empty' }, [svgIcon('note', 20)]);
 
   const check = el('input', {
     type: 'checkbox',
@@ -193,15 +201,15 @@ function copiesStepper(source: string, copies: number): HTMLElement {
     state.selected.set(source, Math.max(1, value));
     scheduleBuild();
   };
-  return el('div', { class: 'copies' }, [
-    stepBtn('-', () => setCopies(copies - 1)),
-    el('span', { class: 'copies-num', text: String(copies) }),
-    stepBtn('+', () => setCopies(copies + 1)),
+  return el('div', { class: 'stepper', role: 'group', 'aria-label': 'Copies' }, [
+    stepBtn('\u2212', 'Decrease copies', () => setCopies(copies - 1)),
+    el('span', { class: 'stepper-num', text: String(copies) }),
+    stepBtn('+', 'Increase copies', () => setCopies(copies + 1)),
   ]);
 }
 
-function stepBtn(label: string, onClick: () => void): HTMLElement {
-  const button = el('button', { class: 'copies-btn', type: 'button' }, [label]);
+function stepBtn(label: string, aria: string, onClick: () => void): HTMLElement {
+  const button = el('button', { class: 'stepper-btn', type: 'button', 'aria-label': aria }, [label]);
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -212,7 +220,7 @@ function stepBtn(label: string, onClick: () => void): HTMLElement {
 
 function sheetPanel(): HTMLElement {
   const children: (Node | string)[] = [
-    el('h2', { class: 'labels-col-title', text: 'Sheet' }),
+    el('p', { class: 'eyebrow', text: 'Sheet' }),
     el('div', { class: 'label-options' }, [
       labelField('Label size', selectEl(SIZES.map((s) => ({ value: s.key, label: s.label })), state.sizeKey, (v) => {
         state.sizeKey = v;
@@ -226,18 +234,18 @@ function sheetPanel(): HTMLElement {
   ];
 
   if (state.selected.size === 0) {
-    children.push(el('p', { class: 'muted', text: 'Select one or more albums to build a label sheet.' }));
-    return el('div', { class: 'sheet-side' }, children);
+    children.push(el('p', { class: 'select-lead', text: 'Select one or more albums to build a label sheet.' }));
+    return el('div', { class: 'stack' }, children);
   }
 
   if (state.buildError) {
-    children.push(el('p', { class: 'wizard-error', text: state.buildError }));
-    return el('div', { class: 'sheet-side' }, children);
+    children.push(el('p', { class: 'select-lead', text: state.buildError }));
+    return el('div', { class: 'stack' }, children);
   }
 
   if (state.building && !state.pages) {
     children.push(spinnerRow('Building sheet...'));
-    return el('div', { class: 'sheet-side' }, children);
+    return el('div', { class: 'stack' }, children);
   }
 
   if (state.pages) {
@@ -245,13 +253,13 @@ function sheetPanel(): HTMLElement {
     children.push(
       el('div', { class: 'label-summary' }, [
         el('span', { class: 'label-summary-count', text: `${state.labelCount} labels` }),
-        el('span', { class: 'muted', text: ` on ${state.pages.length} ${pageWord}` }),
+        el('span', { class: 'select-lead', text: ` on ${state.pages.length} ${pageWord}` }),
       ]),
     );
     children.push(
       el(
         'div',
-        { class: 'sheet-pages' },
+        { class: 'sheet-preview' },
         state.pages.map((svg, index) =>
           el('div', { class: 'sheet-page' }, [
             el('img', {
@@ -266,30 +274,27 @@ function sheetPanel(): HTMLElement {
     if (state.skipped.length) {
       children.push(
         el('p', {
-          class: 'muted small',
+          class: 'select-lead',
           text: `${state.skipped.length} album${state.skipped.length === 1 ? '' : 's'} skipped (no cover art).`,
         }),
       );
     }
     children.push(
-      el('div', { class: 'console-actions' }, [
-        primaryButton('Print...', printSheet),
+      el('div', { class: 'bc-actions' }, [
+        primaryButton('Print...', printSheet, 'label'),
         secondaryButton('Save SVG...', saveSheet),
       ]),
     );
     if (state.saveNotice) {
-      children.push(el('p', { class: 'muted small', text: state.saveNotice }));
+      children.push(el('p', { class: 'select-lead', text: state.saveNotice }));
     }
   }
 
-  return el('div', { class: 'sheet-side' }, children);
+  return el('div', { class: 'stack' }, children);
 }
 
 function labelField(label: string, control: HTMLElement): HTMLElement {
-  return el('label', { class: 'label-field' }, [
-    el('span', { class: 'console-label', text: label }),
-    control,
-  ]);
+  return el('label', { class: 'label-field' }, [el('span', { class: 'eyebrow', text: label }), control]);
 }
 
 function selectEl(
@@ -298,7 +303,7 @@ function selectEl(
   onChange: (value: string) => void,
 ): HTMLSelectElement {
   const select = el('select', {
-    class: 'ui-select',
+    class: 'drive-select',
     onchange: (event: Event) => onChange((event.target as HTMLSelectElement).value),
   }) as HTMLSelectElement;
   for (const option of options) {
@@ -392,12 +397,31 @@ async function printSheet(): Promise<void> {
 }
 
 /* Shared bits */
-function primaryButton(label: string, onClick: () => void | Promise<void>): HTMLElement {
-  return el('button', { class: 'btn btn-primary', onclick: () => void onClick() }, [label]);
+function primaryButton(
+  label: string,
+  onClick: () => void | Promise<void>,
+  icon?: IconName,
+): HTMLElement {
+  const kids: (Node | string)[] = [el('span', { class: 'liquid-rim', 'aria-hidden': 'true' })];
+  if (icon) {
+    const glyph = svgIcon(icon, 20);
+    glyph.setAttribute('class', 'btn__icon');
+    kids.push(glyph);
+  }
+  kids.push(el('span', { class: 'btn__label', text: label }));
+  return el(
+    'button',
+    { class: 'btn btn--primary', type: 'button', onclick: () => void onClick() },
+    kids,
+  );
 }
 
 function secondaryButton(label: string, onClick: () => void | Promise<void>): HTMLElement {
-  return el('button', { class: 'btn', onclick: () => void onClick() }, [label]);
+  return el('button', { class: 'btn btn--secondary', type: 'button', onclick: () => void onClick() }, [
+    el('span', { class: 'liquid-rim', 'aria-hidden': 'true' }),
+    el('span', { class: 'button-surface', 'aria-hidden': 'true' }),
+    el('span', { class: 'btn__label', text: label }),
+  ]);
 }
 
 function textButton(label: string, onClick: () => void): HTMLElement {
