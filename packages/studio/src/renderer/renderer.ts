@@ -204,7 +204,11 @@ function renderNowPlayingBar(): void {
   lastDockKey = dockKey(pstate);
   clearChildren(nowPlayingHost);
   nowPlayingHost.append(
-    renderNowPlaying(pstate, NOW_PLAYING_HANDLERS, { verified: discVerified() }),
+    renderNowPlaying(pstate, NOW_PLAYING_HANDLERS, {
+      verified: discVerified(),
+      ...(state.disc?.audioCodec ? { fileType: state.disc.audioCodec } : {}),
+      ...(state.disc?.coverDataUri ? { coverDataUri: state.disc.coverDataUri } : {}),
+    }),
   );
 }
 
@@ -253,36 +257,6 @@ function btn(
       onclick: () => void onClick(),
     },
     kids,
-  );
-}
-
-/** A full-size player-control glass button (showcase .pc-button). */
-function pcButton(
-  icon: IconName,
-  label: string,
-  onClick: () => void,
-  options: { primary?: boolean; active?: boolean; disabled?: boolean } = {},
-): HTMLElement {
-  const glyph = svgIcon(icon);
-  glyph.setAttribute('class', 'pc-icon');
-  const classes = ['pc-button'];
-  if (options.primary) classes.push('primary');
-  if (options.active) classes.push('is-active');
-  return el(
-    'button',
-    {
-      class: classes.join(' '),
-      type: 'button',
-      'aria-label': label,
-      title: label,
-      disabled: options.disabled ? true : null,
-      onclick: onClick,
-    },
-    [
-      el('span', { class: 'pc-rim', 'aria-hidden': 'true' }),
-      el('span', { class: 'pc-surface', 'aria-hidden': 'true' }),
-      el('span', { class: 'pc-content' }, [glyph]),
-    ],
   );
 }
 
@@ -757,133 +731,6 @@ function formatClock(seconds: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/* Analog VU meter (ported from the showcase): build the scale + set the needle. */
-const VU_NS = 'http://www.w3.org/2000/svg';
-const VU_CFG = {
-  labels: [-20, -10, -6, -3, 0, 3],
-  subs: 4,
-  start: -57,
-  end: 57,
-  pivot: { x: 210, y: 214 },
-  r: { label: 181, tickOuter: 153, major: 126, minor: 136 },
-  zones: [
-    { max: -6, color: '#2788c6' },
-    { max: 0, color: '#35c98b' },
-    { max: 2, color: '#d5d844' },
-    { max: Infinity, color: '#eb3541' },
-  ],
-};
-function vuPoint(deg: number, rad: number): { x: number; y: number } {
-  const r = (deg * Math.PI) / 180;
-  return { x: VU_CFG.pivot.x + Math.sin(r) * rad, y: VU_CFG.pivot.y - Math.cos(r) * rad };
-}
-function vuColor(v: number): string {
-  return (VU_CFG.zones.find((z) => v <= z.max) ?? VU_CFG.zones[VU_CFG.zones.length - 1]!).color;
-}
-function vuAngLabel(i: number): number {
-  return VU_CFG.start + (i / (VU_CFG.labels.length - 1)) * (VU_CFG.end - VU_CFG.start);
-}
-function vuAngVal(v: number): number {
-  const L = VU_CFG.labels;
-  const first = L[0]!;
-  const last = L[L.length - 1]!;
-  if (v <= first) return VU_CFG.start;
-  if (v >= last) return VU_CFG.end;
-  for (let i = 0; i < L.length - 1; i++) {
-    const lo = L[i]!;
-    const hi = L[i + 1]!;
-    if (v >= lo && v <= hi) {
-      const p = (v - lo) / (hi - lo);
-      return vuAngLabel(i) + p * (vuAngLabel(i + 1) - vuAngLabel(i));
-    }
-  }
-  return VU_CFG.start;
-}
-function vuLine(attrs: Record<string, string>): SVGElement {
-  const node = document.createElementNS(VU_NS, 'line');
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  return node;
-}
-function buildVuScale(meter: HTMLElement, level: number): void {
-  const layer = meter.querySelector('.scale-layer');
-  if (!layer) return;
-  for (let s = 0; s < VU_CFG.labels.length - 1; s++) {
-    const lo = VU_CFG.labels[s]!;
-    const hi = VU_CFG.labels[s + 1]!;
-    const la = vuAngLabel(s);
-    const ha = vuAngLabel(s + 1);
-    for (let d = 0; d < VU_CFG.subs; d++) {
-      const p = d / VU_CFG.subs;
-      const a = la + p * (ha - la);
-      const v = lo + p * (hi - lo);
-      const o = vuPoint(a, VU_CFG.r.tickOuter);
-      const inr = vuPoint(a, d === 0 ? VU_CFG.r.major : VU_CFG.r.minor);
-      layer.appendChild(
-        vuLine({
-          x1: inr.x.toFixed(2),
-          y1: inr.y.toFixed(2),
-          x2: o.x.toFixed(2),
-          y2: o.y.toFixed(2),
-          stroke: vuColor(v),
-          'stroke-width': d === 0 ? '4.2' : '2.8',
-          class: 'scale-tick',
-        }),
-      );
-    }
-  }
-  const end = VU_CFG.labels[VU_CFG.labels.length - 1]!;
-  const oe = vuPoint(VU_CFG.end, VU_CFG.r.tickOuter);
-  const ie = vuPoint(VU_CFG.end, VU_CFG.r.major);
-  layer.appendChild(
-    vuLine({
-      x1: ie.x.toFixed(2),
-      y1: ie.y.toFixed(2),
-      x2: oe.x.toFixed(2),
-      y2: oe.y.toFixed(2),
-      stroke: vuColor(end),
-      'stroke-width': '4.2',
-      class: 'scale-tick',
-    }),
-  );
-  VU_CFG.labels.forEach((v, i) => {
-    const pnt = vuPoint(vuAngLabel(i), VU_CFG.r.label);
-    const t = document.createElementNS(VU_NS, 'text');
-    t.setAttribute('x', pnt.x.toFixed(2));
-    t.setAttribute('y', pnt.y.toFixed(2));
-    t.setAttribute('fill', v > 0 ? '#d73342' : '#176795');
-    t.setAttribute('class', 'scale-number');
-    t.textContent = v > 0 ? `+${v}` : `${v}`;
-    layer.appendChild(t);
-  });
-  const needle = meter.querySelector('.needle-group');
-  if (needle instanceof SVGElement) needle.style.transform = `rotate(${vuAngVal(level)}deg)`;
-}
-
-function vuMeter(channel: 'left' | 'right', badge: string, level: number): HTMLElement {
-  const meter = el(
-    'section',
-    { class: 'vu-meter', 'data-meter': channel, 'aria-label': `${badge} channel VU meter` },
-    [
-      el('span', { class: 'vu-rim', 'aria-hidden': 'true' }),
-      el('span', { class: 'vu-surface', 'aria-hidden': 'true' }),
-      rawSvg(
-        '<svg class="vu-dial" viewBox="0 0 420 230" aria-hidden="true"><g class="scale-layer"></g><g class="needle-group"><path class="needle-body" d="M208.35 216 L209.46 77 Q210 68 210.54 77 L211.65 216 Z"/><path class="needle-highlight" d="M209.82 209 L209.82 78"/></g></svg>',
-      ),
-      el('span', { class: 'vu-pivot', 'aria-hidden': 'true' }),
-      el('span', { class: 'vu-badge', 'aria-hidden': 'true', text: badge }),
-    ],
-  );
-  buildVuScale(meter, level);
-  return meter;
-}
-
-function vuMeters(active: boolean): HTMLElement {
-  return el('div', { class: 'stereo-vu' }, [
-    vuMeter('left', 'L', active ? -2.1 : -20),
-    vuMeter('right', 'R', active ? -4.3 : -20),
-  ]);
-}
-
 function trackPanel(disc: StudioDiscInfo, currentIndex: number): HTMLElement {
   const list = el('ol', { class: 'track-list' });
   disc.tracks.forEach((track, index) => {
@@ -972,82 +819,105 @@ function playerView(): HTMLElement {
   ]);
 
   const verified = state.verify ? state.verify.valid : disc.valid;
-  const hero = el('div', { class: 'player-hero' }, [
-    cover,
-    el('div', { class: 'album-meta' }, [
-      el('div', { class: 'album-title', text: disc.album }),
-      el('div', { class: 'album-artist', text: disc.artist }),
-      el('dl', { class: 'kv-list' }, [
-        kvRow('Disc ID', disc.discId),
-        kvRow('Tracks', `${disc.trackCount} \u00b7 ${formatClock(disc.totalDurationSeconds)}`),
-        kvRow('Audio', disc.audioFormat),
-        ...(disc.discFormat ? [kvRow('Disc', disc.discFormat)] : []),
-      ]),
-      el('div', { class: 'player-badges' }, [
-        state.reverifying
-          ? el('span', { class: 'npd-chip' }, [
-              el('span', { class: 'spinner', 'aria-hidden': 'true' }),
-              'Verifying...',
-            ])
-          : el('span', { class: `npd-chip${verified ? ' verified' : ''}` }, [
-              svgIcon('check'),
-              verified ? 'Verified' : 'Not verified',
-            ]),
-        el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), 'FLAC lossless']),
-      ]),
-      el('div', { class: 'bc-actions' }, [
-        btn(playing ? 'Pause' : 'Play', () => player.togglePlayPause(), {
-          primary: true,
-          icon: playing ? 'pause' : 'play',
-        }),
-        ...(state.discSourceKind === 'disc'
-          ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip' })]
-          : []),
-        ...(state.discSourceKind === 'package'
-          ? [
-              btn('Burn to Disc', () => void openAlbumBurn(), {
-                icon: 'create',
-                disabled: !disc.valid,
-              }),
-            ]
-          : []),
-        btn('Re-verify', () => void reverify()),
-        btn('Close', () => {
-          state.disc = undefined;
-          state.verify = undefined;
-          state.discSourceKind = undefined;
-          state.ripStatus = undefined;
-          state.albumBurn = undefined;
-          renderMain();
-        }),
-      ]),
-      ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
+
+  const rows: HTMLElement[] = [kvRow('Album', disc.album), kvRow('Artist', disc.artist)];
+  if (disc.releaseYear) rows.push(kvRow('Year', String(disc.releaseYear)));
+  rows.push(
+    kvRow('Disc ID', disc.discId),
+    kvRow('Tracks', String(disc.trackCount)),
+    kvRow('Total time', formatClock(disc.totalDurationSeconds)),
+    kvRow('Format', disc.audioCodec),
+  );
+  if (disc.audioBitDepth) rows.push(kvRow('Bit depth', `${disc.audioBitDepth}-bit`));
+  if (disc.audioSampleRate) rows.push(kvRow('Sample rate', `${formatKHz(disc.audioSampleRate)} kHz`));
+  if (disc.discFormat) rows.push(kvRow('Disc', disc.discFormat));
+
+  const badge = state.reverifying
+    ? el('span', { class: 'npd-chip' }, [
+        el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+        'Verifying...',
+      ])
+    : el('span', { class: `npd-chip${verified ? ' verified' : ''}` }, [
+        svgIcon('check'),
+        verified ? 'Verified' : 'Not verified',
+      ]);
+
+  const meta = el('div', { class: 'album-meta' }, [
+    el('div', { class: 'album-title', text: disc.album }),
+    el('div', { class: 'album-artist', text: disc.artist }),
+    el('dl', { class: 'kv-list' }, rows),
+    el('div', { class: 'player-badges' }, [
+      badge,
+      el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), 'FLAC lossless']),
     ]),
+    el('div', { class: 'bc-actions' }, [
+      btn(playing ? 'Pause' : 'Play', () => player.togglePlayPause(), {
+        primary: true,
+        icon: playing ? 'pause' : 'play',
+      }),
+      ...(state.discSourceKind === 'disc'
+        ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip' })]
+        : []),
+      ...(state.discSourceKind === 'package'
+        ? [btn('Burn to Disc', () => void openAlbumBurn(), { icon: 'create', disabled: !disc.valid })]
+        : []),
+      btn('Re-verify', () => void reverify()),
+    ]),
+    ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
   ]);
 
-  const controls = el('div', { class: 'stack' }, [
-    el('div', {}, [
-      el('p', { class: 'eyebrow', text: 'Player Controls' }),
-      el('div', { class: 'player-controls' }, [
-        pcButton('shuffle', 'Shuffle', () => player.toggleShuffle(), { active: pstate.shuffle }),
-        pcButton('prev', 'Previous', () => player.previous()),
-        pcButton(playing ? 'pause' : 'play', playing ? 'Pause' : 'Play', () =>
-          player.togglePlayPause(), { primary: true }),
-        pcButton('next', 'Next', () => player.next()),
-        pcButton('repeat', `Repeat: ${pstate.repeat}`, () => player.cycleRepeat(), {
-          active: pstate.repeat !== 'off',
-        }),
-      ]),
-    ]),
-    el('div', {}, [el('p', { class: 'eyebrow', text: 'VU Meters' }), vuMeters(playing)]),
-  ]);
+  const layout = el('div', { class: 'disc-layout' }, [cover, meta, trackPanel(disc, currentIndex)]);
 
   return el('div', { class: 'view' }, [
     head,
-    el('section', { class: 'card' }, [hero]),
+    el('section', { class: 'card' }, [layout]),
     ...(state.albumBurn ? [el('section', { class: 'card' }, [albumBurnPanel()])] : []),
-    el('section', { class: 'card' }, [
-      el('div', { class: 'grid cols-2' }, [trackPanel(disc, currentIndex), controls]),
+    ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
+  ]);
+}
+
+function formatKHz(hz: number): string {
+  const khz = hz / 1000;
+  return Number.isInteger(khz) ? String(khz) : khz.toFixed(1);
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(1)} ${units[unit]}`;
+}
+
+function discUsageCard(disc: StudioDiscInfo): HTMLElement {
+  const capacity = disc.discCapacityBytes ?? 0;
+  const used = disc.totalSizeBytes;
+  const free = Math.max(0, capacity - used);
+  const pct = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0;
+  const fill = el('div', { class: 'meter-fill' });
+  fill.style.width = `${pct.toFixed(1)}%`;
+  return el('section', { class: 'card' }, [
+    el('p', { class: 'eyebrow', text: 'Disc' }),
+    el('div', { class: 'disc-usage' }, [
+      el('div', { class: 'storage-stat' }, [
+        el('div', { class: 'label', text: 'Used' }),
+        el('div', { class: 'value', text: formatBytes(used) }),
+      ]),
+      el('div', { class: 'meter-wrap' }, [
+        el('div', { class: 'meter', role: 'progressbar', 'aria-label': 'Disc usage' }, [fill]),
+        el('div', {
+          class: 'meter-caption',
+          text: `${disc.discFormat ?? 'Disc'} \u00b7 ${formatBytes(capacity)} capacity`,
+        }),
+      ]),
+      el('div', { class: 'storage-stat' }, [
+        el('div', { class: 'label', text: 'Free' }),
+        el('div', { class: 'value', text: formatBytes(free) }),
+      ]),
     ]),
   ]);
 }

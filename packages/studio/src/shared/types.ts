@@ -134,11 +134,20 @@ export interface StudioDiscInfo {
   album: string;
   trackCount: number;
   totalDurationSeconds: number;
+  totalSizeBytes: number;
   valid: boolean;
-  /** Audio format, e.g. "FLAC · 24-bit / 48 kHz". */
-  audioFormat: string;
+  /** Audio codec, e.g. "FLAC". */
+  audioCodec: string;
+  /** Bits per sample, e.g. 16 or 24. */
+  audioBitDepth?: number;
+  /** Sample rate in Hz, e.g. 44100. */
+  audioSampleRate?: number;
+  /** Release year from the manifest. */
+  releaseYear?: number;
   /** Physical disc format when read from a drive, e.g. "8cm mini DVD-RW". */
   discFormat?: string;
+  /** Physical disc capacity in bytes, when read from a drive. */
+  discCapacityBytes?: number;
   coverDataUri?: string;
   tracks: StudioDiscTrack[];
 }

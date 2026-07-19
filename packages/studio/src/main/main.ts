@@ -178,28 +178,24 @@ async function readPrefix(filePath: string, bytes: number): Promise<Buffer> {
   }
 }
 
-function formatKHz(hz: number): string {
-  const khz = hz / 1000;
-  return Number.isInteger(khz) ? String(khz) : khz.toFixed(1);
-}
-
-/** A display label for the audio format, e.g. "FLAC · 24-bit / 48 kHz". */
-async function audioFormatLabel(
+/** Audio codec + bit depth + sample rate, read from the first track's FLAC header. */
+async function audioInfo(
   source: string,
   inspection: { audioCodec: string; tracks: { filename: string }[] },
-): Promise<string> {
+): Promise<{ codec: string; bitDepth?: number; sampleRate?: number }> {
   const codec = inspection.audioCodec || 'FLAC';
   const first = inspection.tracks[0];
-  if (!first) return codec;
+  if (!first) return { codec };
   try {
     const filePath = path.resolve(source, ...first.filename.split('/'));
     const meta = parseFlacMetadata(await readPrefix(filePath, 65536));
-    const detail: string[] = [];
-    if (meta.bitsPerSample) detail.push(`${meta.bitsPerSample}-bit`);
-    if (meta.sampleRate) detail.push(`${formatKHz(meta.sampleRate)} kHz`);
-    return detail.length > 0 ? `${codec} \u00b7 ${detail.join(' / ')}` : codec;
+    return {
+      codec,
+      ...(meta.bitsPerSample ? { bitDepth: meta.bitsPerSample } : {}),
+      ...(meta.sampleRate ? { sampleRate: meta.sampleRate } : {}),
+    };
   } catch {
-    return codec;
+    return { codec };
   }
 }
 
@@ -230,7 +226,7 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
   allowMediaBase(source);
   const validation = await validatePackage(source);
   const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
-  const audioFormat = await audioFormatLabel(source, inspection);
+  const audio = await audioInfo(source, inspection);
   return {
     source,
     discId: inspection.discId,
@@ -238,8 +234,12 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
     album: inspection.album,
     trackCount: inspection.trackCount,
     totalDurationSeconds: inspection.totalDurationSeconds,
+    totalSizeBytes: inspection.totalSizeBytes,
     valid: validation.valid,
-    audioFormat,
+    audioCodec: audio.codec,
+    ...(audio.bitDepth !== undefined ? { audioBitDepth: audio.bitDepth } : {}),
+    ...(audio.sampleRate !== undefined ? { audioSampleRate: audio.sampleRate } : {}),
+    ...(inspection.releaseYear !== undefined ? { releaseYear: inspection.releaseYear } : {}),
     ...(coverDataUri ? { coverDataUri } : {}),
     tracks: inspection.tracks.map((track) => ({
       number: track.number,
@@ -422,15 +422,19 @@ ipcMain.handle('omd:detectDisc', async (): Promise<StudioDiscInfo | null> => {
   for (const drive of drives) {
     const info = await buildDiscInfo(drive.mountPath);
     if (!info) continue;
-    let discFormat: string | undefined;
     if (backend.probeMedia) {
       try {
-        discFormat = describeDisc(await backend.probeMedia(drive));
+        const media = await backend.probeMedia(drive);
+        return {
+          ...info,
+          discFormat: describeDisc(media),
+          ...(media.capacityBytes ? { discCapacityBytes: media.capacityBytes } : {}),
+        };
       } catch {
-        discFormat = undefined;
+        // Fall through to content-only info when the media can't be probed.
       }
     }
-    return discFormat ? { ...info, discFormat } : info;
+    return info;
   }
   return null;
 });

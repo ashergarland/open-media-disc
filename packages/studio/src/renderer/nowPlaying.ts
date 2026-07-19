@@ -24,21 +24,15 @@ export interface NowPlayingHandlers {
 export interface NowPlayingMeta {
   /** Whether the loaded disc passed verification (undefined when no disc). */
   verified?: boolean;
+  /** File-type label for the current track, e.g. "FLAC". */
+  fileType?: string;
+  /** Cover art data URI for the current album. */
+  coverDataUri?: string;
 }
 
 function formatTime(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
-/** The uppercased file extension of a source path (e.g. "FLAC"), or '' if unknown. */
-function fileTypeLabel(src: string | undefined): string {
-  if (!src) return '';
-  const clean = src.split(/[?#]/)[0] ?? '';
-  const dot = clean.lastIndexOf('.');
-  if (dot < 0) return '';
-  const ext = clean.slice(dot + 1);
-  return ext.length >= 1 && ext.length <= 5 ? ext.toUpperCase() : '';
 }
 
 interface PcButtonOptions {
@@ -121,8 +115,11 @@ export function renderNowPlaying(
   const fraction = duration > 0 ? Math.min(1, elapsed / duration) : 0;
   const playing = state.status === 'playing';
 
+  const thumb = meta.coverDataUri
+    ? el('img', { class: 'npd-thumb', src: meta.coverDataUri, alt: '' })
+    : el('span', { class: 'npd-thumb', 'aria-hidden': 'true' });
   const now = el('div', { class: 'npd-now' }, [
-    el('span', { class: 'npd-thumb', 'aria-hidden': 'true' }),
+    thumb,
     el('span', { class: 'npd-meta' }, [
       el('span', { class: 'npd-title', text: track ? track.title : 'Nothing playing' }),
       el('span', {
@@ -153,13 +150,12 @@ export function renderNowPlaying(
 
   const center = el('div', { class: 'npd-center' }, [transport, scrubber]);
 
-  const fileType = hasTrack ? fileTypeLabel(track.src) : '';
   const chips: HTMLElement[] = [];
   if (hasTrack && meta.verified) {
     chips.push(el('span', { class: 'npd-chip verified' }, [svgIcon('check'), 'Verified']));
   }
-  if (fileType) {
-    chips.push(el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), fileType]));
+  if (hasTrack && meta.fileType) {
+    chips.push(el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), meta.fileType]));
   }
 
   const side = el('div', { class: 'npd-side' }, [

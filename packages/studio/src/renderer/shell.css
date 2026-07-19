@@ -313,23 +313,22 @@ body {
   align-content: start;
 }
 
-/* Player hero: cover + meta. */
-.player-hero {
-  display: flex;
+/* Disc view: album art | meta | track list. */
+.disc-layout {
+  display: grid;
+  grid-template-columns: clamp(200px, 22%, 280px) minmax(240px, 1fr) minmax(300px, 1.1fr);
   gap: 22px;
-  align-items: stretch;
+  align-items: start;
 }
-.player-hero .album-art {
-  flex: 0 0 auto;
-  align-self: stretch;
-  aspect-ratio: auto;
-  width: clamp(210px, 24vw, 300px);
-  min-height: 230px;
+.disc-layout .album-art {
+  aspect-ratio: 1;
+  width: 100%;
+  align-self: start;
 }
-.player-hero .album-art img {
+.disc-layout .album-art img {
   object-fit: cover;
 }
-.player-hero .album-art-empty {
+.disc-layout .album-art-empty {
   position: absolute;
   inset: 0;
   display: flex;
@@ -337,16 +336,29 @@ body {
   justify-content: center;
   color: var(--ink-muted);
 }
-.player-hero .album-meta {
-  flex: 1;
+.disc-layout .album-meta {
   min-width: 0;
-  justify-content: center;
 }
 .player-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin: 8px 0 4px;
+}
+
+/* Disc usage meter. */
+.disc-usage {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.disc-usage .meter-wrap {
+  flex: 1;
+}
+
+/* Dock cover thumbnail. */
+img.npd-thumb {
+  object-fit: cover;
 }
 
 /* Inline rip-to-catalog status under the Disc album actions. */
