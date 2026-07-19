@@ -55,6 +55,7 @@ interface AppState {
   discLoading: boolean;
   discError?: string;
   verify?: StudioVerifyResult;
+  reverifying?: boolean;
   ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
   albumBurn?: {
     drives: StudioDrive[];
@@ -480,12 +481,14 @@ async function openDiscByPath(source: string): Promise<void> {
 async function reverify(): Promise<void> {
   if (!state.disc) return;
   state.verify = undefined;
+  state.reverifying = true;
   renderMain();
   try {
     state.verify = await window.omd.verifyDisc(state.disc.source);
   } catch (err) {
     state.discError = (err as Error).message;
   }
+  state.reverifying = false;
   if (state.view === 'disc') renderMain();
 }
 
@@ -962,9 +965,11 @@ function playerView(): HTMLElement {
   const currentIndex = pstate.order[pstate.position] ?? -1;
   const playing = pstate.status === 'playing';
 
-  const cover = disc.coverDataUri
-    ? el('img', { class: 'album-cover', src: disc.coverDataUri, alt: 'Cover art' })
-    : el('div', { class: 'album-cover album-cover-empty' }, [svgIcon('note', 46)]);
+  const cover = el('div', { class: 'album-art' }, [
+    disc.coverDataUri
+      ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
+      : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
+  ]);
 
   const verified = state.verify ? state.verify.valid : disc.valid;
   const hero = el('div', { class: 'player-hero' }, [
@@ -975,13 +980,19 @@ function playerView(): HTMLElement {
       el('dl', { class: 'kv-list' }, [
         kvRow('Disc ID', disc.discId),
         kvRow('Tracks', `${disc.trackCount} \u00b7 ${formatClock(disc.totalDurationSeconds)}`),
-        kvRow('Format', 'FLAC \u00b7 8cm mini DVD-RW'),
+        kvRow('Audio', disc.audioFormat),
+        ...(disc.discFormat ? [kvRow('Disc', disc.discFormat)] : []),
       ]),
       el('div', { class: 'player-badges' }, [
-        el('span', { class: `npd-chip${verified ? ' verified' : ''}` }, [
-          svgIcon('check'),
-          verified ? 'Verified' : 'Not verified',
-        ]),
+        state.reverifying
+          ? el('span', { class: 'npd-chip' }, [
+              el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+              'Verifying...',
+            ])
+          : el('span', { class: `npd-chip${verified ? ' verified' : ''}` }, [
+              svgIcon('check'),
+              verified ? 'Verified' : 'Not verified',
+            ]),
         el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), 'FLAC lossless']),
       ]),
       el('div', { class: 'bc-actions' }, [

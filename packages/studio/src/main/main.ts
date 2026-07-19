@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { watch } from 'node:fs';
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile, open } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
   OMD_FORMAT,
@@ -9,10 +9,12 @@ import {
   burnPackage,
   createPackage,
   inspectPackage,
+  parseFlacMetadata,
   resolveBurnBackend,
   ripPackage,
   slugifyForPath,
   validatePackage,
+  type MediaInfo,
 } from '@open-album-cartridge/core';
 import { buildPackagesLabelSheet } from '@open-album-cartridge/label';
 import type {
@@ -58,7 +60,11 @@ function allowMediaBase(dir: string): void {
 function isAllowedMediaPath(filePath: string): boolean {
   const resolved = path.resolve(filePath);
   for (const base of allowedMediaBases) {
-    if (resolved === base || resolved.startsWith(base + path.sep)) return true;
+    if (resolved === base) return true;
+    // A disc mounted at a drive root (e.g. "D:\\") already ends with the
+    // separator; don't append a second one or child paths never match.
+    const prefix = base.endsWith(path.sep) ? base : base + path.sep;
+    if (resolved.startsWith(prefix)) return true;
   }
   return false;
 }
@@ -160,6 +166,60 @@ async function readCoverDataUri(packageDir: string, coverArt?: string): Promise<
   }
 }
 
+/** Read up to `bytes` from the start of a file (for cheap header parsing). */
+async function readPrefix(filePath: string, bytes: number): Promise<Buffer> {
+  const handle = await open(filePath, 'r');
+  try {
+    const buffer = Buffer.alloc(bytes);
+    const { bytesRead } = await handle.read(buffer, 0, bytes, 0);
+    return buffer.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
+}
+
+function formatKHz(hz: number): string {
+  const khz = hz / 1000;
+  return Number.isInteger(khz) ? String(khz) : khz.toFixed(1);
+}
+
+/** A display label for the audio format, e.g. "FLAC · 24-bit / 48 kHz". */
+async function audioFormatLabel(
+  source: string,
+  inspection: { audioCodec: string; tracks: { filename: string }[] },
+): Promise<string> {
+  const codec = inspection.audioCodec || 'FLAC';
+  const first = inspection.tracks[0];
+  if (!first) return codec;
+  try {
+    const filePath = path.resolve(source, ...first.filename.split('/'));
+    const meta = parseFlacMetadata(await readPrefix(filePath, 65536));
+    const detail: string[] = [];
+    if (meta.bitsPerSample) detail.push(`${meta.bitsPerSample}-bit`);
+    if (meta.sampleRate) detail.push(`${formatKHz(meta.sampleRate)} kHz`);
+    return detail.length > 0 ? `${codec} \u00b7 ${detail.join(' / ')}` : codec;
+  } catch {
+    return codec;
+  }
+}
+
+/** Infer the physical disc size band from its capacity, e.g. "8cm mini". */
+function discSizeLabel(typeName: string, capacityBytes?: number): string {
+  if (!capacityBytes) return '';
+  const type = typeName.toUpperCase();
+  if (type.includes('BD')) return capacityBytes < 15e9 ? '8cm mini' : '';
+  if (type.includes('DVD')) return capacityBytes < 3.5e9 ? '8cm mini' : '';
+  if (type.includes('CD')) return capacityBytes < 400e6 ? '8cm mini' : '';
+  return '';
+}
+
+/** A display label for a probed disc, e.g. "8cm mini DVD-RW" or "Unknown disc". */
+function describeDisc(media: MediaInfo): string {
+  if (!media.typeName) return 'Unknown disc';
+  const size = discSizeLabel(media.typeName, media.capacityBytes);
+  return size ? `${size} ${media.typeName}` : media.typeName;
+}
+
 async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
   let inspection;
   try {
@@ -170,6 +230,7 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
   allowMediaBase(source);
   const validation = await validatePackage(source);
   const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
+  const audioFormat = await audioFormatLabel(source, inspection);
   return {
     source,
     discId: inspection.discId,
@@ -178,6 +239,7 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
     trackCount: inspection.trackCount,
     totalDurationSeconds: inspection.totalDurationSeconds,
     valid: validation.valid,
+    audioFormat,
     ...(coverDataUri ? { coverDataUri } : {}),
     tracks: inspection.tracks.map((track) => ({
       number: track.number,
@@ -351,7 +413,7 @@ ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<St
 ipcMain.handle('omd:detectDisc', async (): Promise<StudioDiscInfo | null> => {
   const backend = resolveBurnBackend();
   if (!(await backend.isAvailable())) return null;
-  let drives: { mountPath: string }[];
+  let drives;
   try {
     drives = await backend.listDrives();
   } catch {
@@ -359,7 +421,16 @@ ipcMain.handle('omd:detectDisc', async (): Promise<StudioDiscInfo | null> => {
   }
   for (const drive of drives) {
     const info = await buildDiscInfo(drive.mountPath);
-    if (info) return info;
+    if (!info) continue;
+    let discFormat: string | undefined;
+    if (backend.probeMedia) {
+      try {
+        discFormat = describeDisc(await backend.probeMedia(drive));
+      } catch {
+        discFormat = undefined;
+      }
+    }
+    return discFormat ? { ...info, discFormat } : info;
   }
   return null;
 });

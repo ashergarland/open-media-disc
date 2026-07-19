@@ -316,15 +316,31 @@ body {
 /* Player hero: cover + meta. */
 .player-hero {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  gap: 22px;
+  align-items: stretch;
 }
-.player-hero .album-cover {
-  width: 168px;
-  height: 168px;
+.player-hero .album-art {
+  flex: 0 0 auto;
+  align-self: stretch;
+  aspect-ratio: auto;
+  width: clamp(210px, 24vw, 300px);
+  min-height: 230px;
+}
+.player-hero .album-art img {
+  object-fit: cover;
+}
+.player-hero .album-art-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
 }
 .player-hero .album-meta {
   flex: 1;
+  min-width: 0;
+  justify-content: center;
 }
 .player-badges {
   display: flex;

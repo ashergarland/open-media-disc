@@ -135,6 +135,10 @@ export interface StudioDiscInfo {
   trackCount: number;
   totalDurationSeconds: number;
   valid: boolean;
+  /** Audio format, e.g. "FLAC · 24-bit / 48 kHz". */
+  audioFormat: string;
+  /** Physical disc format when read from a drive, e.g. "8cm mini DVD-RW". */
+  discFormat?: string;
   coverDataUri?: string;
   tracks: StudioDiscTrack[];
 }
