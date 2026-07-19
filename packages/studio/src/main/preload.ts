@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { OmdStudioApi, StudioBurnProgress } from '../shared/types';
+import type { OmdStudioApi, StudioBurnProgress, StudioDiscInfo } from '../shared/types';
 
 /**
  * The preload bridge. It exposes a small, explicit API on `window.omd` so the
@@ -23,6 +23,11 @@ const api: OmdStudioApi = {
       .finally(() => ipcRenderer.removeListener('omd:burn:progress', listener));
   },
   detectDisc: () => ipcRenderer.invoke('omd:detectDisc'),
+  onDiscChanged: (handler) => {
+    const listener = (_event: IpcRendererEvent, disc: StudioDiscInfo | null): void => handler(disc);
+    ipcRenderer.on('omd:discChanged', listener);
+    return () => ipcRenderer.removeListener('omd:discChanged', listener);
+  },
   openPackageFolder: () => ipcRenderer.invoke('omd:openPackageFolder'),
   openDisc: (source) => ipcRenderer.invoke('omd:openDisc', source),
   verifyDisc: (source) => ipcRenderer.invoke('omd:verifyDisc', source),

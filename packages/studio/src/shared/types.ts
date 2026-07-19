@@ -208,6 +208,12 @@ export interface OmdStudioApi {
     onProgress: (progress: StudioBurnProgress) => void,
   ): Promise<StudioBurnResult>;
   detectDisc(): Promise<StudioDiscInfo | null>;
+  /**
+   * Subscribe to live optical-drive changes. The handler fires with the newly
+   * detected disc when OMD media is inserted, or `null` when it is ejected.
+   * Returns an unsubscribe function.
+   */
+  onDiscChanged(handler: (disc: StudioDiscInfo | null) => void): () => void;
   openPackageFolder(): Promise<StudioDiscInfo | null>;
   openDisc(source: string): Promise<StudioDiscInfo | null>;
   verifyDisc(source: string): Promise<StudioVerifyResult>;

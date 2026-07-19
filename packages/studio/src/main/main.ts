@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { watch } from 'node:fs';
-import { readFile, readdir, writeFile, open } from 'node:fs/promises';
+import { access, readFile, readdir, writeFile, open } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
   OMD_FORMAT,
@@ -94,6 +94,9 @@ function createWindow(): void {
     window.show();
   });
   void window.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+
+  // Watch the optical drives so the Disc view reflects inserts/ejects live.
+  startDiscWatch(window);
 
   // Dev-only live reload: when the built renderer files change (run the `watch`
   // script alongside `start`), reload the window so edits appear immediately.
@@ -216,7 +219,7 @@ function describeDisc(media: MediaInfo): string {
   return size ? `${size} ${media.typeName}` : media.typeName;
 }
 
-async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
+async function buildDiscInfo(source: string, quick = false): Promise<StudioDiscInfo | null> {
   let inspection;
   try {
     inspection = await inspectPackage(source);
@@ -224,7 +227,10 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
     return null;
   }
   allowMediaBase(source);
-  const validation = await validatePackage(source);
+  // Full validation rehashes every FLAC, which is slow on a spinning optical
+  // disc. In quick mode (live detection) we skip it and let the renderer verify
+  // in the background so the disc appears immediately.
+  const valid = quick ? false : (await validatePackage(source)).valid;
   const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
   const audio = await audioInfo(source, inspection);
   return {
@@ -235,7 +241,7 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
     trackCount: inspection.trackCount,
     totalDurationSeconds: inspection.totalDurationSeconds,
     totalSizeBytes: inspection.totalSizeBytes,
-    valid: validation.valid,
+    valid,
     audioCodec: audio.codec,
     ...(audio.bitDepth !== undefined ? { audioBitDepth: audio.bitDepth } : {}),
     ...(audio.sampleRate !== undefined ? { audioSampleRate: audio.sampleRate } : {}),
@@ -248,6 +254,91 @@ async function buildDiscInfo(source: string): Promise<StudioDiscInfo | null> {
       src: audioUrl(path.resolve(source, ...track.filename.split('/'))),
     })),
   };
+}
+
+/** Detect an OMD disc in any optical drive, enriched with probed media info. */
+async function detectOmdDisc(): Promise<StudioDiscInfo | null> {
+  const backend = resolveBurnBackend();
+  if (!(await backend.isAvailable())) return null;
+  let drives;
+  try {
+    drives = await backend.listDrives();
+  } catch {
+    return null;
+  }
+  for (const drive of drives) {
+    const info = await buildDiscInfo(drive.mountPath, true);
+    if (!info) continue;
+    if (backend.probeMedia) {
+      try {
+        const media = await backend.probeMedia(drive);
+        return {
+          ...info,
+          discFormat: describeDisc(media),
+          ...(media.capacityBytes ? { discCapacityBytes: media.capacityBytes } : {}),
+        };
+      } catch {
+        // Fall through to content-only info when the media can't be probed.
+      }
+    }
+    return info;
+  }
+  return null;
+}
+
+/**
+ * A cheap signature of what OMD media is currently present, so the watcher can
+ * tell an insert/eject apart from a poll where nothing changed. It only checks
+ * for the manifest file at each drive root (no full package read).
+ */
+async function discPresenceSignature(): Promise<string> {
+  const backend = resolveBurnBackend();
+  if (!(await backend.isAvailable())) return 'none';
+  let drives;
+  try {
+    drives = await backend.listDrives();
+  } catch {
+    return 'none';
+  }
+  const parts: string[] = [];
+  for (const drive of drives) {
+    try {
+      await access(path.join(drive.mountPath, 'OMD-MANIFEST.json'));
+      parts.push(`${drive.mountPath}:omd`);
+    } catch {
+      parts.push(`${drive.mountPath}:empty`);
+    }
+  }
+  return parts.length > 0 ? parts.join('|') : 'none';
+}
+
+/**
+ * Poll the optical drives and push `omd:discChanged` to the renderer whenever
+ * OMD media appears or disappears, so the Disc view reflects the physical disc
+ * without the user pressing Detect.
+ */
+function startDiscWatch(window: BrowserWindow): void {
+  let lastSignature: string | undefined;
+  let busy = false;
+  const tick = async (): Promise<void> => {
+    if (busy || window.isDestroyed()) return;
+    busy = true;
+    try {
+      const signature = await discPresenceSignature();
+      if (signature !== lastSignature) {
+        lastSignature = signature;
+        const disc = await detectOmdDisc();
+        if (!window.isDestroyed()) window.webContents.send('omd:discChanged', disc);
+      }
+    } catch {
+      // Best-effort polling; ignore transient drive errors.
+    } finally {
+      busy = false;
+    }
+  };
+  const timer = setInterval(() => void tick(), 1500);
+  window.on('closed', () => clearInterval(timer));
+  void tick();
 }
 
 ipcMain.handle('omd:selectAlbumFolder', async (): Promise<string | null> => {
@@ -411,32 +502,7 @@ ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<St
 });
 
 ipcMain.handle('omd:detectDisc', async (): Promise<StudioDiscInfo | null> => {
-  const backend = resolveBurnBackend();
-  if (!(await backend.isAvailable())) return null;
-  let drives;
-  try {
-    drives = await backend.listDrives();
-  } catch {
-    return null;
-  }
-  for (const drive of drives) {
-    const info = await buildDiscInfo(drive.mountPath);
-    if (!info) continue;
-    if (backend.probeMedia) {
-      try {
-        const media = await backend.probeMedia(drive);
-        return {
-          ...info,
-          discFormat: describeDisc(media),
-          ...(media.capacityBytes ? { discCapacityBytes: media.capacityBytes } : {}),
-        };
-      } catch {
-        // Fall through to content-only info when the media can't be probed.
-      }
-    }
-    return info;
-  }
-  return null;
+  return detectOmdDisc();
 });
 
 ipcMain.handle('omd:openPackageFolder', async (): Promise<StudioDiscInfo | null> => {

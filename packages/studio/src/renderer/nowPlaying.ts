@@ -110,21 +110,26 @@ export function renderNowPlaying(
 ): HTMLElement {
   const track = currentTrack(state);
   const hasTrack = track !== undefined;
+  // A disc can be staged (queue loaded) while still 'idle'. Only treat it as
+  // "now playing" once the user has actually started it, so the dock reflects
+  // the transport rather than a merely-inserted disc.
+  const active = hasTrack && state.status !== 'idle';
   const duration = track?.durationSeconds ?? 0;
   const elapsed = state.elapsedSeconds;
   const fraction = duration > 0 ? Math.min(1, elapsed / duration) : 0;
   const playing = state.status === 'playing';
 
-  const thumb = meta.coverDataUri
-    ? el('img', { class: 'npd-thumb', src: meta.coverDataUri, alt: '' })
-    : el('span', { class: 'npd-thumb', 'aria-hidden': 'true' });
+  const thumb =
+    active && meta.coverDataUri
+      ? el('img', { class: 'npd-thumb', src: meta.coverDataUri, alt: '' })
+      : el('span', { class: 'npd-thumb', 'aria-hidden': 'true' });
   const now = el('div', { class: 'npd-now' }, [
     thumb,
     el('span', { class: 'npd-meta' }, [
-      el('span', { class: 'npd-title', text: track ? track.title : 'Nothing playing' }),
+      el('span', { class: 'npd-title', text: active && track ? track.title : 'Nothing playing' }),
       el('span', {
         class: 'npd-artist',
-        text: track?.artist ?? (hasTrack ? '' : 'Load a disc from Disc or Catalog'),
+        text: active && track ? (track.artist ?? '') : 'Load a disc from Disc or Catalog',
       }),
     ]),
   ]);
@@ -151,10 +156,10 @@ export function renderNowPlaying(
   const center = el('div', { class: 'npd-center' }, [transport, scrubber]);
 
   const chips: HTMLElement[] = [];
-  if (hasTrack && meta.verified) {
+  if (active && meta.verified) {
     chips.push(el('span', { class: 'npd-chip verified' }, [svgIcon('check'), 'Verified']));
   }
-  if (hasTrack && meta.fileType) {
+  if (active && meta.fileType) {
     chips.push(el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), meta.fileType]));
   }
 

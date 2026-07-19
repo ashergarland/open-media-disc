@@ -403,6 +403,32 @@ function loadDiscIntoPlayer(disc: StudioDiscInfo, kind: 'disc' | 'package'): voi
       ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
     })),
   );
+  // A live-detected disc loads without full checksum hashing (fast). Verify it
+  // in the background so the badge becomes "Verified" without blocking playback.
+  if (kind === 'disc') void reverify();
+}
+
+/**
+ * React to a live optical-drive change pushed from the main process: load a
+ * freshly inserted OMD disc, or clear a physical disc that was ejected. An
+ * explicitly opened package folder is left untouched.
+ */
+function onDiscChanged(disc: StudioDiscInfo | null): void {
+  if (disc) {
+    // Don't clobber a package folder the user opened by hand.
+    if (state.disc && state.discSourceKind === 'package') return;
+    loadDiscIntoPlayer(disc, 'disc');
+  } else {
+    if (state.discSourceKind !== 'disc') return;
+    state.disc = undefined;
+    state.discSourceKind = undefined;
+    state.verify = undefined;
+    state.ripStatus = undefined;
+    state.albumBurn = undefined;
+    player.loadDisc([]);
+  }
+  renderNowPlayingBar();
+  if (state.view === 'disc') renderMain();
 }
 
 async function detectDisc(): Promise<void> {
@@ -790,21 +816,24 @@ function playerView(): HTMLElement {
 
   if (!state.disc) {
     const hero: (Node | string)[] = [
-      el('span', { class: 'select-icon' }, [svgIcon('drive', 54)]),
+      el('span', { class: 'select-icon disc-empty-icon' }, [svgIcon('disc', 56)]),
+      el('h2', { class: 'select-title', text: 'No disc inserted' }),
       el('p', {
         class: 'select-lead',
-        text: 'Insert a burned OMD disc and detect it, or open a package folder on disk.',
+        text: 'Insert an OMD disc and it will load here automatically.',
       }),
+      state.discLoading
+        ? spinnerRow('Reading disc\u2026')
+        : spinnerRow('Watching the drive\u2026'),
       el('div', { class: 'bc-actions' }, [
-        btn('Detect disc', () => void detectDisc(), { primary: true, icon: 'drive' }),
-        btn('Open folder...', () => void openFolder(), { icon: 'folder' }),
+        btn('Open package folder\u2026', () => void openFolder(), { icon: 'folder' }),
+        btn('Scan again', () => void detectDisc(), { small: true }),
       ]),
     ];
-    if (state.discLoading) hero.push(spinnerRow('Looking for a disc...'));
-    if (state.discError) hero.push(el('p', { class: 'select-lead', text: state.discError }));
+    if (state.discError) hero.push(el('p', { class: 'select-lead muted', text: state.discError }));
     return el('div', { class: 'view' }, [
       head,
-      el('section', { class: 'card' }, [el('div', { class: 'select-hero' }, hero)]),
+      el('section', { class: 'card' }, [el('div', { class: 'select-hero disc-empty' }, hero)]),
     ]);
   }
 
@@ -1138,6 +1167,7 @@ async function init(): Promise<void> {
   applyThemeById(state.themeId);
   player.initPlayer();
   player.subscribe(onPlayerChange);
+  window.omd.onDiscChanged(onDiscChanged);
   setView(state.view);
   renderNowPlayingBar();
 
