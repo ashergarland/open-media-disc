@@ -123,7 +123,7 @@ export function renderNowPlaying(
     active && meta.coverDataUri
       ? el('img', { class: 'npd-thumb', src: meta.coverDataUri, alt: '' })
       : el('span', { class: 'npd-thumb', 'aria-hidden': 'true' });
-  const now = el('div', { class: 'npd-now' }, [
+  const nowChildren: HTMLElement[] = [
     thumb,
     el('span', { class: 'npd-meta' }, [
       el('span', { class: 'npd-title', text: active && track ? track.title : 'Nothing playing' }),
@@ -132,7 +132,19 @@ export function renderNowPlaying(
         text: active && track ? (track.artist ?? '') : 'Load a disc from Disc or Catalog',
       }),
     ]),
-  ]);
+  ];
+  if (playing) {
+    nowChildren.push(
+      el('span', { class: 'npd-eq', 'aria-hidden': 'true' }, [
+        el('span'),
+        el('span'),
+        el('span'),
+        el('span'),
+        el('span'),
+      ]),
+    );
+  }
+  const now = el('div', { class: 'npd-now' }, nowChildren);
 
   const transport = el('div', { class: 'npd-transport' }, [
     pcButton('shuffle', 'Shuffle', handlers.onToggleShuffle, { active: state.shuffle }),

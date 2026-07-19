@@ -96,6 +96,12 @@ function logoFor(id: string): string {
   return `assets/${themeId}/logo.png`;
 }
 
+/** The cartridge image path for a theme id (each theme ships assets/<id>/cartridge.png). */
+function cartridgeFor(id: string): string {
+  const themeId = THEME_OPTIONS.some((entry) => entry.id === id) ? id : DEFAULT_THEME_ID;
+  return `assets/${themeId}/cartridge.png`;
+}
+
 /** The persisted theme id, or the default when none is stored. */
 function loadThemeId(): string {
   try {
@@ -841,15 +847,9 @@ function playerView(): HTMLElement {
   const currentIndex = pstate.order[pstate.position] ?? -1;
   const playing = pstate.status === 'playing';
 
-  const cover = el('div', { class: 'album-art' }, [
-    disc.coverDataUri
-      ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
-      : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
-  ]);
-
   const verified = state.verify ? state.verify.valid : disc.valid;
 
-  const rows: HTMLElement[] = [kvRow('Album', disc.album), kvRow('Artist', disc.artist)];
+  const rows: HTMLElement[] = [];
   if (disc.releaseYear) rows.push(kvRow('Year', String(disc.releaseYear)));
   rows.push(
     kvRow('Disc ID', disc.discId),
@@ -871,34 +871,49 @@ function playerView(): HTMLElement {
         verified ? 'Verified' : 'Not verified',
       ]);
 
+  const albumCol = el('div', { class: 'album-col' }, [
+    el('div', { class: 'album-art' }, [
+      disc.coverDataUri
+        ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
+        : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
+    ]),
+    el('div', { class: 'album-heading' }, [
+      el('div', { class: 'album-title', text: disc.album }),
+      el('div', { class: 'album-artist', text: disc.artist }),
+    ]),
+    el('div', { class: 'bc-actions' }, [
+      btn(playing ? 'Pause' : 'Play', () => player.togglePlayPause(), {
+        primary: true,
+        small: true,
+        icon: playing ? 'pause' : 'play',
+      }),
+      ...(state.discSourceKind === 'disc'
+        ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip', small: true })]
+        : []),
+      ...(state.discSourceKind === 'package'
+        ? [
+            btn('Burn to Disc', () => void openAlbumBurn(), {
+              icon: 'create',
+              small: true,
+              disabled: !disc.valid,
+            }),
+          ]
+        : []),
+    ]),
+    ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
+  ]);
+
   const meta = el('div', { class: 'album-meta' }, [
-    el('div', { class: 'album-title', text: disc.album }),
-    el('div', { class: 'album-artist', text: disc.artist }),
     el('dl', { class: 'kv-list' }, rows),
     el('div', { class: 'player-badges' }, [
       badge,
       el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), 'FLAC lossless']),
     ]),
-    el('div', { class: 'bc-actions' }, [
-      btn(playing ? 'Pause' : 'Play', () => player.togglePlayPause(), {
-        primary: true,
-        icon: playing ? 'pause' : 'play',
-      }),
-      ...(state.discSourceKind === 'disc'
-        ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip' })]
-        : []),
-      ...(state.discSourceKind === 'package'
-        ? [btn('Burn to Disc', () => void openAlbumBurn(), { icon: 'create', disabled: !disc.valid })]
-        : []),
-      btn('Re-verify', () => void reverify()),
-    ]),
-    ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
   ]);
 
-  const layout = el('div', { class: 'disc-layout' }, [cover, meta, trackPanel(disc, currentIndex)]);
+  const layout = el('div', { class: 'disc-layout' }, [albumCol, meta, trackPanel(disc, currentIndex)]);
 
   return el('div', { class: 'view' }, [
-    head,
     el('section', { class: 'card' }, [layout]),
     ...(state.albumBurn ? [el('section', { class: 'card' }, [albumBurnPanel()])] : []),
     ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
@@ -922,6 +937,45 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
+/** Derive the media family (CD/DVD/BD) and writability (R/RW/RE) for the badge. */
+function mediaBadge(disc: StudioDiscInfo): { family: string; write: string } | null {
+  const type = (disc.discMediaType ?? disc.discFormat ?? '').toUpperCase();
+  const family = type.includes('BD') || type.includes('BLU')
+    ? 'BD'
+    : type.includes('DVD')
+      ? 'DVD'
+      : type.includes('CD')
+        ? 'CD'
+        : '';
+  if (!family) return null;
+  const write = type.includes('RE')
+    ? 'RE'
+    : type.includes('RW')
+      ? 'RW'
+      : disc.discRewritable === true
+        ? 'RW'
+        : 'R';
+  return { family, write };
+}
+
+function cartridgeVisual(disc: StudioDiscInfo): HTMLElement {
+  const badge = mediaBadge(disc);
+  const children: (Node | string)[] = [
+    el('img', { class: 'cartridge-img', src: cartridgeFor(state.themeId), alt: 'OMD cartridge' }),
+  ];
+  if (badge || disc.discCapacityBytes) {
+    const rows: HTMLElement[] = [];
+    if (badge) {
+      rows.push(el('span', { class: 'cartridge-type', text: `${badge.family}\u2011${badge.write}` }));
+    }
+    if (disc.discCapacityBytes) {
+      rows.push(el('span', { class: 'cartridge-size', text: formatBytes(disc.discCapacityBytes) }));
+    }
+    children.push(el('span', { class: 'cartridge-badge' }, rows));
+  }
+  return el('div', { class: 'cartridge' }, children);
+}
+
 function discUsageCard(disc: StudioDiscInfo): HTMLElement {
   const capacity = disc.discCapacityBytes ?? 0;
   const used = disc.totalSizeBytes;
@@ -930,22 +984,24 @@ function discUsageCard(disc: StudioDiscInfo): HTMLElement {
   const fill = el('div', { class: 'meter-fill' });
   fill.style.width = `${pct.toFixed(1)}%`;
   return el('section', { class: 'card' }, [
-    el('p', { class: 'eyebrow', text: 'Disc' }),
-    el('div', { class: 'disc-usage' }, [
-      el('div', { class: 'storage-stat' }, [
-        el('div', { class: 'label', text: 'Used' }),
-        el('div', { class: 'value', text: formatBytes(used) }),
-      ]),
-      el('div', { class: 'meter-wrap' }, [
-        el('div', { class: 'meter', role: 'progressbar', 'aria-label': 'Disc usage' }, [fill]),
-        el('div', {
-          class: 'meter-caption',
-          text: `${disc.discFormat ?? 'Disc'} \u00b7 ${formatBytes(capacity)} capacity`,
-        }),
-      ]),
-      el('div', { class: 'storage-stat' }, [
-        el('div', { class: 'label', text: 'Free' }),
-        el('div', { class: 'value', text: formatBytes(free) }),
+    el('div', { class: 'disc-media' }, [
+      cartridgeVisual(disc),
+      el('div', { class: 'disc-usage' }, [
+        el('div', { class: 'storage-stat' }, [
+          el('div', { class: 'label', text: 'Used' }),
+          el('div', { class: 'value', text: formatBytes(used) }),
+        ]),
+        el('div', { class: 'meter-wrap' }, [
+          el('div', { class: 'meter', role: 'progressbar', 'aria-label': 'Disc usage' }, [fill]),
+          el('div', {
+            class: 'meter-caption',
+            text: `${disc.discFormat ?? 'Disc'} \u00b7 ${formatBytes(capacity)} capacity`,
+          }),
+        ]),
+        el('div', { class: 'storage-stat' }, [
+          el('div', { class: 'label', text: 'Free' }),
+          el('div', { class: 'value', text: formatBytes(free) }),
+        ]),
       ]),
     ]),
   ]);

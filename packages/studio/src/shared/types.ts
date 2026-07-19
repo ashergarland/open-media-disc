@@ -146,6 +146,10 @@ export interface StudioDiscInfo {
   releaseYear?: number;
   /** Physical disc format when read from a drive, e.g. "8cm mini DVD-RW". */
   discFormat?: string;
+  /** Probed media type name, e.g. "DVD-RW", "DVD-R", "BD-RE". */
+  discMediaType?: string;
+  /** Whether the physical media is rewritable (RW/RE) rather than write-once (R). */
+  discRewritable?: boolean;
   /** Physical disc capacity in bytes, when read from a drive. */
   discCapacityBytes?: number;
   coverDataUri?: string;

@@ -275,6 +275,8 @@ async function detectOmdDisc(): Promise<StudioDiscInfo | null> {
         return {
           ...info,
           discFormat: describeDisc(media),
+          ...(media.typeName ? { discMediaType: media.typeName } : {}),
+          ...(media.kind !== 'unknown' ? { discRewritable: media.kind === 'rewritable' } : {}),
           ...(media.capacityBytes ? { discCapacityBytes: media.capacityBytes } : {}),
         };
       } catch {
