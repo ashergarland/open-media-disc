@@ -225,6 +225,11 @@ export interface OmdStudioApi {
   chooseRipDestination(): Promise<string | null>;
   chooseLibraryFolder(): Promise<string | null>;
   scanLibrary(dir: string): Promise<CatalogEntry[]>;
+  /**
+   * Subscribe to changes in the watched library folder (packages added or
+   * removed on disk). Returns an unsubscribe function.
+   */
+  onLibraryChanged(handler: () => void): () => void;
   revealInFolder(target: string): Promise<void>;
   importThemeFile(): Promise<string | null>;
 }

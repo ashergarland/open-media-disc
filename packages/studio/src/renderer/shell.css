@@ -343,15 +343,35 @@ body {
   align-content: start;
 }
 
-/* Disc view: album art | meta | track list. */
+/* Disc/Catalog album layout: art | info | track list, with an actions row that
+ * spans the art + info columns while the track list keeps its own tall column. */
 .disc-layout {
   display: grid;
-  grid-template-columns: clamp(300px, 34%, 430px) minmax(0, 0.8fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 22px;
   align-items: start;
 }
 .disc-layout > * {
   min-width: 0;
+}
+.disc-main {
+  display: grid;
+  grid-template-columns: clamp(280px, 44%, 400px) minmax(0, 1fr);
+  grid-template-areas:
+    'album info'
+    'actions actions';
+  gap: 16px 22px;
+  align-items: start;
+}
+.disc-main .album-col {
+  grid-area: album;
+}
+.disc-main .album-meta {
+  grid-area: info;
+  min-width: 0;
+}
+.disc-main .disc-actions {
+  grid-area: actions;
 }
 .disc-layout .album-art {
   aspect-ratio: 1;
@@ -369,9 +389,6 @@ body {
   justify-content: center;
   color: var(--ink-muted);
 }
-.disc-layout .album-meta {
-  min-width: 0;
-}
 .album-col {
   display: flex;
   flex-direction: column;
@@ -383,10 +400,12 @@ body {
   flex-direction: column;
   gap: 2px;
 }
-.album-col .player-badges {
-  margin: 0;
+.disc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.album-col .bc-actions {
+.disc-actions .bc-actions {
   flex-wrap: wrap;
 }
 .player-badges {
@@ -396,19 +415,20 @@ body {
   margin: 8px 0 4px;
 }
 
-/* Reflow the Disc layout as the window narrows: drop the track list to a full
- * width row below the art + info, then stack everything on very small windows. */
+/* Reflow the album layout as the window narrows: actions become their own full
+ * width row, then the track list drops below, then everything stacks. */
 @media (max-width: 1180px) {
   .disc-layout {
-    grid-template-columns: clamp(280px, 40%, 400px) minmax(0, 1fr);
-  }
-  .disc-layout .track-panel {
-    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (max-width: 680px) {
-  .disc-layout {
+  .disc-main {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'album'
+      'info'
+      'actions';
   }
   .disc-layout .album-art {
     width: clamp(170px, 55%, 260px);
@@ -533,7 +553,9 @@ img.npd-thumb {
 
 /* Catalog tile cover fallback. */
 img.ct-cover {
+  width: 100%;
   object-fit: cover;
+  display: block;
 }
 .ct-cover-empty {
   display: flex;

@@ -35,6 +35,11 @@ const api: OmdStudioApi = {
   chooseRipDestination: () => ipcRenderer.invoke('omd:chooseRipDestination'),
   chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
   scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
+  onLibraryChanged: (handler) => {
+    const listener = (): void => handler();
+    ipcRenderer.on('omd:libraryChanged', listener);
+    return () => ipcRenderer.removeListener('omd:libraryChanged', listener);
+  },
   revealInFolder: (target) => ipcRenderer.invoke('omd:revealInFolder', target),
   importThemeFile: () => ipcRenderer.invoke('omd:importThemeFile'),
 };

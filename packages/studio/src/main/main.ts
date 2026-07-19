@@ -560,6 +560,28 @@ ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDis
   return buildDiscInfo(source);
 });
 
+let libraryWatcher: ReturnType<typeof watch> | undefined;
+let libraryWatchTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Watch the current library folder and notify the renderer (debounced) when its
+ * contents change, so the Catalog reflects packages added or deleted on disk
+ * without a manual refresh. Only one folder is watched at a time.
+ */
+function watchLibrary(dir: string, sender: Electron.WebContents): void {
+  libraryWatcher?.close();
+  try {
+    libraryWatcher = watch(dir, () => {
+      clearTimeout(libraryWatchTimer);
+      libraryWatchTimer = setTimeout(() => {
+        if (!sender.isDestroyed()) sender.send('omd:libraryChanged');
+      }, 300);
+    });
+  } catch {
+    libraryWatcher = undefined;
+  }
+}
+
 ipcMain.handle('omd:chooseLibraryFolder', async (): Promise<string | null> => {
   const result = await dialog.showOpenDialog({
     title: 'Choose a library folder',
@@ -569,6 +591,7 @@ ipcMain.handle('omd:chooseLibraryFolder', async (): Promise<string | null> => {
 });
 
 ipcMain.handle('omd:scanLibrary', async (_event, dir: string): Promise<CatalogEntry[]> => {
+  watchLibrary(dir, _event.sender);
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });

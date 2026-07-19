@@ -50,10 +50,16 @@ interface AppState {
   themeId: string;
   info?: StudioInfo;
   drives?: StudioDrive[];
+  /** The physically inserted OMD disc (Disc view). */
   disc?: StudioDiscInfo;
-  discSourceKind?: 'disc' | 'package';
   discLoading: boolean;
   discError?: string;
+  /** The catalog album opened for detail/playback (Catalog view). */
+  album?: StudioDiscInfo;
+  albumLoading: boolean;
+  albumError?: string;
+  /** Which album is loaded in the shared transport, identified by its source. */
+  nowPlaying?: { disc: StudioDiscInfo; source: 'disc' | 'album' };
   verify?: StudioVerifyResult;
   reverifying?: boolean;
   ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
@@ -137,6 +143,7 @@ const state: AppState = {
   themeId: loadThemeId(),
   libraryDir: loadCatalogDir(),
   discLoading: false,
+  albumLoading: false,
   catalogLoading: false,
 };
 
@@ -176,6 +183,9 @@ function setView(view: ViewId): void {
     oldButton?.replaceWith(newButton);
     navButtons.set(item.id, newButton);
   }
+  // Entering the Catalog re-scans the library folder so newly ripped/burned
+  // packages appear without a manual refresh.
+  if (view === 'catalog' && state.libraryDir && !state.album) void rescanLibrary();
   renderMain();
 }
 
@@ -184,10 +194,12 @@ function renderMain(): void {
   mainEl.append(viewFor(state.view));
 }
 
-/** Whether the loaded disc passed verification (undefined when no disc is loaded). */
+/** Whether the album loaded in the transport passed verification (undefined when none). */
 function discVerified(): boolean | undefined {
-  if (!state.disc) return undefined;
-  return state.verify ? state.verify.valid : state.disc.valid;
+  const np = state.nowPlaying;
+  if (!np) return undefined;
+  if (np.source === 'disc') return state.verify ? state.verify.valid : np.disc.valid;
+  return np.disc.valid;
 }
 
 /** A key over the structural dock state; when unchanged, the dock updates in place. */
@@ -209,11 +221,12 @@ function renderNowPlayingBar(): void {
   const pstate = player.getState();
   lastDockKey = dockKey(pstate);
   clearChildren(nowPlayingHost);
+  const np = state.nowPlaying;
   nowPlayingHost.append(
     renderNowPlaying(pstate, NOW_PLAYING_HANDLERS, {
       verified: discVerified(),
-      ...(state.disc?.audioCodec ? { fileType: state.disc.audioCodec } : {}),
-      ...(state.disc?.coverDataUri ? { coverDataUri: state.disc.coverDataUri } : {}),
+      ...(np?.disc.audioCodec ? { fileType: np.disc.audioCodec } : {}),
+      ...(np?.disc.coverDataUri ? { coverDataUri: np.disc.coverDataUri } : {}),
     }),
   );
 }
@@ -226,7 +239,8 @@ function onPlayerChange(): void {
     updateNowPlaying(nowPlayingHost, pstate);
   }
   const key = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
-  if (state.view === 'disc' && key !== lastPlayerKey) {
+  const showsAlbum = state.view === 'disc' || (state.view === 'catalog' && state.album !== undefined);
+  if (showsAlbum && key !== lastPlayerKey) {
     renderMain();
   }
 }
@@ -244,8 +258,7 @@ function btn(
   onClick: () => void | Promise<void>,
   options: { primary?: boolean; small?: boolean; icon?: IconName; disabled?: boolean } = {},
 ): HTMLElement {
-  const classes = ['btn', options.primary ? 'btn--primary' : 'btn--secondary'];
-  if (options.small) classes.push('btn--sm');
+  const classes = ['btn', 'btn--sm', options.primary ? 'btn--primary' : 'btn--secondary'];
   const kids: (Node | string)[] = [el('span', { class: 'liquid-rim', 'aria-hidden': 'true' })];
   if (!options.primary) kids.push(el('span', { class: 'button-surface', 'aria-hidden': 'true' }));
   if (options.icon) {
@@ -394,46 +407,57 @@ function settingsView(): HTMLElement {
   ]);
 }
 
-function loadDiscIntoPlayer(disc: StudioDiscInfo, kind: 'disc' | 'package'): void {
-  state.disc = disc;
-  state.discSourceKind = kind;
-  state.verify = undefined;
-  state.discError = undefined;
-  state.ripStatus = undefined;
-  player.loadDisc(
-    disc.tracks.map((track) => ({
-      number: track.number,
-      title: track.title,
-      src: track.src,
-      artist: disc.artist,
-      ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
-    })),
-  );
-  // A live-detected disc loads without full checksum hashing (fast). Verify it
-  // in the background so the badge becomes "Verified" without blocking playback.
-  if (kind === 'disc') void reverify();
+function queueFor(disc: StudioDiscInfo) {
+  return disc.tracks.map((track) => ({
+    number: track.number,
+    title: track.title,
+    src: track.src,
+    artist: disc.artist,
+    ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
+  }));
 }
 
 /**
- * React to a live optical-drive change pushed from the main process: load a
- * freshly inserted OMD disc, or clear a physical disc that was ejected. An
- * explicitly opened package folder is left untouched.
+ * Play an album through the shared transport. If it is not already the loaded
+ * album, load its queue first; then start (or toggle) playback, optionally at a
+ * specific track. This is how both the Disc and Catalog views drive the player.
+ */
+function playFrom(disc: StudioDiscInfo, source: 'disc' | 'album', trackIndex?: number): void {
+  if (state.nowPlaying?.disc.source !== disc.source) {
+    state.nowPlaying = { disc, source };
+    player.loadDisc(queueFor(disc));
+  }
+  if (trackIndex !== undefined) player.playTrack(trackIndex);
+  else player.togglePlayPause();
+}
+
+/** Set the physical disc and kick off a background verify. Does not touch the transport. */
+function setDisc(disc: StudioDiscInfo): void {
+  state.disc = disc;
+  state.verify = undefined;
+  state.ripStatus = undefined;
+  void reverify();
+}
+
+/**
+ * React to a live optical-drive change pushed from the main process: show a
+ * freshly inserted OMD disc in the Disc view, or clear an ejected one (stopping
+ * playback only if that disc was the one playing).
  */
 function onDiscChanged(disc: StudioDiscInfo | null): void {
   if (disc) {
-    // Don't clobber a package folder the user opened by hand.
-    if (state.disc && state.discSourceKind === 'package') return;
-    loadDiscIntoPlayer(disc, 'disc');
+    setDisc(disc);
   } else {
-    if (state.discSourceKind !== 'disc') return;
+    if (!state.disc) return;
     state.disc = undefined;
-    state.discSourceKind = undefined;
     state.verify = undefined;
     state.ripStatus = undefined;
-    state.albumBurn = undefined;
-    player.loadDisc([]);
+    if (state.nowPlaying?.source === 'disc') {
+      state.nowPlaying = undefined;
+      player.loadDisc([]);
+      renderNowPlayingBar();
+    }
   }
-  renderNowPlayingBar();
   if (state.view === 'disc') renderMain();
 }
 
@@ -443,8 +467,8 @@ async function detectDisc(): Promise<void> {
   renderMain();
   try {
     const disc = await window.omd.detectDisc();
-    if (disc) loadDiscIntoPlayer(disc, 'disc');
-    else state.discError = 'No OMD disc detected. Insert a disc or open a package folder.';
+    if (disc) setDisc(disc);
+    else state.discError = 'No OMD disc detected. Insert a burned OMD disc to play it here.';
   } catch (err) {
     state.discError = (err as Error).message;
   }
@@ -452,49 +476,37 @@ async function detectDisc(): Promise<void> {
   if (state.view === 'disc') renderMain();
 }
 
-async function openFolder(): Promise<void> {
-  state.discLoading = true;
-  state.discError = undefined;
-  renderMain();
-  try {
-    const disc = await window.omd.openPackageFolder();
-    if (disc) loadDiscIntoPlayer(disc, 'package');
-    else state.discError = 'That folder is not an OMD package.';
-  } catch (err) {
-    state.discError = (err as Error).message;
-  }
-  state.discLoading = false;
-  if (state.view === 'disc') renderMain();
-}
-
-async function openDiscByPath(source: string): Promise<void> {
-  setView('disc');
+/** Open a catalog package for detail/playback inside the Catalog view. */
+async function openAlbum(source: string): Promise<void> {
+  setView('catalog');
   if (!source) return;
-  state.discLoading = true;
-  state.discError = undefined;
+  state.albumLoading = true;
+  state.albumError = undefined;
   renderMain();
   try {
     const disc = await window.omd.openDisc(source);
-    if (disc) loadDiscIntoPlayer(disc, 'package');
-    else state.discError = 'Could not open the package.';
+    if (disc) state.album = disc;
+    else state.albumError = 'Could not open the package.';
   } catch (err) {
-    state.discError = (err as Error).message;
+    state.albumError = (err as Error).message;
   }
-  state.discLoading = false;
-  if (state.view === 'disc') renderMain();
+  state.albumLoading = false;
+  if (state.view === 'catalog') renderMain();
 }
 
 async function reverify(): Promise<void> {
   if (!state.disc) return;
+  const source = state.disc.source;
   state.verify = undefined;
   state.reverifying = true;
-  renderMain();
+  if (state.view === 'disc') renderMain();
   try {
-    state.verify = await window.omd.verifyDisc(state.disc.source);
+    state.verify = await window.omd.verifyDisc(source);
   } catch (err) {
     state.discError = (err as Error).message;
   }
   state.reverifying = false;
+  if (state.nowPlaying?.source === 'disc') renderNowPlayingBar();
   if (state.view === 'disc') renderMain();
 }
 
@@ -615,7 +627,7 @@ async function openAlbumBurn(): Promise<void> {
     drives = [];
   }
   state.albumBurn = { drives, burning: false, ...(drives[0] ? { selectedDrive: drives[0].mountPath } : {}) };
-  if (state.view === 'disc') renderMain();
+  if (state.view === 'catalog') renderMain();
 }
 
 function driveSelectAlbum(ab: NonNullable<AppState['albumBurn']>): HTMLSelectElement {
@@ -718,10 +730,11 @@ function albumBurnPanel(): HTMLElement {
 
 async function runAlbumBurn(): Promise<void> {
   const ab = state.albumBurn;
-  if (!ab || !ab.selectedDrive || !state.disc) return;
+  if (!ab || !ab.selectedDrive || !state.album) return;
+  const album = state.album;
   const drive = ab.selectedDrive;
   const confirmed = window.confirm(
-    `Burn "${state.disc.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
+    `Burn "${album.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
   );
   if (!confirmed) return;
   ab.burning = true;
@@ -729,11 +742,11 @@ async function runAlbumBurn(): Promise<void> {
   renderMain();
   try {
     const result = await window.omd.burn(
-      { packageDir: state.disc.source, driveMountPath: drive, blank: true, verify: true, eject: true },
+      { packageDir: album.source, driveMountPath: drive, blank: true, verify: true, eject: true },
       (progress) => {
         if (state.albumBurn) {
           state.albumBurn.phase = burnPhaseLabel(progress.phase);
-          if (state.view === 'disc') renderMain();
+          if (state.view === 'catalog') renderMain();
         }
       },
     );
@@ -755,7 +768,7 @@ async function runAlbumBurn(): Promise<void> {
       };
     }
   }
-  if (state.view === 'disc') renderMain();
+  if (state.view === 'catalog') renderMain();
 }
 
 function formatClock(seconds: number): string {
@@ -763,7 +776,11 @@ function formatClock(seconds: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function trackPanel(disc: StudioDiscInfo, currentIndex: number): HTMLElement {
+function trackPanel(
+  disc: StudioDiscInfo,
+  currentIndex: number,
+  onPlay: (index: number) => void,
+): HTMLElement {
   const list = el('ol', { class: 'track-list' });
   disc.tracks.forEach((track, index) => {
     const selected = index === currentIndex;
@@ -772,7 +789,7 @@ function trackPanel(disc: StudioDiscInfo, currentIndex: number): HTMLElement {
       {
         class: `track-row${selected ? ' selected' : ''}`,
         type: 'button',
-        onclick: () => player.playTrack(index),
+        onclick: () => onPlay(index),
       },
       [
         el('span', { class: 'track-position' }, [
@@ -811,43 +828,13 @@ function trackPanel(disc: StudioDiscInfo, currentIndex: number): HTMLElement {
   ]);
 }
 
-function playerView(): HTMLElement {
+/** The shared album detail (art | info | track list [+ usage]) used by Disc and Catalog. */
+function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElement[] {
   const pstate = player.getState();
   lastPlayerKey = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
-
-  const head = el('div', { class: 'view-head' }, [
-    el('h1', { class: 'view-title', text: 'Disc' }),
-    el('p', { class: 'view-lead', text: 'Play a mounted OMD disc with verified, lossless FLAC.' }),
-  ]);
-
-  if (!state.disc) {
-    const hero: (Node | string)[] = [
-      el('span', { class: 'select-icon disc-empty-icon' }, [svgIcon('disc', 56)]),
-      el('h2', { class: 'select-title', text: 'No disc inserted' }),
-      el('p', {
-        class: 'select-lead',
-        text: 'Insert an OMD disc and it will load here automatically.',
-      }),
-      state.discLoading
-        ? spinnerRow('Reading disc\u2026')
-        : spinnerRow('Watching the drive\u2026'),
-      el('div', { class: 'bc-actions' }, [
-        btn('Open package folder\u2026', () => void openFolder(), { icon: 'folder' }),
-        btn('Scan again', () => void detectDisc(), { small: true }),
-      ]),
-    ];
-    if (state.discError) hero.push(el('p', { class: 'select-lead muted', text: state.discError }));
-    return el('div', { class: 'view' }, [
-      head,
-      el('section', { class: 'card' }, [el('div', { class: 'select-hero disc-empty' }, hero)]),
-    ]);
-  }
-
-  const disc = state.disc;
-  const currentIndex = pstate.order[pstate.position] ?? -1;
-  const playing = pstate.status === 'playing';
-
-  const verified = state.verify ? state.verify.valid : disc.valid;
+  const active = state.nowPlaying?.disc.source === disc.source;
+  const currentIndex = active ? (pstate.order[pstate.position] ?? -1) : -1;
+  const playing = active && pstate.status === 'playing';
 
   const rows: HTMLElement[] = [];
   if (disc.releaseYear) rows.push(kvRow('Year', String(disc.releaseYear)));
@@ -861,7 +848,9 @@ function playerView(): HTMLElement {
   if (disc.audioSampleRate) rows.push(kvRow('Sample rate', `${formatKHz(disc.audioSampleRate)} kHz`));
   if (disc.discFormat) rows.push(kvRow('Disc', disc.discFormat));
 
-  const badge = state.reverifying
+  const verifying = source === 'disc' && state.reverifying === true;
+  const verified = source === 'disc' && state.verify ? state.verify.valid : disc.valid;
+  const badge = verifying
     ? el('span', { class: 'npd-chip' }, [
         el('span', { class: 'spinner', 'aria-hidden': 'true' }),
         'Verifying...',
@@ -870,6 +859,26 @@ function playerView(): HTMLElement {
         svgIcon('check'),
         verified ? 'Verified' : 'Not verified',
       ]);
+
+  const actions: HTMLElement[] = [
+    btn(playing ? 'Pause' : 'Play', () => playFrom(disc, source), {
+      primary: true,
+      small: true,
+      icon: playing ? 'pause' : 'play',
+    }),
+  ];
+  if (source === 'disc') {
+    actions.push(btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip', small: true }));
+  } else {
+    actions.push(
+      btn('Burn to Disc', () => void openAlbumBurn(), {
+        icon: 'create',
+        small: true,
+        disabled: !disc.valid,
+      }),
+      btn('Show in folder', () => void window.omd.revealInFolder(disc.source), { small: true }),
+    );
+  }
 
   const albumCol = el('div', { class: 'album-col' }, [
     el('div', { class: 'album-art' }, [
@@ -881,26 +890,6 @@ function playerView(): HTMLElement {
       el('div', { class: 'album-title', text: disc.album }),
       el('div', { class: 'album-artist', text: disc.artist }),
     ]),
-    el('div', { class: 'bc-actions' }, [
-      btn(playing ? 'Pause' : 'Play', () => player.togglePlayPause(), {
-        primary: true,
-        small: true,
-        icon: playing ? 'pause' : 'play',
-      }),
-      ...(state.discSourceKind === 'disc'
-        ? [btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip', small: true })]
-        : []),
-      ...(state.discSourceKind === 'package'
-        ? [
-            btn('Burn to Disc', () => void openAlbumBurn(), {
-              icon: 'create',
-              small: true,
-              disabled: !disc.valid,
-            }),
-          ]
-        : []),
-    ]),
-    ...(state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
   ]);
 
   const meta = el('div', { class: 'album-meta' }, [
@@ -911,13 +900,49 @@ function playerView(): HTMLElement {
     ]),
   ]);
 
-  const layout = el('div', { class: 'disc-layout' }, [albumCol, meta, trackPanel(disc, currentIndex)]);
-
-  return el('div', { class: 'view' }, [
-    el('section', { class: 'card' }, [layout]),
-    ...(state.albumBurn ? [el('section', { class: 'card' }, [albumBurnPanel()])] : []),
-    ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
+  const actionsRow = el('div', { class: 'disc-actions' }, [
+    el('div', { class: 'bc-actions' }, actions),
+    ...(source === 'disc' && state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
   ]);
+
+  const discMain = el('div', { class: 'disc-main' }, [albumCol, meta, actionsRow]);
+
+  const layout = el('div', { class: 'disc-layout' }, [
+    discMain,
+    trackPanel(disc, currentIndex, (index) => playFrom(disc, source, index)),
+  ]);
+
+  return [
+    el('section', { class: 'card' }, [layout]),
+    ...(source === 'album' && state.albumBurn
+      ? [el('section', { class: 'card' }, [albumBurnPanel()])]
+      : []),
+    ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
+  ];
+}
+
+function playerView(): HTMLElement {
+  const pstate = player.getState();
+  lastPlayerKey = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
+
+  if (!state.disc) {
+    const hero: (Node | string)[] = [
+      el('span', { class: 'select-icon disc-empty-icon' }, [svgIcon('disc', 56)]),
+      el('h2', { class: 'select-title', text: 'No disc inserted' }),
+      el('p', {
+        class: 'select-lead',
+        text: 'Insert a burned OMD disc and it will load here automatically.',
+      }),
+      state.discLoading ? spinnerRow('Reading disc\u2026') : spinnerRow('Watching the drive\u2026'),
+      el('div', { class: 'bc-actions' }, [btn('Scan again', () => void detectDisc(), { small: true })]),
+    ];
+    if (state.discError) hero.push(el('p', { class: 'select-lead muted', text: state.discError }));
+    return el('div', { class: 'view' }, [
+      el('section', { class: 'card' }, [el('div', { class: 'select-hero disc-empty' }, hero)]),
+    ]);
+  }
+
+  return el('div', { class: 'view' }, albumDetail(state.disc, 'disc'));
 }
 
 function formatKHz(hz: number): string {
@@ -1060,7 +1085,7 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
     el('div', { class: 'ct-actions' }, [
       el(
         'button',
-        { class: 'ct-btn', type: 'button', onclick: () => void openDiscByPath(entry.source) },
+        { class: 'ct-btn', type: 'button', onclick: () => void openAlbum(entry.source) },
         ['Open'],
       ),
       el(
@@ -1077,12 +1102,32 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
 }
 
 function catalogView(): HTMLElement {
+  if (state.albumLoading) {
+    return el('div', { class: 'view' }, [
+      el('section', { class: 'card' }, [spinnerRow('Opening album\u2026')]),
+    ]);
+  }
+  if (state.album) {
+    const back = el('div', { class: 'bc-actions' }, [
+      btn(
+        'Back to catalog',
+        () => {
+          state.album = undefined;
+          state.albumBurn = undefined;
+          renderMain();
+        },
+        { small: true, icon: 'chevron-left' },
+      ),
+    ]);
+    return el('div', { class: 'view' }, [back, ...albumDetail(state.album, 'album')]);
+  }
+
   const actions = el('div', { class: 'bc-actions' }, [
-    btn('Choose library folder...', () => void chooseLibrary(), { primary: true, icon: 'catalog' }),
-    ...(state.libraryDir ? [btn('Rescan', () => void rescanLibrary())] : []),
+    btn('Choose library folder\u2026', () => void chooseLibrary(), { primary: true, icon: 'catalog' }),
   ]);
   const body: (Node | string)[] = [actions];
   if (state.libraryDir) body.push(el('p', { class: 'burn-source-path', text: state.libraryDir }));
+  if (state.albumError) body.push(el('p', { class: 'select-lead muted', text: state.albumError }));
 
   if (state.catalogLoading) {
     body.push(spinnerRow('Scanning...'));
@@ -1103,19 +1148,13 @@ function catalogView(): HTMLElement {
     );
   }
 
-  return el('div', { class: 'view' }, [
-    el('div', { class: 'view-head' }, [
-      el('h1', { class: 'view-title', text: 'Catalog' }),
-      el('p', { class: 'view-lead', text: 'Browse the OMD packages you have created and ripped.' }),
-    ]),
-    el('section', { class: 'card' }, body),
-  ]);
+  return el('div', { class: 'view' }, [el('section', { class: 'card' }, body)]);
 }
 
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
     case 'burn':
-      return renderBurnView({ onOpenPlayer: (source) => void openDiscByPath(source) });
+      return renderBurnView({ onOpenPlayer: (source) => void openAlbum(source) });
     case 'labels':
       return renderLabelsView();
     case 'disc':
@@ -1224,6 +1263,10 @@ async function init(): Promise<void> {
   player.initPlayer();
   player.subscribe(onPlayerChange);
   window.omd.onDiscChanged(onDiscChanged);
+  window.omd.onLibraryChanged(() => {
+    // The library folder changed on disk; refresh the grid when it is showing.
+    if (state.view === 'catalog' && !state.album) void rescanLibrary();
+  });
   setView(state.view);
   renderNowPlayingBar();
 
