@@ -16,6 +16,7 @@ import type {
   StudioImportProgress,
   StudioImportResult,
   StudioInfo,
+  StudioMixtapeAlbum,
   StudioVerifyResult,
 } from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
@@ -91,6 +92,18 @@ interface AppState {
   catalogLoading: boolean;
   catalogError?: string;
   importStatus?: { busy: boolean; progress?: StudioImportProgress; result?: StudioImportResult };
+  /** In-progress mixtape being built from catalog tracks. */
+  mixtape?: {
+    name: string;
+    artist: string;
+    coverSourcePath?: string;
+    coverPreview?: string;
+    tracks: { sourcePath: string; title: string; from: string }[];
+    sources?: StudioMixtapeAlbum[];
+    loading?: boolean;
+    saving?: boolean;
+    error?: string;
+  };
   themeError?: string;
 }
 
@@ -809,6 +822,13 @@ function albumBurnPanel(): HTMLElement {
   const noDrive = ab.drives.length === 0;
   return el('div', { class: 'burn-console' }, [
     el('div', { class: 'bc-head' }, [el('span', { class: 'bc-title', text: 'Burn to Disc' })]),
+    el('div', { class: 'burn-cartridge' }, [
+      el('img', { class: 'cartridge-img', src: cartridgeFor(state.themeId), alt: 'OMD cartridge' }),
+      el('span', { class: 'cartridge-badge' }, [
+        el('span', { class: 'cartridge-type', text: 'DVD\u2011RW' }),
+        el('span', { class: 'cartridge-size', text: '1.4 GB' }),
+      ]),
+    ]),
     el('div', { class: 'bc-drive' }, [
       svgIcon('drive', 22),
       noDrive
@@ -1227,6 +1247,90 @@ async function runImport(): Promise<void> {
   if (state.view === 'catalog') renderMain();
 }
 
+/** Open the mixtape builder, loading catalog tracks as the source pool. */
+async function startMixtape(): Promise<void> {
+  let dir = state.libraryDir;
+  if (!dir) {
+    const chosen = await window.omd.chooseLibraryFolder();
+    if (!chosen) return;
+    setCatalogDir(chosen);
+    dir = chosen;
+  }
+  state.mixtape = { name: '', artist: 'Various Artists', tracks: [], loading: true };
+  if (state.view === 'catalog') renderMain();
+  try {
+    state.mixtape.sources = await window.omd.mixtapeSources(dir);
+  } catch (err) {
+    state.mixtape.error = (err as Error).message;
+  }
+  state.mixtape.loading = false;
+  if (state.view === 'catalog') renderMain();
+}
+
+function addMixtapeTrack(album: StudioMixtapeAlbum, track: StudioMixtapeAlbum['tracks'][number]): void {
+  state.mixtape?.tracks.push({ sourcePath: track.path, title: track.title, from: album.album });
+  renderMain();
+}
+
+function removeMixtapeTrack(index: number): void {
+  state.mixtape?.tracks.splice(index, 1);
+  renderMain();
+}
+
+function moveMixtapeTrack(index: number, delta: number): void {
+  const tracks = state.mixtape?.tracks;
+  if (!tracks) return;
+  const target = index + delta;
+  if (target < 0 || target >= tracks.length) return;
+  [tracks[index]!, tracks[target]!] = [tracks[target]!, tracks[index]!];
+  renderMain();
+}
+
+async function chooseMixtapeCover(): Promise<void> {
+  const picked = await window.omd.chooseCoverImage(state.libraryDir);
+  if (!picked || !state.mixtape) return;
+  state.mixtape.coverSourcePath = picked.path;
+  state.mixtape.coverPreview = picked.dataUri;
+  renderMain();
+}
+
+async function saveMixtape(): Promise<void> {
+  const m = state.mixtape;
+  if (!m || !state.libraryDir) return;
+  const name = m.name.trim();
+  if (!name) {
+    m.error = 'Give your mixtape a name.';
+    renderMain();
+    return;
+  }
+  if (m.tracks.length === 0) {
+    m.error = 'Add at least one track.';
+    renderMain();
+    return;
+  }
+  m.saving = true;
+  m.error = undefined;
+  renderMain();
+  try {
+    const disc = await window.omd.createMixtape({
+      destDir: state.libraryDir,
+      discId: name,
+      artist: m.artist.trim() || 'Various Artists',
+      album: name,
+      releaseYear: null,
+      ...(m.coverSourcePath ? { coverSourcePath: m.coverSourcePath } : {}),
+      tracks: m.tracks.map((t) => ({ sourcePath: t.sourcePath, title: t.title })),
+    });
+    state.mixtape = undefined;
+    await rescanLibrary();
+    if (disc) state.album = disc;
+  } catch (err) {
+    m.saving = false;
+    m.error = (err as Error).message;
+  }
+  if (state.view === 'catalog') renderMain();
+}
+
 function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
   if (status.busy) {
     const p = status.progress;
@@ -1472,7 +1576,176 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
   return el('div', { class: 'view' }, children);
 }
 
+/** The mixtape builder: a source track library on the left, your mix on the right. */
+function mixtapeView(): HTMLElement {
+  const m = state.mixtape!;
+  const cancel = (): void => {
+    state.mixtape = undefined;
+    renderMain();
+  };
+  const topbar = el('div', { class: 'edit-topbar' }, [
+    btn('Back to catalog', cancel, { small: true, icon: 'chevron-left' }),
+    el('div', { class: 'edit-topbar-actions' }, [
+      btn(m.saving ? 'Saving\u2026' : 'Save mixtape', () => void saveMixtape(), {
+        primary: true,
+        icon: 'check',
+        disabled: m.saving,
+      }),
+      btn('Cancel', cancel, { small: true }),
+    ]),
+  ]);
+
+  const sourcesCol = el('div', { class: 'mixtape-sources' }, []);
+  if (m.loading) {
+    sourcesCol.append(spinnerRow('Loading your library\u2026'));
+  } else if (!m.sources || m.sources.length === 0) {
+    sourcesCol.append(
+      el('p', { class: 'select-lead', text: 'No catalog albums to pull tracks from yet.' }),
+    );
+  } else {
+    for (const album of m.sources) {
+      const list = el('ol', { class: 'mixtape-src-list' });
+      album.tracks.forEach((track) => {
+        list.append(
+          el('li', { class: 'mixtape-src-row' }, [
+            el('span', { class: 'mixtape-src-title', text: `${track.number}. ${track.title}` }),
+            el(
+              'button',
+              { class: 'link-btn', type: 'button', onclick: () => addMixtapeTrack(album, track) },
+              ['+ Add'],
+            ),
+          ]),
+        );
+      });
+      sourcesCol.append(
+        el('div', { class: 'mixtape-album' }, [
+          el('div', { class: 'mixtape-album-head' }, [
+            el('div', { class: 'mixtape-album-title', text: album.album }),
+            el('div', { class: 'mixtape-album-sub', text: album.artist }),
+          ]),
+          list,
+        ]),
+      );
+    }
+  }
+
+  const nameInput = el('input', {
+    class: 'edit-input',
+    type: 'text',
+    value: m.name,
+    placeholder: 'Mixtape name',
+    maxlength: '200',
+  }) as HTMLInputElement;
+  nameInput.addEventListener('input', () => {
+    m.name = nameInput.value;
+  });
+  const artistInput = el('input', {
+    class: 'edit-input',
+    type: 'text',
+    value: m.artist,
+    placeholder: 'Artist',
+  }) as HTMLInputElement;
+  artistInput.addEventListener('input', () => {
+    m.artist = artistInput.value;
+  });
+
+  const coverBox = el('div', { class: 'mixtape-cover album-art' }, [
+    m.coverPreview
+      ? el('img', { src: m.coverPreview, alt: 'Cover' })
+      : el('span', { class: 'album-art-empty' }, [svgIcon('note', 40)]),
+  ]);
+
+  const selList = el('ol', { class: 'mixtape-sel-list' });
+  if (m.tracks.length === 0) {
+    selList.append(
+      el('li', { class: 'mixtape-sel-empty', text: 'Add tracks from the left to build your mix.' }),
+    );
+  }
+  m.tracks.forEach((t, i) => {
+    selList.append(
+      el('li', { class: 'mixtape-sel-row' }, [
+        el('span', { class: 'mixtape-sel-num', text: String(i + 1) }),
+        el('span', { class: 'mixtape-sel-title', text: t.title }),
+        el('span', { class: 'mixtape-sel-from', text: t.from }),
+        el('div', { class: 'mixtape-sel-actions' }, [
+          el(
+            'button',
+            {
+              class: 'mini-btn',
+              type: 'button',
+              title: 'Move up',
+              disabled: i === 0 ? true : null,
+              onclick: () => moveMixtapeTrack(i, -1),
+            },
+            ['\u2191'],
+          ),
+          el(
+            'button',
+            {
+              class: 'mini-btn',
+              type: 'button',
+              title: 'Move down',
+              disabled: i === m.tracks.length - 1 ? true : null,
+              onclick: () => moveMixtapeTrack(i, 1),
+            },
+            ['\u2193'],
+          ),
+          el(
+            'button',
+            {
+              class: 'mini-btn danger',
+              type: 'button',
+              title: 'Remove',
+              onclick: () => removeMixtapeTrack(i),
+            },
+            ['\u2715'],
+          ),
+        ]),
+      ]),
+    );
+  });
+
+  const detail = el('div', { class: 'mixtape-detail' }, [
+    el('div', { class: 'mixtape-head-row' }, [
+      coverBox,
+      el('div', { class: 'mixtape-fields' }, [
+        el('label', { class: 'edit-field' }, [
+          el('span', { class: 'edit-label', text: 'Mixtape name' }),
+          nameInput,
+        ]),
+        el('label', { class: 'edit-field' }, [
+          el('span', { class: 'edit-label', text: 'Artist' }),
+          artistInput,
+        ]),
+        el('div', { class: 'bc-actions' }, [
+          btn('Replace cover\u2026', () => void chooseMixtapeCover(), { icon: 'note', small: true }),
+        ]),
+      ]),
+    ]),
+    el('div', { class: 'edit-label', text: `Tracks (${m.tracks.length})` }),
+    selList,
+  ]);
+
+  const children: (Node | string)[] = [topbar];
+  if (m.error) children.push(notice('error', m.error));
+  children.push(
+    el('section', { class: 'card' }, [
+      el('div', { class: 'mixtape-layout' }, [
+        el('div', { class: 'mixtape-col' }, [el('p', { class: 'eyebrow', text: 'Library' }), sourcesCol]),
+        el('div', { class: 'mixtape-col' }, [
+          el('p', { class: 'eyebrow', text: 'Your mixtape' }),
+          detail,
+        ]),
+      ]),
+    ]),
+  );
+  return el('div', { class: 'view' }, children);
+}
+
 function catalogView(): HTMLElement {
+  if (state.mixtape) {
+    return mixtapeView();
+  }
   if (state.albumLoading) {
     return el('div', { class: 'view' }, [
       el('section', { class: 'card' }, [spinnerRow('Opening album\u2026')]),
@@ -1499,6 +1772,7 @@ function catalogView(): HTMLElement {
   const actions = el('div', { class: 'bc-actions' }, [
     btn('Choose library folder\u2026', () => void chooseLibrary(), { primary: true, icon: 'catalog' }),
     btn('Import music\u2026', () => void runImport(), { icon: 'note' }),
+    btn('New mixtape\u2026', () => void startMixtape(), { icon: 'rip' }),
   ]);
   const body: (Node | string)[] = [actions];
   if (state.libraryDir) body.push(el('p', { class: 'burn-source-path', text: state.libraryDir }));

@@ -219,6 +219,38 @@ export interface StudioCoverPick {
   dataUri: string;
 }
 
+/** A source track available to add to a mixtape (one catalog album's track). */
+export interface StudioMixtapeSourceTrack {
+  /** Absolute path to the FLAC file. */
+  path: string;
+  number: number;
+  title: string;
+  durationSeconds?: number;
+}
+
+/** A catalog album exposed as a source of tracks for the mixtape builder. */
+export interface StudioMixtapeAlbum {
+  source: string;
+  discId: string;
+  artist: string;
+  album: string;
+  coverDataUri?: string;
+  tracks: StudioMixtapeSourceTrack[];
+}
+
+/** A request to compile a mixtape package into the catalog. */
+export interface StudioMixtapeRequest {
+  /** The library folder the mixtape package is written into. */
+  destDir: string;
+  discId: string;
+  artist: string;
+  album: string;
+  releaseYear: number | null;
+  coverSourcePath?: string;
+  /** Selected tracks in play order. */
+  tracks: { sourcePath: string; title?: string }[];
+}
+
 /** A request to import FLAC album folder(s) from disk into the catalog. */
 export interface StudioImportRequest {
   /** The library folder new packages are written into. */
@@ -287,6 +319,10 @@ export interface OmdStudioApi {
     request: StudioImportRequest,
     onProgress: (progress: StudioImportProgress) => void,
   ): Promise<StudioImportResult>;
+  /** List catalog albums with their tracks (absolute FLAC paths) for the mixtape builder. */
+  mixtapeSources(dir: string): Promise<StudioMixtapeAlbum[]>;
+  /** Compile a mixtape package into the catalog; returns the new package info. */
+  createMixtape(request: StudioMixtapeRequest): Promise<StudioDiscInfo | null>;
   chooseLibraryFolder(): Promise<string | null>;
   scanLibrary(dir: string): Promise<CatalogEntry[]>;
   /**

@@ -50,6 +50,8 @@ const api: OmdStudioApi = {
   },
   chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
   scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
+  mixtapeSources: (dir) => ipcRenderer.invoke('omd:mixtapeSources', dir),
+  createMixtape: (request) => ipcRenderer.invoke('omd:createMixtape', request),
   onLibraryChanged: (handler) => {
     const listener = (): void => handler();
     ipcRenderer.on('omd:libraryChanged', listener);

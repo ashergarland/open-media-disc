@@ -5,6 +5,7 @@ import {
   CHECKSUMS_FILENAME,
   MANIFEST_FILENAME,
   calculateChecksums,
+  createMixtape,
   createPackage,
   formatChecksumsFile,
   inspectPackage,
@@ -341,6 +342,40 @@ describe('updatePackageMetadata', () => {
     const info = await inspectPackage(out);
     expect(info.coverArt).toBe('COVER.png');
     await expect(readFile(path.join(out, 'COVER.jpg'))).rejects.toThrow();
+  });
+});
+
+describe('createMixtape', () => {
+  it('compiles selected tracks from multiple albums into a valid package', async () => {
+    const srcA = path.join(tmp.path(), 'a');
+    await makeSourceAlbum(srcA, {
+      artist: 'A',
+      album: 'Album A',
+      tracks: [
+        { number: 1, title: 'One' },
+        { number: 2, title: 'Two' },
+      ],
+    });
+    const srcB = path.join(tmp.path(), 'b');
+    await makeSourceAlbum(srcB, { artist: 'B', album: 'Album B', tracks: [{ number: 1, title: 'Uno' }] });
+    const out = path.join(tmp.path(), 'mix');
+    const { validation } = await createMixtape({
+      tracks: [
+        { sourcePath: path.join(srcB, '01 Uno.flac') },
+        { sourcePath: path.join(srcA, '02 Two.flac'), title: 'Renamed' },
+      ],
+      discId: 'My Mix',
+      artist: 'Various Artists',
+      album: 'My Mix',
+      outDir: out,
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(validation.valid).toBe(true);
+    const info = await inspectPackage(out);
+    expect(info.trackCount).toBe(2);
+    expect(info.tracks.map((t) => t.number)).toEqual([1, 2]);
+    expect(info.tracks[0]!.title).toBe('Uno');
+    expect(info.tracks[1]!.title).toBe('Renamed');
   });
 });
 

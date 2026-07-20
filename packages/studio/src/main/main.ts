@@ -7,6 +7,7 @@ import {
   OMD_VERSION,
   OutputExistsError,
   burnPackage,
+  createMixtape,
   createPackage,
   inspectPackage,
   parseFlacMetadata,
@@ -32,6 +33,8 @@ import type {
   StudioInfo,
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
+  StudioMixtapeAlbum,
+  StudioMixtapeRequest,
   StudioPackageResponse,
   StudioRipRequest,
   StudioRipResult,
@@ -566,6 +569,61 @@ ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<Stu
 ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {
   return buildDiscInfo(source);
 });
+
+ipcMain.handle('omd:mixtapeSources', async (_event, dir: string): Promise<StudioMixtapeAlbum[]> => {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const albums: StudioMixtapeAlbum[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const source = path.join(dir, entry.name);
+    let inspection;
+    try {
+      inspection = await inspectPackage(source);
+    } catch {
+      continue;
+    }
+    const coverDataUri = await readCoverDataUri(source, inspection.coverArt);
+    albums.push({
+      source,
+      discId: inspection.discId,
+      artist: inspection.artist,
+      album: inspection.album,
+      ...(coverDataUri ? { coverDataUri } : {}),
+      tracks: inspection.tracks.map((track) => ({
+        path: path.resolve(source, ...track.filename.split('/')),
+        number: track.number,
+        title: track.title,
+        ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
+      })),
+    });
+  }
+  albums.sort((a, b) => a.discId.localeCompare(b.discId));
+  return albums;
+});
+
+ipcMain.handle(
+  'omd:createMixtape',
+  async (_event, request: StudioMixtapeRequest): Promise<StudioDiscInfo | null> => {
+    const outDir = path.join(request.destDir, slugifyForPath(request.discId || request.album));
+    await createMixtape({
+      tracks: request.tracks,
+      discId: request.discId,
+      artist: request.artist,
+      album: request.album,
+      outDir,
+      overwrite: true,
+      ...(request.releaseYear !== null ? { releaseYear: request.releaseYear } : {}),
+      ...(request.coverSourcePath ? { coverSourcePath: request.coverSourcePath } : {}),
+      generator: { name: 'OMD Studio', version: STUDIO_VERSION },
+    });
+    return buildDiscInfo(outDir);
+  },
+);
 
 ipcMain.handle('omd:chooseCoverImage', async (_event, defaultDir?: string): Promise<StudioCoverPick | null> => {
   const result = await dialog.showOpenDialog({

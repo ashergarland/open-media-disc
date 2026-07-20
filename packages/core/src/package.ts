@@ -323,6 +323,109 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
   return { outDir, manifest, validation };
 }
 
+/** One track selected for a mixtape. */
+export interface MixtapeTrackInput {
+  /** Absolute path to a source FLAC file. */
+  sourcePath: string;
+  /** Optional title override (else taken from FLAC tags / filename). */
+  title?: string;
+}
+
+/** Options for {@link createMixtape}. */
+export interface CreateMixtapeOptions {
+  /** The tracks, in the desired play order. */
+  tracks: MixtapeTrackInput[];
+  /** Disc title (human `discId`). */
+  discId: string;
+  /** Artist (for a multi-artist mix, "Various Artists" is typical). */
+  artist: string;
+  /** Album / mixtape name. */
+  album: string;
+  /** Destination package folder. */
+  outDir: string;
+  releaseYear?: number;
+  /** Absolute path to a cover image (.jpg/.jpeg/.png). */
+  coverSourcePath?: string;
+  overwrite?: boolean;
+  generator?: { name: string; version: string };
+  createdAt?: Date;
+}
+
+/**
+ * Build an OMD package from a curated, ordered list of FLAC tracks pulled from
+ * anywhere (e.g. several catalog albums) — a mixtape. Tracks are renumbered
+ * 1..N, copied into `AUDIO/`, and a fresh manifest + checksums are written.
+ */
+export async function createMixtape(options: CreateMixtapeOptions): Promise<CreatePackageResult> {
+  const generator = options.generator ?? { name: 'OMD Core', version: OMD_VERSION };
+  if (options.tracks.length === 0) {
+    throw new Error('A mixtape needs at least one track.');
+  }
+  const discId = options.discId.trim() || options.album;
+  const { outDir } = options;
+
+  if (await pathExists(outDir)) {
+    if (!options.overwrite) throw new OutputExistsError(outDir);
+    await rm(outDir, { recursive: true, force: true });
+  }
+  const audioOut = path.join(outDir, AUDIO_DIR);
+  await mkdir(audioOut, { recursive: true });
+
+  const tracks: OmdTrack[] = [];
+  let number = 1;
+  for (const input of options.tracks) {
+    const prefix = await readPrefix(input.sourcePath, FLAC_PREFIX_BYTES);
+    if (!isFlacBuffer(prefix)) {
+      throw new Error(`File is not a valid FLAC: ${input.sourcePath}`);
+    }
+    const meta = parseFlacMetadata(prefix);
+    const title =
+      (input.title ?? meta.tags['title'] ?? titleFromFilename(path.basename(input.sourcePath))).trim() ||
+      `Track ${number}`;
+    const padded = number.toString().padStart(2, '0');
+    const destName = `${padded} - ${normalizeFilename(title)}.flac`;
+    const destPath = path.join(audioOut, destName);
+    await copyFile(input.sourcePath, destPath);
+    const size = (await stat(destPath)).size;
+    const sha256 = await sha256File(destPath);
+    tracks.push({
+      number,
+      title,
+      filename: `${AUDIO_DIR}/${destName}`,
+      ...(meta.durationSeconds !== undefined ? { durationSeconds: meta.durationSeconds } : {}),
+      sizeBytes: size,
+      sha256,
+    });
+    number += 1;
+  }
+
+  let coverArt: string | undefined;
+  if (options.coverSourcePath) {
+    coverArt = `COVER${coverExt(options.coverSourcePath)}`;
+    await copyFile(options.coverSourcePath, path.join(outDir, coverArt));
+  }
+
+  const manifest = createManifest({
+    discId,
+    artist: options.artist,
+    album: options.album,
+    ...(options.releaseYear !== undefined ? { releaseYear: options.releaseYear } : {}),
+    tracks,
+    ...(coverArt ? { coverArt } : {}),
+    generator,
+    ...(options.createdAt ? { createdAt: options.createdAt } : {}),
+  });
+  await writeFile(path.join(outDir, MANIFEST_FILENAME), stringifyManifest(manifest), 'utf8');
+  const checksumEntries = await calculateChecksums(outDir);
+  await writeFile(
+    path.join(outDir, CHECKSUMS_FILENAME),
+    formatChecksumsFile(checksumEntries),
+    'utf8',
+  );
+  const validation = await validatePackage(outDir, { budgetBytes: DVD_RW_8CM_USABLE_BYTES });
+  return { outDir, manifest, validation };
+}
+
 /** Options for {@link validatePackage}. */
 export interface ValidatePackageOptions {
   /** Capacity budget in bytes. Defaults to the 8cm DVD-RW budget. */
