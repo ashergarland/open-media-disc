@@ -11,7 +11,7 @@ import {
   OutputExistsError,
   validatePackage,
 } from '../src/index.js';
-import { makeSourceAlbum, useTempDir } from './helpers/fixtures.js';
+import { makeSourceAlbum, tinyJpeg, useTempDir } from './helpers/fixtures.js';
 
 const tmp = useTempDir();
 
@@ -223,6 +223,53 @@ describe('validatePackage', () => {
     const result = await validatePackage(out);
     expect(result.valid).toBe(true);
     expect(result.warnings.map((w) => w.code)).toContain('MISSING_COVER_ART');
+  });
+
+  it('finds cover art with a non-standard filename', async () => {
+    const src = path.join(tmp.path(), 'src');
+    const out = path.join(tmp.path(), 'out');
+    await makeSourceAlbum(src, {
+      artist: 'A',
+      album: 'B',
+      tracks: [{ number: 1, title: 'One' }],
+      cover: false,
+    });
+    // The only image is named oddly; the packager should still pick it up.
+    await writeFile(path.join(src, 'Toonami Deep Space Bass.jpg'), tinyJpeg());
+    await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000005',
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    const info = await inspectPackage(out);
+    expect(info.coverArt).toBe('COVER.jpg');
+    const result = await validatePackage(out);
+    expect(result.warnings.map((w) => w.code)).not.toContain('MISSING_COVER_ART');
+  });
+
+  it('prefers the largest image when several unnamed images are present', async () => {
+    const src = path.join(tmp.path(), 'src');
+    const out = path.join(tmp.path(), 'out');
+    await makeSourceAlbum(src, {
+      artist: 'A',
+      album: 'B',
+      tracks: [{ number: 1, title: 'One' }],
+      cover: false,
+    });
+    // Neither name is a known cover name or keyword; the larger file should win.
+    await writeFile(path.join(src, 'img_a.png'), tinyJpeg());
+    await writeFile(path.join(src, 'img_b.png'), Buffer.concat([tinyJpeg(), Buffer.alloc(4096)]));
+    await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000006',
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    const info = await inspectPackage(out);
+    expect(info.coverArt).toBe('COVER.png');
+    const copied = await readFile(path.join(out, 'COVER.png'));
+    expect(copied.length).toBeGreaterThan(1000);
   });
 });
 

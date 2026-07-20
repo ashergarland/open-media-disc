@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { watch } from 'node:fs';
-import { access, readFile, readdir, writeFile, open } from 'node:fs/promises';
+import { access, readFile, readdir, writeFile, open, rm } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
   OMD_FORMAT,
@@ -23,6 +23,10 @@ import type {
   StudioBurnResult,
   StudioDiscInfo,
   StudioDrive,
+  StudioImportItem,
+  StudioImportProgress,
+  StudioImportRequest,
+  StudioImportResult,
   StudioInfo,
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
@@ -560,6 +564,81 @@ ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDis
   return buildDiscInfo(source);
 });
 
+/** Whether a directory directly contains at least one FLAC file. */
+async function hasFlacFiles(dir: string): Promise<boolean> {
+  try {
+    const entries = await readdir(dir, { withFileTypes: true });
+    return entries.some((e) => e.isFile() && /\.flac$/i.test(e.name));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Find importable album folders under a chosen root: the root itself when it
+ * holds FLAC files, otherwise each immediate subfolder that does.
+ */
+async function findAlbumFolders(root: string): Promise<string[]> {
+  if (await hasFlacFiles(root)) return [root];
+  let entries;
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const albums: string[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const sub = path.join(root, entry.name);
+    if (await hasFlacFiles(sub)) albums.push(sub);
+  }
+  return albums.sort((a, b) => a.localeCompare(b));
+}
+
+ipcMain.handle(
+  'omd:importToCatalog',
+  async (event, request: StudioImportRequest): Promise<StudioImportResult> => {
+    const pick = await dialog.showOpenDialog({
+      title: 'Choose a music folder to import (FLAC)',
+      properties: ['openDirectory'],
+    });
+    if (pick.canceled || pick.filePaths.length === 0) {
+      return { canceled: true, total: 0, imported: 0, skipped: 0, failed: 0, items: [] };
+    }
+    const albums = await findAlbumFolders(pick.filePaths[0]!);
+    const items: StudioImportItem[] = [];
+    let imported = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (let i = 0; i < albums.length; i += 1) {
+      const albumDir = albums[i]!;
+      const name = path.basename(albumDir);
+      const progress: StudioImportProgress = { index: i, total: albums.length, album: name };
+      if (!event.sender.isDestroyed()) event.sender.send('omd:importProgress', progress);
+      try {
+        const outDir = path.join(request.destDir, slugifyForPath(name));
+        const { manifest } = await createPackage({
+          sourceDir: albumDir,
+          outDir,
+          ...(request.overwrite ? { overwrite: true } : {}),
+          generator: { name: 'OMD Studio', version: STUDIO_VERSION },
+        });
+        items.push({ album: manifest.album || name, ok: true, outDir });
+        imported += 1;
+      } catch (err) {
+        if (err instanceof OutputExistsError) {
+          items.push({ album: name, ok: false, skipped: true, error: 'Already in the catalog' });
+          skipped += 1;
+        } else {
+          items.push({ album: name, ok: false, error: (err as Error).message });
+          failed += 1;
+        }
+      }
+    }
+    return { total: albums.length, imported, skipped, failed, items };
+  },
+);
+
 let libraryWatcher: ReturnType<typeof watch> | undefined;
 let libraryWatchTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -624,6 +703,16 @@ ipcMain.handle('omd:scanLibrary', async (_event, dir: string): Promise<CatalogEn
 
 ipcMain.handle('omd:revealInFolder', (_event, target: string): void => {
   shell.showItemInFolder(path.resolve(target));
+});
+
+ipcMain.handle('omd:deletePackage', async (_event, source: string): Promise<void> => {
+  // Safety: only remove a folder that actually looks like an OMD package.
+  try {
+    await access(path.join(source, 'OMD-MANIFEST.json'));
+  } catch {
+    throw new Error('That folder is not an OMD package.');
+  }
+  await rm(source, { recursive: true, force: true });
 });
 
 ipcMain.handle('omd:importThemeFile', async (): Promise<string | null> => {

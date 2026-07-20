@@ -13,6 +13,8 @@ import type {
   StudioBurnResult,
   StudioDiscInfo,
   StudioDrive,
+  StudioImportProgress,
+  StudioImportResult,
   StudioInfo,
   StudioVerifyResult,
 } from '../shared/types';
@@ -74,6 +76,7 @@ interface AppState {
   catalog?: CatalogEntry[];
   catalogLoading: boolean;
   catalogError?: string;
+  importStatus?: { busy: boolean; progress?: StudioImportProgress; result?: StudioImportResult };
   themeError?: string;
 }
 
@@ -1039,6 +1042,14 @@ function spinnerRow(text: string): HTMLElement {
   ]);
 }
 
+/** A reusable "in progress" badge: a spinner inside a neutral status pill. */
+function busyPill(label: string): HTMLElement {
+  return el('span', { class: 'status-pill neutral busy' }, [
+    el('span', { class: 'spinner', 'aria-hidden': 'true' }),
+    label,
+  ]);
+}
+
 async function rescanDrives(): Promise<void> {
   state.drives = undefined;
   renderMain();
@@ -1071,34 +1082,156 @@ async function rescanLibrary(): Promise<void> {
   if (state.view === 'catalog') renderMain();
 }
 
+/** Import FLAC album folder(s) from disk into the catalog library. */
+async function runImport(): Promise<void> {
+  let dir = state.libraryDir;
+  if (!dir) {
+    const chosen = await window.omd.chooseLibraryFolder();
+    if (!chosen) return;
+    setCatalogDir(chosen);
+    dir = chosen;
+  }
+  state.importStatus = { busy: true };
+  if (state.view === 'catalog') renderMain();
+  try {
+    const result = await window.omd.importToCatalog({ destDir: dir }, (progress) => {
+      if (state.importStatus?.busy) {
+        state.importStatus.progress = progress;
+        if (state.view === 'catalog' && !state.album) renderMain();
+      }
+    });
+    if (result.canceled) {
+      state.importStatus = undefined;
+    } else {
+      state.importStatus = { busy: false, result };
+      await rescanLibrary();
+    }
+  } catch (err) {
+    state.importStatus = {
+      busy: false,
+      result: {
+        total: 0,
+        imported: 0,
+        skipped: 0,
+        failed: 1,
+        items: [{ album: 'Import', ok: false, error: (err as Error).message }],
+      },
+    };
+  }
+  if (state.view === 'catalog') renderMain();
+}
+
+function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
+  if (status.busy) {
+    const p = status.progress;
+    const text = p
+      ? `Importing ${p.index + 1} of ${p.total}: ${p.album}`
+      : 'Scanning for FLAC albums\u2026';
+    return el('div', { class: 'rip-status' }, [busyPill('IMPORTING'), el('span', { class: 'rip-status-text', text })]);
+  }
+  const result = status.result;
+  if (!result) return el('div');
+  const ok = result.failed === 0 && result.total > 0;
+  const summary =
+    result.total === 0
+      ? 'No FLAC albums found in that folder.'
+      : `Imported ${result.imported}` +
+        (result.skipped ? `, skipped ${result.skipped} already in catalog` : '') +
+        (result.failed ? `, ${result.failed} failed` : '') +
+        '.';
+  return el('div', { class: 'rip-status' }, [
+    el('span', { class: `status-pill ${ok ? 'ok' : result.total === 0 ? 'neutral' : 'bad'}` }, [
+      el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
+      result.total === 0 ? 'NOTHING' : ok ? 'IMPORTED' : 'PARTIAL',
+    ]),
+    el('span', { class: 'rip-status-text', text: summary }),
+    el(
+      'button',
+      {
+        class: 'link-btn',
+        type: 'button',
+        onclick: () => {
+          state.importStatus = undefined;
+          renderMain();
+        },
+      },
+      ['Dismiss'],
+    ),
+  ]);
+}
+
+/** Play a catalog package immediately (loads the full package, then plays). */
+async function playCatalogEntry(entry: CatalogEntry): Promise<void> {
+  try {
+    const disc = await window.omd.openDisc(entry.source);
+    if (disc) playFrom(disc, 'album');
+  } catch {
+    // Ignore; a failed open just does nothing.
+  }
+}
+
+/** Delete a catalog package from disk after confirmation. */
+async function deleteCatalogEntry(entry: CatalogEntry): Promise<void> {
+  const ok = window.confirm(
+    `Delete "${entry.discId}" from your catalog?\n\nThis permanently removes the package folder:\n${entry.source}`,
+  );
+  if (!ok) return;
+  try {
+    await window.omd.deletePackage(entry.source);
+  } catch (err) {
+    state.catalogError = (err as Error).message;
+  }
+  if (state.album?.source === entry.source) state.album = undefined;
+  if (state.nowPlaying?.disc.source === entry.source) {
+    state.nowPlaying = undefined;
+    player.loadDisc([]);
+    renderNowPlayingBar();
+  }
+  await rescanLibrary();
+}
+
 function catalogCard(entry: CatalogEntry): HTMLElement {
   const cover = entry.coverDataUri
-    ? el('img', { class: 'ct-cover', src: entry.coverDataUri, alt: 'Cover art' })
-    : el('span', { class: 'ct-cover ct-cover-empty' }, [svgIcon('note', 34)]);
-  return el('div', { class: 'catalog-tile' }, [
-    cover,
-    el('div', { class: 'ct-body' }, [
-      el('div', { class: 'ct-title', text: entry.discId }),
-      el('div', { class: 'ct-sub', text: `${entry.artist} \u2014 ${entry.album}` }),
-      el('div', { class: 'ct-sub', text: `${entry.trackCount} tracks` }),
-    ]),
-    el('div', { class: 'ct-actions' }, [
-      el(
-        'button',
-        { class: 'ct-btn', type: 'button', onclick: () => void openAlbum(entry.source) },
-        ['Open'],
-      ),
-      el(
-        'button',
-        {
-          class: 'ct-btn ghost',
-          type: 'button',
-          onclick: () => void window.omd.revealInFolder(entry.source),
-        },
-        ['Show'],
-      ),
-    ]),
+    ? el('img', {
+        class: 'ct-cover',
+        src: entry.coverDataUri,
+        alt: 'Cover art',
+        onclick: () => void openAlbum(entry.source),
+      })
+    : el(
+        'span',
+        { class: 'ct-cover ct-cover-empty', onclick: () => void openAlbum(entry.source) },
+        [svgIcon('note', 34)],
+      );
+  const body = el('div', { class: 'ct-body', onclick: () => void openAlbum(entry.source) }, [
+    el('div', { class: 'ct-title', text: entry.discId }),
+    el('div', { class: 'ct-sub', text: `${entry.artist} \u2014 ${entry.album}` }),
+    el('div', { class: 'ct-sub', text: `${entry.trackCount} tracks` }),
   ]);
+  const playIcon = svgIcon('play', 16);
+  const trashIcon = svgIcon('trash', 16);
+  const actions = el('div', { class: 'ct-actions' }, [
+    el(
+      'button',
+      { class: 'ct-btn play', type: 'button', onclick: () => void playCatalogEntry(entry) },
+      [playIcon, 'Play'],
+    ),
+    el('button', { class: 'ct-btn ghost', type: 'button', onclick: () => void openAlbum(entry.source) }, [
+      'Open',
+    ]),
+    el(
+      'button',
+      {
+        class: 'ct-btn danger ct-icon',
+        type: 'button',
+        title: 'Delete from catalog',
+        'aria-label': 'Delete from catalog',
+        onclick: () => void deleteCatalogEntry(entry),
+      },
+      [trashIcon],
+    ),
+  ]);
+  return el('div', { class: 'catalog-tile' }, [cover, body, actions]);
 }
 
 function catalogView(): HTMLElement {
@@ -1124,9 +1257,11 @@ function catalogView(): HTMLElement {
 
   const actions = el('div', { class: 'bc-actions' }, [
     btn('Choose library folder\u2026', () => void chooseLibrary(), { primary: true, icon: 'catalog' }),
+    btn('Import music\u2026', () => void runImport(), { icon: 'note' }),
   ]);
   const body: (Node | string)[] = [actions];
   if (state.libraryDir) body.push(el('p', { class: 'burn-source-path', text: state.libraryDir }));
+  if (state.importStatus) body.push(importStatusEl(state.importStatus));
   if (state.albumError) body.push(el('p', { class: 'select-lead muted', text: state.albumError }));
 
   if (state.catalogLoading) {

@@ -198,6 +198,41 @@ export interface CatalogEntry {
   coverDataUri?: string;
 }
 
+/** A request to import FLAC album folder(s) from disk into the catalog. */
+export interface StudioImportRequest {
+  /** The library folder new packages are written into. */
+  destDir: string;
+  /** Overwrite packages that already exist. */
+  overwrite?: boolean;
+}
+
+/** Progress while importing music into the catalog. */
+export interface StudioImportProgress {
+  index: number;
+  total: number;
+  album: string;
+}
+
+/** The outcome of importing one album folder. */
+export interface StudioImportItem {
+  album: string;
+  ok: boolean;
+  outDir?: string;
+  skipped?: boolean;
+  error?: string;
+}
+
+/** The overall outcome of an import. */
+export interface StudioImportResult {
+  /** True when the user cancelled the source-folder picker. */
+  canceled?: boolean;
+  total: number;
+  imported: number;
+  skipped: number;
+  failed: number;
+  items: StudioImportItem[];
+}
+
 /** The API exposed to the renderer on `window.omd` via the preload bridge. */
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
@@ -223,6 +258,10 @@ export interface OmdStudioApi {
   verifyDisc(source: string): Promise<StudioVerifyResult>;
   rip(request: StudioRipRequest): Promise<StudioRipResult>;
   chooseRipDestination(): Promise<string | null>;
+  importToCatalog(
+    request: StudioImportRequest,
+    onProgress: (progress: StudioImportProgress) => void,
+  ): Promise<StudioImportResult>;
   chooseLibraryFolder(): Promise<string | null>;
   scanLibrary(dir: string): Promise<CatalogEntry[]>;
   /**
@@ -231,5 +270,7 @@ export interface OmdStudioApi {
    */
   onLibraryChanged(handler: () => void): () => void;
   revealInFolder(target: string): Promise<void>;
+  /** Permanently delete an OMD package folder from disk. */
+  deletePackage(source: string): Promise<void>;
   importThemeFile(): Promise<string | null>;
 }

@@ -133,6 +133,54 @@ function titleFromFilename(name: string): string {
  * `AUDIO/`, detects cover art, writes `OMD-MANIFEST.json` and
  * `CHECKSUMS.sha256`, then validates the result.
  */
+/** Image file extensions the packager will accept as cover art. */
+const COVER_IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png']);
+/** Filename hints that strongly suggest an image is the album cover. */
+const COVER_KEYWORDS = ['cover', 'front', 'folder', 'album', 'artwork', 'art', 'scan'];
+
+/** The normalized package cover extension (`.png` or `.jpg`) for a source name. */
+function coverExt(name: string): string {
+  return path.extname(name).toLowerCase() === '.png' ? '.png' : '.jpg';
+}
+
+/**
+ * Find the album cover in a source folder, resiliently.
+ *
+ * Priority: (1) exact well-known names (`cover`/`folder`/`front`.jpg|png), then
+ * (2) any image whose filename hints at cover art, then (3) any image at all —
+ * choosing the largest file, since album covers are typically the biggest image
+ * (small icons/thumbnails lose). Returns the source filename to copy, or
+ * `undefined` when the folder holds no images.
+ */
+async function detectCoverArt(
+  sourceDir: string,
+  entries: { isFile(): boolean; name: string }[],
+): Promise<string | undefined> {
+  for (const candidate of COVER_ART_SOURCE_NAMES) {
+    const found = entries.find((e) => e.isFile() && e.name.toLowerCase() === candidate);
+    if (found) return found.name;
+  }
+  const images = entries.filter(
+    (e) => e.isFile() && COVER_IMAGE_EXTS.has(path.extname(e.name).toLowerCase()),
+  );
+  if (images.length === 0) return undefined;
+  const keyworded = images.filter((e) => {
+    const lower = e.name.toLowerCase();
+    return COVER_KEYWORDS.some((k) => lower.includes(k));
+  });
+  const pool = keyworded.length > 0 ? keyworded : images;
+  let best = pool[0]!.name;
+  let bestSize = -1;
+  for (const image of pool) {
+    const size = (await stat(path.join(sourceDir, image.name))).size;
+    if (size > bestSize) {
+      bestSize = size;
+      best = image.name;
+    }
+  }
+  return best;
+}
+
 export async function createPackage(options: CreatePackageOptions): Promise<CreatePackageResult> {
   const { sourceDir } = options;
   const budgetBytes = options.budgetBytes ?? DVD_RW_8CM_USABLE_BYTES;
@@ -230,16 +278,12 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
     });
   }
 
-  // Detect and copy cover art.
+  // Detect and copy cover art (resilient to non-standard filenames).
   let coverArt: string | undefined;
-  for (const candidate of COVER_ART_SOURCE_NAMES) {
-    const found = entries.find((e) => e.isFile() && e.name.toLowerCase() === candidate);
-    if (found) {
-      const ext = path.extname(found.name).toLowerCase() === '.png' ? '.png' : '.jpg';
-      coverArt = `COVER${ext}`;
-      await copyFile(path.join(sourceDir, found.name), path.join(outDir, coverArt));
-      break;
-    }
+  const coverSource = await detectCoverArt(sourceDir, entries);
+  if (coverSource) {
+    coverArt = `COVER${coverExt(coverSource)}`;
+    await copyFile(path.join(sourceDir, coverSource), path.join(outDir, coverArt));
   }
 
   // Copy optional booklet.

@@ -69,6 +69,7 @@ export type IconName =
   | 'folder'
   | 'rip'
   | 'disc'
+  | 'trash'
   | 'label';
 
 interface IconDef {
@@ -219,6 +220,16 @@ function iconDef(name: IconName): IconDef {
           shape('circle', { cx: '12', cy: '12', r: '9', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
           shape('circle', { cx: '12', cy: '12', r: '2.4', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8' }),
           shape('path', { d: 'M8.4 5.2A7.2 7.2 0 0 1 12 4.4', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.6', 'stroke-linecap': 'round' }),
+        ],
+      };
+    case 'trash': // Delete
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('path', { d: 'M4 7h16', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
+          shape('path', { d: 'M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M6 7l1 12.5A1.5 1.5 0 0 0 8.5 21h7a1.5 1.5 0 0 0 1.5-1.5L18 7', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }),
+          shape('path', { d: 'M10 11v6M14 11v6', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round' }),
         ],
       };
     case 'note': // Tracks (music note)

@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { OmdStudioApi, StudioBurnProgress, StudioDiscInfo } from '../shared/types';
+import type {
+  OmdStudioApi,
+  StudioBurnProgress,
+  StudioDiscInfo,
+  StudioImportProgress,
+} from '../shared/types';
 
 /**
  * The preload bridge. It exposes a small, explicit API on `window.omd` so the
@@ -33,6 +38,14 @@ const api: OmdStudioApi = {
   verifyDisc: (source) => ipcRenderer.invoke('omd:verifyDisc', source),
   rip: (request) => ipcRenderer.invoke('omd:rip', request),
   chooseRipDestination: () => ipcRenderer.invoke('omd:chooseRipDestination'),
+  importToCatalog: (request, onProgress) => {
+    const listener = (_event: IpcRendererEvent, progress: StudioImportProgress): void =>
+      onProgress(progress);
+    ipcRenderer.on('omd:importProgress', listener);
+    return ipcRenderer
+      .invoke('omd:importToCatalog', request)
+      .finally(() => ipcRenderer.removeListener('omd:importProgress', listener));
+  },
   chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
   scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
   onLibraryChanged: (handler) => {
@@ -41,6 +54,7 @@ const api: OmdStudioApi = {
     return () => ipcRenderer.removeListener('omd:libraryChanged', listener);
   },
   revealInFolder: (target) => ipcRenderer.invoke('omd:revealInFolder', target),
+  deletePackage: (source) => ipcRenderer.invoke('omd:deletePackage', source),
   importThemeFile: () => ipcRenderer.invoke('omd:importThemeFile'),
 };
 

@@ -542,13 +542,49 @@ img.npd-thumb {
 /* Inline rip-to-catalog status under the Disc album actions. */
 .rip-status {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-top: 6px;
+  margin: 10px 0 16px;
 }
 .rip-status-text {
   font: 400 13px/1.4 var(--font);
   color: var(--ink-muted);
+}
+
+/* Reusable in-progress badge: spinner inside a neutral status pill. */
+.status-pill.busy .spinner {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+}
+
+/* Catalog tile: clickable cover/body + Play / Open / Delete actions. */
+.catalog-tile .ct-cover,
+.catalog-tile .ct-body {
+  cursor: pointer;
+}
+.ct-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ct-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+.ct-btn.ct-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  padding: 0;
+}
+.ct-btn.danger {
+  background: color-mix(in srgb, #ef4d38 20%, transparent);
+}
+.ct-btn.danger:hover {
+  background: color-mix(in srgb, #ef4d38 32%, transparent);
 }
 
 /* Catalog tile cover fallback. */
