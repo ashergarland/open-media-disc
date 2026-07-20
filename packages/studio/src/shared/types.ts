@@ -198,6 +198,27 @@ export interface CatalogEntry {
   coverDataUri?: string;
 }
 
+/** A request to edit an existing catalog package's album metadata. */
+export interface StudioUpdateRequest {
+  /** The package folder to edit. */
+  source: string;
+  discId: string;
+  artist: string;
+  album: string;
+  /** Release year, or null to clear it. */
+  releaseYear: number | null;
+  /** Track title overrides, matched by track number. */
+  trackTitles?: { number: number; title: string }[];
+  /** Absolute path to a replacement cover image (jpg/png). */
+  coverSourcePath?: string;
+}
+
+/** A chosen cover image, with a data URI for immediate preview. */
+export interface StudioCoverPick {
+  path: string;
+  dataUri: string;
+}
+
 /** A request to import FLAC album folder(s) from disk into the catalog. */
 export interface StudioImportRequest {
   /** The library folder new packages are written into. */
@@ -256,6 +277,10 @@ export interface OmdStudioApi {
   openPackageFolder(): Promise<StudioDiscInfo | null>;
   openDisc(source: string): Promise<StudioDiscInfo | null>;
   verifyDisc(source: string): Promise<StudioVerifyResult>;
+  /** Choose a replacement cover image; returns its path and a preview data URI. */
+  chooseCoverImage(defaultDir?: string): Promise<StudioCoverPick | null>;
+  /** Edit a catalog package's album metadata (and optionally cover); returns the refreshed info. */
+  updatePackage(request: StudioUpdateRequest): Promise<StudioDiscInfo | null>;
   rip(request: StudioRipRequest): Promise<StudioRipResult>;
   chooseRipDestination(): Promise<string | null>;
   importToCatalog(

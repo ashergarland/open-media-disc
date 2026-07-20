@@ -60,6 +60,20 @@ interface AppState {
   album?: StudioDiscInfo;
   albumLoading: boolean;
   albumError?: string;
+  /** In-progress metadata edit for the opened catalog album. */
+  albumEdit?: {
+    discId: string;
+    artist: string;
+    album: string;
+    year: string;
+    tracks: { number: number; title: string }[];
+    coverSourcePath?: string;
+    coverPreview?: string;
+    saving?: boolean;
+    error?: string;
+    /** True once a save has been attempted, so all invalid fields highlight. */
+    showErrors?: boolean;
+  };
   /** Which album is loaded in the shared transport, identified by its source. */
   nowPlaying?: { disc: StudioDiscInfo; source: 'disc' | 'album' };
   verify?: StudioVerifyResult;
@@ -242,7 +256,9 @@ function onPlayerChange(): void {
     updateNowPlaying(nowPlayingHost, pstate);
   }
   const key = `${pstate.order[pstate.position] ?? -1}|${pstate.status}`;
-  const showsAlbum = state.view === 'disc' || (state.view === 'catalog' && state.album !== undefined);
+  const showsAlbum =
+    state.view === 'disc' ||
+    (state.view === 'catalog' && state.album !== undefined && state.albumEdit === undefined);
   if (showsAlbum && key !== lastPlayerKey) {
     renderMain();
   }
@@ -494,6 +510,71 @@ async function openAlbum(source: string): Promise<void> {
     state.albumError = (err as Error).message;
   }
   state.albumLoading = false;
+  if (state.view === 'catalog') renderMain();
+}
+
+/** Enter edit mode for the opened catalog album, seeded from its current data. */
+function startEditAlbum(disc: StudioDiscInfo): void {
+  state.albumEdit = {
+    discId: disc.discId,
+    artist: disc.artist,
+    album: disc.album,
+    year: disc.releaseYear ? String(disc.releaseYear) : '',
+    tracks: disc.tracks.map((t) => ({ number: t.number, title: t.title })),
+  };
+  renderMain();
+}
+
+/** Pick a replacement cover image and preview it in the edit form. */
+async function chooseCover(): Promise<void> {
+  const picked = await window.omd.chooseCoverImage(state.album?.source);
+  if (!picked || !state.albumEdit) return;
+  state.albumEdit.coverSourcePath = picked.path;
+  state.albumEdit.coverPreview = picked.dataUri;
+  renderMain();
+}
+
+/** Save the edited album metadata (and cover) back to the package. */
+async function saveEdit(): Promise<void> {
+  const edit = state.albumEdit;
+  const album = state.album;
+  if (!edit || !album) return;
+  // Field-level validation (matches the manifest schema); highlight on failure.
+  const fieldKeys = ['discId', 'artist', 'album', 'year'] as const;
+  const hasFieldError = fieldKeys.some((k) => fieldError(k, edit[k]) !== undefined);
+  const hasTrackError = edit.tracks.some((t) => t.title.trim().length === 0);
+  if (hasFieldError || hasTrackError) {
+    edit.showErrors = true;
+    edit.error = 'Please fix the highlighted fields.';
+    renderMain();
+    return;
+  }
+  const year = edit.year.trim() ? Number.parseInt(edit.year.trim(), 10) : null;
+  edit.saving = true;
+  edit.error = undefined;
+  renderMain();
+  try {
+    const updated = await window.omd.updatePackage({
+      source: album.source,
+      discId: edit.discId.trim(),
+      artist: edit.artist.trim(),
+      album: edit.album.trim(),
+      releaseYear: year,
+      trackTitles: edit.tracks.map((t) => ({ number: t.number, title: t.title.trim() })),
+      ...(edit.coverSourcePath ? { coverSourcePath: edit.coverSourcePath } : {}),
+    });
+    if (updated) {
+      state.album = updated;
+      if (state.nowPlaying?.disc.source === updated.source) {
+        state.nowPlaying = { disc: updated, source: 'album' };
+        renderNowPlayingBar();
+      }
+    }
+    state.albumEdit = undefined;
+  } catch (err) {
+    edit.saving = false;
+    edit.error = (err as Error).message;
+  }
   if (state.view === 'catalog') renderMain();
 }
 
@@ -879,6 +960,7 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
         small: true,
         disabled: !disc.valid,
       }),
+      btn('Edit', () => startEditAlbum(disc), { icon: 'label', small: true }),
       btn('Show in folder', () => void window.omd.revealInFolder(disc.source), { small: true }),
     );
   }
@@ -1234,11 +1316,146 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
   return el('div', { class: 'catalog-tile' }, [cover, body, actions]);
 }
 
+/** A reusable inline notice banner (error/warning/info). */
+function notice(kind: 'error' | 'warning' | 'info', text: string): HTMLElement {
+  return el('div', { class: `notice notice-${kind}`, role: 'alert' }, [
+    el('span', { class: 'notice-dot', 'aria-hidden': 'true' }),
+    el('span', { class: 'notice-text', text }),
+  ]);
+}
+
+/** Validate one metadata field against the manifest schema; returns a message or undefined. */
+function fieldError(key: 'discId' | 'artist' | 'album' | 'year', value: string): string | undefined {
+  const v = value.trim();
+  if (key === 'discId') {
+    if (!v) return 'Required.';
+    if (v.length > 200) return 'Must be 200 characters or fewer.';
+    return undefined;
+  }
+  if (key === 'artist' || key === 'album') {
+    return v ? undefined : 'Required.';
+  }
+  // year
+  if (!v) return undefined;
+  if (!/^\d{1,4}$/.test(v)) return 'Use a 4-digit year.';
+  const n = Number.parseInt(v, 10);
+  if (n < 1900 || n > 2200) return 'Must be between 1900 and 2200.';
+  return undefined;
+}
+
+function editField(label: string, key: 'discId' | 'artist' | 'album' | 'year'): HTMLElement {
+  const edit = state.albumEdit!;
+  const extra: Record<string, string> =
+    key === 'year'
+      ? { inputmode: 'numeric', placeholder: 'e.g. 2009', maxlength: '4' }
+      : key === 'discId'
+        ? { maxlength: '200' }
+        : {};
+  const initialErr = edit.showErrors ? fieldError(key, edit[key]) : undefined;
+  const input = el('input', {
+    class: `edit-input${initialErr ? ' invalid' : ''}`,
+    type: 'text',
+    value: edit[key],
+    ...extra,
+  }) as HTMLInputElement;
+  const errorSpan = el('span', { class: 'edit-error', text: initialErr ?? '' });
+  const apply = (msg: string | undefined): void => {
+    errorSpan.textContent = msg ?? '';
+    input.classList.toggle('invalid', Boolean(msg));
+  };
+  input.addEventListener('input', () => {
+    edit[key] = input.value;
+    // Clear a shown error as soon as the field becomes valid again.
+    if (input.classList.contains('invalid')) apply(fieldError(key, edit[key]));
+  });
+  input.addEventListener('blur', () => apply(fieldError(key, edit[key])));
+  return el('label', { class: 'edit-field' }, [
+    el('span', { class: 'edit-label', text: label }),
+    input,
+    errorSpan,
+  ]);
+}
+
+function editTrackRow(index: number): HTMLElement {
+  const edit = state.albumEdit!;
+  const track = edit.tracks[index]!;
+  const initialInvalid = edit.showErrors && track.title.trim().length === 0;
+  const input = el('input', {
+    class: `edit-input${initialInvalid ? ' invalid' : ''}`,
+    type: 'text',
+    value: track.title,
+    'aria-label': `Track ${track.number} title`,
+  }) as HTMLInputElement;
+  const mark = (): void => {
+    input.classList.toggle('invalid', input.value.trim().length === 0);
+  };
+  input.addEventListener('input', () => {
+    edit.tracks[index]!.title = input.value;
+    if (input.classList.contains('invalid')) mark();
+  });
+  input.addEventListener('blur', mark);
+  return el('div', { class: 'edit-track-row' }, [
+    el('span', { class: 'edit-track-num', text: String(track.number) }),
+    input,
+  ]);
+}
+
+/** The metadata editor for the opened catalog album (art + fields + top Save/Cancel). */
+function albumEditView(disc: StudioDiscInfo): HTMLElement {
+  const edit = state.albumEdit!;
+  const cover = edit.coverPreview ?? disc.coverDataUri;
+  const art = el('div', { class: 'album-col' }, [
+    el('div', { class: 'album-art' }, [
+      cover
+        ? el('img', { src: cover, alt: 'Cover art' })
+        : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
+    ]),
+    el('div', { class: 'bc-actions' }, [
+      btn('Replace cover\u2026', () => void chooseCover(), { icon: 'note', small: true }),
+    ]),
+  ]);
+
+  const form = el('div', { class: 'album-meta edit-form' }, [
+    editField('Album', 'album'),
+    editField('Artist', 'artist'),
+    editField('Year', 'year'),
+    editField('Disc title', 'discId'),
+    el('div', { class: 'edit-tracks' }, [
+      el('span', { class: 'edit-label', text: 'Track titles' }),
+      ...edit.tracks.map((_track, index) => editTrackRow(index)),
+    ]),
+  ]);
+
+  const cancel = (): void => {
+    state.albumEdit = undefined;
+    renderMain();
+  };
+  const topbar = el('div', { class: 'edit-topbar' }, [
+    btn('Back to album', cancel, { small: true, icon: 'chevron-left' }),
+    el('div', { class: 'edit-topbar-actions' }, [
+      btn(edit.saving ? 'Saving\u2026' : 'Save', () => void saveEdit(), {
+        primary: true,
+        icon: 'check',
+        disabled: edit.saving,
+      }),
+      btn('Cancel', cancel, { small: true }),
+    ]),
+  ]);
+
+  const children: (Node | string)[] = [topbar];
+  if (edit.error) children.push(notice('error', edit.error));
+  children.push(el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]));
+  return el('div', { class: 'view' }, children);
+}
+
 function catalogView(): HTMLElement {
   if (state.albumLoading) {
     return el('div', { class: 'view' }, [
       el('section', { class: 'card' }, [spinnerRow('Opening album\u2026')]),
     ]);
+  }
+  if (state.album && state.albumEdit) {
+    return albumEditView(state.album);
   }
   if (state.album) {
     const back = el('div', { class: 'bc-actions' }, [

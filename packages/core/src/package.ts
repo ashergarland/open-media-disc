@@ -594,6 +594,90 @@ export interface PackageInspection {
  * Read an OMD package's manifest and return a summary. Throws if the manifest
  * is missing or invalid; use {@link validatePackage} for graceful diagnostics.
  */
+/** Options for {@link updatePackageMetadata}. */
+export interface UpdatePackageMetadataOptions {
+  /** The package folder to edit in place. */
+  packageDir: string;
+  /** New disc title (human `discId`). Omit to leave unchanged. */
+  discId?: string;
+  /** New artist. Omit to leave unchanged. */
+  artist?: string;
+  /** New album. Omit to leave unchanged. */
+  album?: string;
+  /** New release year, or `null` to clear it. Omit to leave unchanged. */
+  releaseYear?: number | null;
+  /** Track title overrides, matched by track `number`. Omit to leave unchanged. */
+  trackTitles?: { number: number; title: string }[];
+  /** Absolute path to a replacement cover image (.jpg/.jpeg/.png). */
+  coverSourcePath?: string;
+  /** Generator identity written to the manifest. */
+  generator?: { name: string; version: string };
+}
+
+/** Result of {@link updatePackageMetadata}. */
+export interface UpdatePackageMetadataResult {
+  manifest: OmdManifest;
+  validation: PackageValidationResult;
+}
+
+/**
+ * Edit an existing package's album metadata (and optionally its cover art) in
+ * place, then rewrite the manifest and recompute `CHECKSUMS.sha256` so the
+ * package stays valid. Audio tracks are never touched.
+ */
+export async function updatePackageMetadata(
+  options: UpdatePackageMetadataOptions,
+): Promise<UpdatePackageMetadataResult> {
+  const { packageDir } = options;
+  const raw = await readFile(path.join(packageDir, MANIFEST_FILENAME), 'utf8');
+  const manifest = manifestSchema.parse(JSON.parse(raw));
+
+  if (options.discId !== undefined) manifest.discId = options.discId;
+  if (options.artist !== undefined) manifest.artist = options.artist;
+  if (options.album !== undefined) manifest.album = options.album;
+  if (options.releaseYear === null) {
+    delete manifest.releaseYear;
+  } else if (options.releaseYear !== undefined) {
+    manifest.releaseYear = options.releaseYear;
+  }
+  if (options.trackTitles && options.trackTitles.length > 0) {
+    const byNumber = new Map(options.trackTitles.map((t) => [t.number, t.title]));
+    manifest.tracks = manifest.tracks.map((track) => {
+      const title = byNumber.get(track.number);
+      return title ? { ...track, title } : track;
+    });
+  }
+  if (options.generator) manifest.generator = options.generator;
+
+  // Decide the cover filename (if replacing) and stage it on the manifest, but
+  // do NOT touch any files until the whole manifest validates. This guarantees
+  // an invalid edit can never leave the package with a dangling cover.
+  const previousCover = manifest.coverArt;
+  let newCover: string | undefined;
+  if (options.coverSourcePath) {
+    const ext = path.extname(options.coverSourcePath).toLowerCase() === '.png' ? '.png' : '.jpg';
+    newCover = `COVER${ext}`;
+    manifest.coverArt = newCover;
+  }
+
+  // Validate first (throws on invalid input) — before any filesystem mutation.
+  const validated = manifestSchema.parse(manifest);
+
+  if (options.coverSourcePath && newCover) {
+    if (previousCover && previousCover !== newCover) {
+      await rm(path.join(packageDir, previousCover), { force: true });
+    }
+    await copyFile(options.coverSourcePath, path.join(packageDir, newCover));
+  }
+
+  await writeFile(path.join(packageDir, MANIFEST_FILENAME), stringifyManifest(validated), 'utf8');
+  const entries = await calculateChecksums(packageDir);
+  await writeFile(path.join(packageDir, CHECKSUMS_FILENAME), formatChecksumsFile(entries), 'utf8');
+
+  const validation = await validatePackage(packageDir);
+  return { manifest: validated, validation };
+}
+
 export async function inspectPackage(packageDir: string): Promise<PackageInspection> {
   const manifestPath = path.join(packageDir, MANIFEST_FILENAME);
   const raw = await readFile(manifestPath, 'utf8');

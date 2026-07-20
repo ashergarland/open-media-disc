@@ -13,6 +13,7 @@ import {
   resolveBurnBackend,
   ripPackage,
   slugifyForPath,
+  updatePackageMetadata,
   validatePackage,
   type MediaInfo,
 } from '@open-album-cartridge/core';
@@ -21,6 +22,7 @@ import type {
   CatalogEntry,
   StudioBurnRequest,
   StudioBurnResult,
+  StudioCoverPick,
   StudioDiscInfo,
   StudioDrive,
   StudioImportItem,
@@ -33,6 +35,7 @@ import type {
   StudioPackageResponse,
   StudioRipRequest,
   StudioRipResult,
+  StudioUpdateRequest,
   StudioValidationFinding,
   StudioVerifyResult,
 } from '../shared/types';
@@ -563,6 +566,37 @@ ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<Stu
 ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {
   return buildDiscInfo(source);
 });
+
+ipcMain.handle('omd:chooseCoverImage', async (_event, defaultDir?: string): Promise<StudioCoverPick | null> => {
+  const result = await dialog.showOpenDialog({
+    title: 'Choose cover art',
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }],
+    ...(defaultDir ? { defaultPath: defaultDir } : {}),
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const filePath = result.filePaths[0]!;
+  const mime = filePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+  const data = await readFile(filePath);
+  return { path: filePath, dataUri: `data:${mime};base64,${data.toString('base64')}` };
+});
+
+ipcMain.handle(
+  'omd:updatePackage',
+  async (_event, request: StudioUpdateRequest): Promise<StudioDiscInfo | null> => {
+    await updatePackageMetadata({
+      packageDir: request.source,
+      discId: request.discId,
+      artist: request.artist,
+      album: request.album,
+      releaseYear: request.releaseYear,
+      ...(request.trackTitles ? { trackTitles: request.trackTitles } : {}),
+      ...(request.coverSourcePath ? { coverSourcePath: request.coverSourcePath } : {}),
+      generator: { name: 'OMD Studio', version: STUDIO_VERSION },
+    });
+    return buildDiscInfo(request.source);
+  },
+);
 
 /** Whether a directory directly contains at least one FLAC file. */
 async function hasFlacFiles(dir: string): Promise<boolean> {

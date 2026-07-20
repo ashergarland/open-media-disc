@@ -9,6 +9,7 @@ import {
   formatChecksumsFile,
   inspectPackage,
   OutputExistsError,
+  updatePackageMetadata,
   validatePackage,
 } from '../src/index.js';
 import { makeSourceAlbum, tinyJpeg, useTempDir } from './helpers/fixtures.js';
@@ -270,6 +271,76 @@ describe('validatePackage', () => {
     expect(info.coverArt).toBe('COVER.png');
     const copied = await readFile(path.join(out, 'COVER.png'));
     expect(copied.length).toBeGreaterThan(1000);
+  });
+});
+
+describe('updatePackageMetadata', () => {
+  it('edits album metadata and keeps the package valid', async () => {
+    const { out } = await buildValidPackage(2);
+    const { validation } = await updatePackageMetadata({
+      packageDir: out,
+      discId: 'My New Title',
+      artist: 'New Artist',
+      album: 'New Album',
+      releaseYear: 1999,
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(validation.valid).toBe(true);
+    const info = await inspectPackage(out);
+    expect(info.discId).toBe('My New Title');
+    expect(info.artist).toBe('New Artist');
+    expect(info.album).toBe('New Album');
+    expect(info.releaseYear).toBe(1999);
+    const revalidate = await validatePackage(out);
+    expect(revalidate.valid).toBe(true);
+  });
+
+  it('rejects an invalid edit without corrupting the package', async () => {
+    const { out } = await buildValidPackage(2);
+    await expect(
+      updatePackageMetadata({
+        packageDir: out,
+        artist: '',
+        generator: { name: 'test', version: '0.1.0' },
+      }),
+    ).rejects.toThrow();
+    // The package must be untouched: still valid, cover still present.
+    const result = await validatePackage(out);
+    expect(result.valid).toBe(true);
+    await expect(readFile(path.join(out, 'COVER.jpg'))).resolves.toBeDefined();
+  });
+
+  it('edits track titles and keeps the package valid', async () => {
+    const { out } = await buildValidPackage(3);
+    await updatePackageMetadata({
+      packageDir: out,
+      trackTitles: [
+        { number: 1, title: 'Opening' },
+        { number: 3, title: 'Finale' },
+      ],
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    const info = await inspectPackage(out);
+    const titles = info.tracks.map((t) => t.title);
+    expect(titles[0]).toBe('Opening');
+    expect(titles[2]).toBe('Finale');
+    const revalidate = await validatePackage(out);
+    expect(revalidate.valid).toBe(true);
+  });
+
+  it('replaces the cover art and removes the old file', async () => {
+    const { src, out } = await buildValidPackage(2);
+    const newCover = path.join(src, 'replacement.png');
+    await writeFile(newCover, Buffer.concat([tinyJpeg(), Buffer.alloc(2048)]));
+    const { validation } = await updatePackageMetadata({
+      packageDir: out,
+      coverSourcePath: newCover,
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(validation.valid).toBe(true);
+    const info = await inspectPackage(out);
+    expect(info.coverArt).toBe('COVER.png');
+    await expect(readFile(path.join(out, 'COVER.jpg'))).rejects.toThrow();
   });
 });
 
