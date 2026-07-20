@@ -262,6 +262,30 @@ function onPlayerChange(): void {
   if (showsAlbum && key !== lastPlayerKey) {
     renderMain();
   }
+  if (pstate.status === 'playing') startEqualizer();
+}
+
+// Drive the dock equalizer bars from live audio levels while playing. The loop
+// re-queries the bar elements each frame so it survives dock re-renders, and
+// self-stops when playback pauses/stops.
+let eqRaf = 0;
+function equalizerTick(): void {
+  const bars = nowPlayingHost.querySelectorAll<HTMLElement>('.npd-spectrum .spectrum-fill');
+  const playing = player.getState().status === 'playing';
+  if (bars.length === 0 || !playing) {
+    bars.forEach((bar) => bar.style.setProperty('height', '10%'));
+    eqRaf = 0;
+    return;
+  }
+  const levels = player.getLevels(bars.length);
+  bars.forEach((bar, i) => {
+    const pct = 10 + Math.round((levels[i] ?? 0) * 82);
+    bar.style.setProperty('height', `${pct}%`);
+  });
+  eqRaf = requestAnimationFrame(equalizerTick);
+}
+function startEqualizer(): void {
+  if (!eqRaf) eqRaf = requestAnimationFrame(equalizerTick);
 }
 
 function card(title: string, children: (Node | string)[]): HTMLElement {

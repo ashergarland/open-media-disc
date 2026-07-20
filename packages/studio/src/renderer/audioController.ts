@@ -33,8 +33,64 @@ let state: PlayerState;
 let started = false;
 const listeners = new Set<Listener>();
 
+// Web Audio analyser for the real-time dock equalizer. Set up lazily on the
+// first play (after a user gesture, so autoplay policy is satisfied).
+let audioCtx: AudioContext | undefined;
+let analyser: AnalyserNode | undefined;
+let sourceNode: MediaElementAudioSourceNode | undefined;
+let freqData: Uint8Array<ArrayBuffer> | undefined;
+
 function emit(): void {
   for (const listener of listeners) listener();
+}
+
+/**
+ * Route the audio element through an AnalyserNode so the equalizer can read live
+ * frequency data. Idempotent; falls back to direct output if Web Audio fails.
+ */
+function ensureAnalyser(): void {
+  if (analyser || !audio) return;
+  try {
+    audioCtx = new AudioContext();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.8;
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    freqData = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
+  } catch {
+    // Keep audio audible even if the analyser could not be created.
+    try {
+      if (sourceNode && audioCtx) sourceNode.connect(audioCtx.destination);
+    } catch {
+      // Nothing more we can do; playback continues via the element.
+    }
+    analyser = undefined;
+  }
+}
+
+/**
+ * Sample the current audio into `bars` normalized (0..1) frequency bands for the
+ * equalizer. Returns zeros when nothing is analysable (paused, or no analyser).
+ */
+export function getLevels(bars: number): number[] {
+  const out = new Array<number>(bars).fill(0);
+  if (!analyser || !freqData || state.status !== 'playing') return out;
+  analyser.getByteFrequencyData(freqData);
+  // Music energy sits in the lower part of the spectrum; ignore the sparse top.
+  const usable = Math.max(bars, Math.floor(freqData.length * 0.7));
+  const per = usable / bars;
+  for (let b = 0; b < bars; b += 1) {
+    let sum = 0;
+    let count = 0;
+    for (let i = Math.floor(b * per); i < Math.floor((b + 1) * per) && i < usable; i += 1) {
+      sum += freqData[i]!;
+      count += 1;
+    }
+    out[b] = count ? sum / count / 255 : 0;
+  }
+  return out;
 }
 
 /** Create the audio element and wire element events. Idempotent. */
@@ -68,6 +124,8 @@ function syncSrc(): void {
 function applyPlayback(): void {
   audio.volume = state.volume;
   if (state.status === 'playing') {
+    ensureAnalyser();
+    if (audioCtx?.state === 'suspended') void audioCtx.resume();
     void audio.play().catch(() => undefined);
   } else {
     audio.pause();

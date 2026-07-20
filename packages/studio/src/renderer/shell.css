@@ -567,7 +567,12 @@ body {
   min-width: 160px;
 }
 
-/* Dock cover thumbnail. */
+/* Dock cover thumbnail (larger than the showcase default). */
+.now-playing-dock .npd-thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 15px;
+}
 img.npd-thumb {
   object-fit: cover;
 }
@@ -628,35 +633,32 @@ img.npd-thumb {
 }
 
 /* Dock equalizer (self-contained; reuses the theme eq1/eq2/eq3 keyframes). */
-.npd-eq {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 20px;
-  margin-left: 6px;
-  flex: 0 0 auto;
+/* Dock spectrum equalizer: the showcase .spectrum, but stripped of its glass
+ * "screen" panel so the bars fill the dock cell, and driven by live audio (the
+ * canned per-bar animation is disabled). Bar colors come from each theme. */
+.now-playing-dock .npd-spectrum {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  height: auto;
+  margin: 0 14px;
+  padding: 0;
+  gap: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  justify-content: space-between;
 }
-.npd-eq span {
-  width: 3px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--pal-cyan, var(--ink-strong));
-  transform-origin: center bottom;
+.now-playing-dock .npd-spectrum::after {
+  display: none;
 }
-.npd-eq span:nth-child(1) {
-  animation: eq1 760ms ease-in-out infinite alternate;
+.now-playing-dock .npd-spectrum .spectrum-bar {
+  width: 6px;
 }
-.npd-eq span:nth-child(2) {
-  animation: eq2 590ms ease-in-out infinite alternate;
-}
-.npd-eq span:nth-child(3) {
-  animation: eq3 820ms ease-in-out infinite alternate;
-}
-.npd-eq span:nth-child(4) {
-  animation: eq1 640ms ease-in-out infinite alternate;
-}
-.npd-eq span:nth-child(5) {
-  animation: eq2 710ms ease-in-out infinite alternate;
+.now-playing-dock .npd-spectrum .spectrum-fill {
+  animation: none !important;
+  height: 10%;
+  transition: height 60ms linear;
 }
 
 /* Inline rip-to-catalog status under the Disc album actions. */

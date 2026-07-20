@@ -134,15 +134,11 @@ export function renderNowPlaying(
     ]),
   ];
   if (playing) {
-    nowChildren.push(
-      el('span', { class: 'npd-eq', 'aria-hidden': 'true' }, [
-        el('span'),
-        el('span'),
-        el('span'),
-        el('span'),
-        el('span'),
-      ]),
-    );
+    const spectrum = el('div', { class: 'spectrum npd-spectrum', 'aria-hidden': 'true' });
+    for (let i = 0; i < 24; i += 1) {
+      spectrum.append(el('span', { class: 'spectrum-bar' }, [el('span', { class: 'spectrum-fill' })]));
+    }
+    nowChildren.push(spectrum);
   }
   const now = el('div', { class: 'npd-now' }, nowChildren);
 
