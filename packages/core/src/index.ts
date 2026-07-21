@@ -12,6 +12,8 @@ export * from './manifest.js';
 export * from './discTitle.js';
 export * from './checksums.js';
 export * from './flac.js';
+export * from './audioMeta.js';
+export * from './audioConvert.js';
 export * from './filenames.js';
 export * from './discSize.js';
 export * from './validationTypes.js';

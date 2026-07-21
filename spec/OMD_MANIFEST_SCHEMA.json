@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://open-album-cartridge.org/schema/OMD_MANIFEST_SCHEMA.json",
   "title": "OMD Manifest",
-  "description": "Manifest schema for an Open Media Disc (OMD) FLAC data package, format version 0.1.0.",
+  "description": "Manifest schema for an Open Media Disc (OMD) audio data package, format version 0.1.0.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -61,7 +61,9 @@
       "maximum": 2200
     },
     "audioCodec": {
-      "const": "FLAC"
+      "type": "string",
+      "enum": ["FLAC", "MP3", "AAC", "Vorbis", "Opus", "WAV"],
+      "description": "The single audio codec used by every track in this package."
     },
     "trackCount": {
       "type": "integer",
@@ -104,7 +106,23 @@
           "filename": {
             "description": "Relative path from the package root, always inside AUDIO/.",
             "type": "string",
-            "pattern": "^AUDIO/.+\\.flac$"
+            "pattern": "^AUDIO/.+\\.(flac|mp3|m4a|aac|mp4|ogg|oga|opus|wav|wave)$"
+          },
+          "artist": {
+            "description": "Per-track artist, present only when it differs from the album artist (compilations).",
+            "type": "string",
+            "minLength": 1
+          },
+          "album": {
+            "description": "Per-track source album, present only when it differs from the package album.",
+            "type": "string",
+            "minLength": 1
+          },
+          "year": {
+            "description": "Per-track release year, present only when it differs from the album release year.",
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2200
           },
           "durationSeconds": {
             "type": "number",

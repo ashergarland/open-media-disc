@@ -13,8 +13,8 @@ Format identifier: `OMD-FLAC-DATA`
 
 Open Media Disc is an open-source **physical music format**. The long-term vision is a
 rewritable optical album cartridge inspired by MiniDisc and UMD, built on commodity 8cm
-DVD-RW media, FLAC audio, open metadata, and eventually dedicated Raspberry Pi-based
-player and writer hardware.
+DVD-RW media, standard digital audio, open metadata, and eventually dedicated Raspberry
+Pi-based player and writer hardware.
 
 The **cartridge is the format**; the DVD-RW is the storage layer. There is no cartridge
 yet. The package format (album folder in, validated OMD package out) is the foundation;
@@ -27,10 +27,10 @@ image and burning it to 8cm DVD-RW. The cartridge shell remains future work.
 | --- | --- |
 | Format name | Open Media Disc |
 | Short name | OMD |
-| Data format id | `OMD-FLAC-DATA` |
+| Data format id | `OMD-FLAC-DATA` (legacy identifier; packages may use any supported codec) |
 | Format version | `0.1.0` |
 | Primary medium (target) | 8cm DVD-RW (~1.4 GB usable class) |
-| Audio codec | FLAC |
+| Audio codec | One per package: FLAC, MP3, AAC, Vorbis, Opus, or WAV |
 | Metadata | `OMD-MANIFEST.json` (authoritative) |
 | Integrity | `CHECKSUMS.sha256` + per-track SHA-256 in manifest |
 | Disc filesystem | UDF |
@@ -80,7 +80,7 @@ package contains:
 
 - `OMD-MANIFEST.json`: required, at package root. The album table of contents.
 - `CHECKSUMS.sha256`: required. Standard `sha256sum`-style file for the whole package.
-- `AUDIO/`: required. FLAC tracks, numbered in playback order.
+- `AUDIO/`: required. Audio tracks (all one codec), numbered in playback order.
 - `COVER.jpg` / `COVER.png`: recommended cover art at the root.
 - `BOOKLET.pdf`: optional.
 
@@ -90,6 +90,15 @@ The manifest is the bridge between a generic data folder and a dedicated album o
 It is authoritative: a player reads it first and presents album mode rather than a folder
 browser. The machine-checkable contract is [`OMD_MANIFEST_SCHEMA.json`](./OMD_MANIFEST_SCHEMA.json)
 (JSON Schema draft-07). See the schema for exact field types and constraints.
+
+All tracks in a package share a single `audioCodec` (one of `FLAC`, `MP3`, `AAC`, `Vorbis`,
+`Opus`, `WAV`); mixed-codec packages are not permitted. The codec is chosen when the package
+is created and every track file uses the matching extension.
+
+Each track may carry optional per-track `artist`, `album`, and `year` fields. These are
+written only when they differ from the album-level values, so ordinary single-artist albums
+stay uncluttered while compilations (e.g. a "Various Artists" mix) can name each track's
+own artist.
 
 Example:
 

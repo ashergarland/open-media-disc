@@ -30,7 +30,7 @@ Each result carries a stable `code` so other implementations can match behavior.
 | `MISSING_CHECKSUMS_FILE` | structure | `CHECKSUMS.sha256` is absent. |
 | `MISSING_AUDIO_DIR` | structure | `AUDIO/` directory is absent. |
 | `MISSING_TRACK_FILE` | tracks | A manifest track `filename` does not exist on disk. |
-| `TRACK_NOT_FLAC` | tracks | A listed track is not a readable FLAC file (bad magic). |
+| `TRACK_CODEC_MISMATCH` | tracks | A listed track's file extension does not match the package `audioCodec` (all tracks must share one codec). |
 | `DUPLICATE_TRACK_NUMBER` | tracks | Two or more tracks share the same `number`. |
 | `TRACK_COUNT_MISMATCH` | tracks | `trackCount` does not equal `tracks.length`. |
 | `CHECKSUM_MISMATCH` | integrity | A file's actual SHA-256 differs from the manifest/`CHECKSUMS.sha256` value. |
@@ -56,7 +56,7 @@ Each result carries a stable `code` so other implementations can match behavior.
    `MANIFEST_SCHEMA_ERROR` stops further track/checksum checks (nothing reliable to check
    against).
 2. **Format**: `omdFormat` supported, `omdVersion` known.
-3. **Tracks**: each track file exists, is FLAC, numbers are unique, `trackCount` matches.
+3. **Tracks**: each track file exists, matches the package `audioCodec`, numbers are unique, `trackCount` matches.
 4. **Integrity**: recompute SHA-256 for each package file and compare to
    `CHECKSUMS.sha256` and the per-track `sha256` in the manifest.
 5. **Metadata & portability**: cover art, filenames, OS junk.
@@ -72,11 +72,16 @@ Each result carries a stable `code` so other implementations can match behavior.
 boolean `overBudget`. In non-strict validation, overflow is a `CAPACITY_WARNING`; in strict
 mode it is a `CAPACITY_WARNING`-coded `error`.
 
-## 6. FLAC Recognition
+## 6. Audio Codec Recognition
 
-A file is recognized as FLAC when its first four bytes are the ASCII magic `fLaC`
-(`0x66 0x4C 0x61 0x43`). v0.1 does not require full FLAC frame decoding for validation; the
-STREAMINFO metadata block is parsed opportunistically to populate duration.
+Every track in a package uses a single audio codec, declared in the manifest `audioCodec`
+field (one of `FLAC`, `MP3`, `AAC`, `Vorbis`, `Opus`, `WAV`). A track is recognized as
+matching the package when its file extension maps to that codec (e.g. `.flac` → FLAC,
+`.mp3` → MP3, `.m4a`/`.aac`/`.mp4` → AAC, `.ogg`/`.oga` → Vorbis, `.opus` → Opus,
+`.wav`/`.wave` → WAV). For FLAC the `fLaC` magic (`0x66 0x4C 0x61 0x43`) and STREAMINFO
+block are parsed opportunistically to populate duration and bit depth; other codecs are
+parsed with a general audio-metadata reader. v0.1 does not require full frame decoding for
+validation.
 
 ## 7. Disc Verification
 

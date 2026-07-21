@@ -11,7 +11,7 @@ same whether the package lives in a build folder or is later burned to an 8cm DV
 /OMD-MANIFEST.json     required   Album metadata + track table (authoritative)
 /COVER.jpg             recommended  Cover art (COVER.png also accepted)
 /BOOKLET.pdf           optional   Liner notes / booklet
-/AUDIO/                required   Directory of FLAC tracks in playback order
+/AUDIO/                required   Directory of audio tracks (one codec) in playback order
   01 - Track Name.flac
   02 - Track Name.flac
   03 - Track Name.flac

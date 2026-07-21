@@ -9,11 +9,12 @@ import {
   createPackage,
   formatChecksumsFile,
   inspectPackage,
+  inspectSourceAlbum,
   OutputExistsError,
   updatePackageMetadata,
   validatePackage,
 } from '../src/index.js';
-import { makeSourceAlbum, tinyJpeg, useTempDir } from './helpers/fixtures.js';
+import { makeSourceAlbum, makeWavSourceAlbum, tinyJpeg, useTempDir } from './helpers/fixtures.js';
 
 const tmp = useTempDir();
 
@@ -56,6 +57,144 @@ describe('createPackage', () => {
     expect(info.trackCount).toBe(3);
     expect(info.coverArt).toBe('COVER.jpg');
     expect(info.tracks.map((t) => t.number)).toEqual([1, 2, 3]);
+  });
+
+  it('creates a WAV package from a folder of WAV files', async () => {
+    const src = path.join(tmp.path(), 'wav-src');
+    const out = path.join(tmp.path(), 'wav-out');
+    await makeWavSourceAlbum(src, {
+      cover: true,
+      tracks: [
+        { number: 1, title: 'One', seconds: 1 },
+        { number: 2, title: 'Two', seconds: 1 },
+      ],
+    });
+    await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000002',
+      artist: 'WAV Test',
+      album: 'PCM Vol. 1',
+      generator: { name: 'test', version: '0.1.0' },
+    });
+
+    const result = await validatePackage(out);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+
+    const info = await inspectPackage(out);
+    expect(info.audioCodec).toBe('WAV');
+    expect(info.trackCount).toBe(2);
+    expect(info.tracks.every((t) => t.filename.endsWith('.wav'))).toBe(true);
+  });
+
+  it('normalizes 0-indexed source track numbers to a 1..N sequence', async () => {
+    const src = path.join(tmp.path(), 'zero-src');
+    const out = path.join(tmp.path(), 'zero-out');
+    await makeSourceAlbum(src, {
+      artist: 'Zero Index',
+      album: 'Off By One',
+      tracks: [
+        { number: 0, title: 'First' },
+        { number: 1, title: 'Second' },
+        { number: 2, title: 'Third' },
+      ],
+    });
+    const { manifest } = await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000004',
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(manifest.tracks.map((t) => t.number)).toEqual([1, 2, 3]);
+    const result = await validatePackage(out);
+    expect(result.valid).toBe(true);
+  });
+
+  it('inspectSourceAlbum previews metadata without writing a package', async () => {
+    const src = path.join(tmp.path(), 'inspect-src');
+    await makeSourceAlbum(src, {
+      artist: 'Preview Artist',
+      album: 'Preview Album',
+      year: 2024,
+      cover: true,
+      tracks: [
+        { number: 0, title: 'Alpha' },
+        { number: 1, title: 'Beta' },
+      ],
+    });
+    const draft = await inspectSourceAlbum(src);
+    expect(draft.artist).toBe('Preview Artist');
+    expect(draft.album).toBe('Preview Album');
+    expect(draft.detectedCodec).toBe('FLAC');
+    expect(draft.codecsPresent).toEqual(['FLAC']);
+    expect(draft.coverSourcePath).toBeDefined();
+    expect(draft.tracks.map((t) => t.number)).toEqual([1, 2]);
+    expect(draft.tracks.map((t) => t.title)).toEqual(['Alpha', 'Beta']);
+    // No package should have been written to the source folder.
+    await expect(validatePackage(src)).resolves.toMatchObject({ valid: false });
+  });
+
+  it('applies trackMeta overrides by resulting track number', async () => {
+    const src = path.join(tmp.path(), 'override-src');
+    const out = path.join(tmp.path(), 'override-out');
+    await makeSourceAlbum(src, {
+      artist: 'A',
+      album: 'B',
+      tracks: [
+        { number: 1, title: 'Old One' },
+        { number: 2, title: 'Old Two' },
+      ],
+    });
+    const { manifest } = await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000005',
+      trackMeta: [
+        { number: 1, title: 'New One' },
+        { number: 2, title: 'New Two' },
+      ],
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(manifest.tracks.map((t) => t.title)).toEqual(['New One', 'New Two']);
+  });
+
+  it('suggests "Various Artists" when track artists differ', async () => {
+    const src = path.join(tmp.path(), 'va-src');
+    await makeSourceAlbum(src, {
+      album: 'Comp',
+      tracks: [
+        { number: 1, title: 'One', artist: 'Artist A' },
+        { number: 2, title: 'Two', artist: 'Artist B' },
+      ],
+    });
+    const draft = await inspectSourceAlbum(src);
+    expect(draft.artist).toBe('Various Artists');
+    expect(draft.multipleArtists).toBe(true);
+    expect(draft.suggestedDiscId).toBe('Various Artists - Comp');
+  });
+
+  it('stores per-track artist only when it differs from the album artist', async () => {
+    const src = path.join(tmp.path(), 'pertrack-src');
+    const out = path.join(tmp.path(), 'pertrack-out');
+    await makeSourceAlbum(src, {
+      album: 'Comp',
+      tracks: [
+        { number: 1, title: 'One', artist: 'Artist A' },
+        { number: 2, title: 'Two', artist: 'Artist B' },
+      ],
+    });
+    const { manifest } = await createPackage({
+      sourceDir: src,
+      outDir: out,
+      discId: 'OMD-000006',
+      artist: 'Various Artists',
+      album: 'Comp',
+      generator: { name: 'test', version: '0.1.0' },
+    });
+    expect(manifest.artist).toBe('Various Artists');
+    expect(manifest.tracks[0]!.artist).toBe('Artist A');
+    expect(manifest.tracks[1]!.artist).toBe('Artist B');
   });
 
   it('infers metadata from FLAC tags when not overridden', async () => {
@@ -137,7 +276,7 @@ describe('createPackage', () => {
     expect(validation.valid).toBe(true);
   });
 
-  it('throws when the source folder has no FLAC files', async () => {
+  it('throws when the source folder has no audio files', async () => {
     const src = path.join(tmp.path(), 'empty');
     await makeSourceAlbum(src, { tracks: [] });
     await expect(
@@ -147,7 +286,7 @@ describe('createPackage', () => {
         discId: 'OMD-000003',
         generator: { name: 'test', version: '0.1.0' },
       }),
-    ).rejects.toThrow(/No FLAC files/);
+    ).rejects.toThrow(/No audio files/);
   });
 });
 

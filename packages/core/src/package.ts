@@ -1,14 +1,18 @@
 import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { open } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  ALL_AUDIO_EXTENSIONS,
   AUDIO_DIR,
   BOOKLET_FILENAME,
   CHECKSUMS_FILENAME,
   COVER_ART_SOURCE_NAMES,
+  DEFAULT_AUDIO_CODEC,
   DVD_RW_8CM_USABLE_BYTES,
   MANIFEST_FILENAME,
   OMD_VERSION,
+  codecForExtension,
+  extensionForCodec,
+  type AudioCodec,
 } from './constants.js';
 import {
   calculateChecksums,
@@ -18,7 +22,8 @@ import {
   totalPackageSize,
 } from './checksums.js';
 import { estimateDiscSize } from './discSize.js';
-import { isFlacBuffer, parseFlacMetadata } from './flac.js';
+import { readAudioMeta } from './audioMeta.js';
+import { canConvertTo, convertAudioFile } from './audioConvert.js';
 import { isOsJunkName, isPortableFilename, normalizeFilename } from './filenames.js';
 import { slugifyForPath } from './discTitle.js';
 import {
@@ -52,12 +57,43 @@ export interface CreatePackageOptions {
   discId?: string;
   /** Overwrite the output folder if it already exists. Defaults to `false`. */
   overwrite?: boolean;
-  /** Override artist (else inferred from FLAC tags). */
+  /** Override artist (else inferred from tags). */
   artist?: string;
-  /** Override album (else inferred from FLAC tags). */
+  /** Override album (else inferred from tags). */
   album?: string;
-  /** Override release year (else inferred from FLAC tags). */
+  /** Override release year (else inferred from tags). */
   releaseYear?: number;
+  /**
+   * Override per-track metadata by resulting (1..N) track number. Fields left
+   * blank keep their inferred value. Used by import review flows. Per-track
+   * `artist`/`album`/`year` are stored only when they differ from the
+   * album-level value.
+   */
+  trackMeta?: {
+    number: number;
+    title?: string;
+    artist?: string;
+    album?: string;
+    year?: number;
+  }[];
+  /**
+   * The package codec. Defaults to the most common codec among the source
+   * files. Source files already in this codec are copied as-is; files in other
+   * codecs are transcoded when {@link CreatePackageOptions.convert} is set, and
+   * otherwise skipped.
+   */
+  audioCodec?: AudioCodec;
+  /**
+   * Enable transcoding so that source files not already in the package codec are
+   * converted to it (rather than skipped). Requires a path to an ffmpeg binary,
+   * e.g. from `ffmpeg-static`.
+   */
+  convert?: {
+    /** Absolute path to an ffmpeg executable. */
+    ffmpegPath: string;
+    /** Target bitrate in kbps for lossy package codecs. */
+    bitrateKbps?: number;
+  };
   /** Capacity budget in bytes. Defaults to the 8cm DVD-RW budget. */
   budgetBytes?: number;
   /** Generator identity written to the manifest. */
@@ -90,28 +126,13 @@ export class OutputExistsError extends Error {
 
 interface SourceTrack {
   sourcePath: string;
+  sourceCodec: AudioCodec;
   number: number;
   title: string;
   durationSeconds?: number;
   artist?: string;
   album?: string;
   year?: number;
-}
-
-const FLAC_PREFIX_BYTES = 1_048_576; // 1 MiB is plenty for STREAMINFO + tags.
-
-/** Read a bounded prefix of a file for metadata parsing. */
-async function readPrefix(filePath: string, length: number): Promise<Buffer> {
-  const handle = await open(filePath, 'r');
-  try {
-    const size = (await handle.stat()).size;
-    const toRead = Math.min(length, size);
-    const buf = Buffer.alloc(toRead);
-    await handle.read(buf, 0, toRead, 0);
-    return buf;
-  } finally {
-    await handle.close();
-  }
 }
 
 /** Extract a leading track number from a filename like "01 - Boot.flac". */
@@ -122,8 +143,26 @@ function numberFromFilename(name: string): number | undefined {
 
 /** Derive a track title from a filename by stripping a leading number prefix. */
 function titleFromFilename(name: string): string {
-  const stem = name.replace(/\.flac$/i, '');
+  const stem = name.replace(/\.[a-z0-9]+$/i, '');
   return stem.replace(/^\s*\d{1,3}\s*[-._)]?\s*/, '').trim() || stem;
+}
+
+/** The most common codec among a set of audio filenames. */
+function dominantCodec(names: string[]): AudioCodec {
+  const counts = new Map<AudioCodec, number>();
+  for (const name of names) {
+    const codec = codecForExtension(path.extname(name));
+    if (codec) counts.set(codec, (counts.get(codec) ?? 0) + 1);
+  }
+  let best: AudioCodec = DEFAULT_AUDIO_CODEC;
+  let bestCount = -1;
+  for (const [codec, count] of counts) {
+    if (count > bestCount) {
+      bestCount = count;
+      best = codec;
+    }
+  }
+  return best;
 }
 
 /**
@@ -181,6 +220,142 @@ async function detectCoverArt(
   return best;
 }
 
+/**
+ * Read audio metadata for the given files and return them as ordered source
+ * tracks numbered sequentially 1..N (source numbers may be 0-indexed, have
+ * gaps, collide, or be missing; the sorted order is what is trusted).
+ */
+async function readSourceTracks(
+  sourceDir: string,
+  fileNames: string[],
+  fallbackCodec: AudioCodec,
+): Promise<SourceTrack[]> {
+  const sourceTracks: SourceTrack[] = [];
+  let fallbackNumber = 1;
+  for (const name of fileNames) {
+    const sourcePath = path.join(sourceDir, name);
+    const sourceCodec = codecForExtension(path.extname(name)) ?? fallbackCodec;
+    const meta = await readAudioMeta(sourcePath);
+    const number =
+      (Number.isFinite(meta.trackNumber) ? meta.trackNumber : undefined) ??
+      numberFromFilename(name) ??
+      fallbackNumber;
+    fallbackNumber = Math.max(fallbackNumber, number) + 1;
+    sourceTracks.push({
+      sourcePath,
+      sourceCodec,
+      number,
+      title: meta.title ?? titleFromFilename(name),
+      ...(meta.durationSeconds !== undefined ? { durationSeconds: meta.durationSeconds } : {}),
+      ...(meta.artist ? { artist: meta.artist } : {}),
+      ...(meta.album ? { album: meta.album } : {}),
+      ...(meta.year !== undefined ? { year: meta.year } : {}),
+    });
+  }
+  sourceTracks.sort((a, b) => a.number - b.number);
+  sourceTracks.forEach((track, index) => {
+    track.number = index + 1;
+  });
+  return sourceTracks;
+}
+
+/** A preview of the package {@link createPackage} would build from a folder. */
+export interface SourceAlbumDraft {
+  /** The source folder inspected. */
+  sourceDir: string;
+  /** The most common codec among the source files (the default target). */
+  detectedCodec: AudioCodec;
+  /** The distinct codecs present in the source folder. */
+  codecsPresent: AudioCodec[];
+  /** Inferred album artist ("Various Artists" when tracks differ). */
+  artist: string;
+  /** Inferred album title. */
+  album: string;
+  /** A suggested disc title ("Artist - Album"). */
+  suggestedDiscId: string;
+  /** Inferred release year, if any. */
+  releaseYear?: number;
+  /** True when the source tracks carry more than one distinct artist. */
+  multipleArtists: boolean;
+  /** Absolute path to the detected cover image, if any. */
+  coverSourcePath?: string;
+  /** Tracks in playback order (1..N) with inferred metadata. */
+  tracks: {
+    number: number;
+    title: string;
+    artist?: string;
+    album?: string;
+    year?: number;
+    sourceCodec: AudioCodec;
+    durationSeconds?: number;
+  }[];
+}
+
+/** Derive the album artist: an explicit override, the single artist, or "Various Artists". */
+function deriveAlbumArtist(tracks: { artist?: string }[], override?: string): string {
+  if (override !== undefined) return override;
+  const artists = [
+    ...new Set(
+      tracks.map((t) => t.artist?.trim()).filter((a): a is string => !!a && a.length > 0),
+    ),
+  ];
+  if (artists.length === 0) return 'Unknown Artist';
+  if (artists.length === 1) return artists[0]!;
+  return 'Various Artists';
+}
+
+/**
+ * Inspect a source album folder and return the metadata {@link createPackage}
+ * would infer, without writing anything. Used by import review flows so the
+ * user can confirm or edit the details (and pick a codec) before committing.
+ */
+export async function inspectSourceAlbum(sourceDir: string): Promise<SourceAlbumDraft> {
+  const entries = await readdir(sourceDir, { withFileTypes: true });
+  const audioFiles = entries
+    .filter((e) => e.isFile() && ALL_AUDIO_EXTENSIONS.includes(path.extname(e.name).toLowerCase()))
+    .map((e) => e.name)
+    .sort();
+  if (audioFiles.length === 0) {
+    throw new Error(`No audio files found in source folder: ${sourceDir}`);
+  }
+  const detectedCodec = dominantCodec(audioFiles);
+  const codecsPresent = [
+    ...new Set(
+      audioFiles
+        .map((name) => codecForExtension(path.extname(name)))
+        .filter((c): c is AudioCodec => c !== undefined),
+    ),
+  ];
+  const sourceTracks = await readSourceTracks(sourceDir, audioFiles, detectedCodec);
+  const distinctArtists = new Set(
+    sourceTracks.map((t) => t.artist?.trim()).filter((a): a is string => !!a && a.length > 0),
+  );
+  const artist = deriveAlbumArtist(sourceTracks);
+  const album = sourceTracks.find((t) => t.album)?.album ?? 'Unknown Album';
+  const releaseYear = sourceTracks.find((t) => t.year && Number.isFinite(t.year))?.year;
+  const coverSource = await detectCoverArt(sourceDir, entries);
+  return {
+    sourceDir,
+    detectedCodec,
+    codecsPresent,
+    artist,
+    album,
+    suggestedDiscId: `${artist} - ${album}`,
+    multipleArtists: distinctArtists.size > 1,
+    ...(releaseYear !== undefined ? { releaseYear } : {}),
+    ...(coverSource ? { coverSourcePath: path.join(sourceDir, coverSource) } : {}),
+    tracks: sourceTracks.map((t) => ({
+      number: t.number,
+      title: t.title,
+      ...(t.artist ? { artist: t.artist } : {}),
+      ...(t.album ? { album: t.album } : {}),
+      ...(t.year !== undefined ? { year: t.year } : {}),
+      sourceCodec: t.sourceCodec,
+      ...(t.durationSeconds !== undefined ? { durationSeconds: t.durationSeconds } : {}),
+    })),
+  };
+}
+
 export async function createPackage(options: CreatePackageOptions): Promise<CreatePackageResult> {
   const { sourceDir } = options;
   const budgetBytes = options.budgetBytes ?? DVD_RW_8CM_USABLE_BYTES;
@@ -188,48 +363,53 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
 
   const entries = await readdir(sourceDir, { withFileTypes: true });
 
-  // Collect and describe FLAC source tracks.
-  const flacFiles = entries
-    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.flac'))
+  // Collect audio source files (any recognized codec), then settle on one codec
+  // for the whole package: the caller's choice, else the most common codec.
+  const audioFiles = entries
+    .filter((e) => e.isFile() && ALL_AUDIO_EXTENSIONS.includes(path.extname(e.name).toLowerCase()))
     .map((e) => e.name)
     .sort();
 
-  if (flacFiles.length === 0) {
-    throw new Error(`No FLAC files found in source folder: ${sourceDir}`);
+  if (audioFiles.length === 0) {
+    throw new Error(`No audio files found in source folder: ${sourceDir}`);
   }
 
-  const sourceTracks: SourceTrack[] = [];
-  let fallbackNumber = 1;
-  for (const name of flacFiles) {
-    const sourcePath = path.join(sourceDir, name);
-    const prefix = await readPrefix(sourcePath, FLAC_PREFIX_BYTES);
-    if (!isFlacBuffer(prefix)) {
-      throw new Error(`File is not a valid FLAC (bad magic): ${name}`);
-    }
-    const meta = parseFlacMetadata(prefix);
-    const tagNumber = meta.tags['tracknumber']
-      ? Number.parseInt(meta.tags['tracknumber']!.split('/')[0]!, 10)
-      : undefined;
-    const number =
-      (Number.isFinite(tagNumber) ? tagNumber : undefined) ??
-      numberFromFilename(name) ??
-      fallbackNumber;
-    fallbackNumber = Math.max(fallbackNumber, number) + 1;
+  const codec = options.audioCodec ?? dominantCodec(audioFiles);
+  const converter = options.convert;
+  const canConvert = converter !== undefined && canConvertTo(codec);
 
-    sourceTracks.push({
-      sourcePath,
-      number,
-      title: meta.tags['title'] ?? titleFromFilename(name),
-      durationSeconds: meta.durationSeconds,
-      artist: meta.tags['artist'] ?? meta.tags['albumartist'],
-      album: meta.tags['album'],
-      year: meta.tags['date'] ? Number.parseInt(meta.tags['date']!.slice(0, 4), 10) : undefined,
-    });
+  // Files already in the package codec are copied as-is; files in other codecs
+  // are transcoded when a converter is available, otherwise skipped.
+  const usableFiles = audioFiles.filter((name) => {
+    const source = codecForExtension(path.extname(name));
+    return source !== undefined && (source === codec || canConvert);
+  });
+  if (usableFiles.length === 0) {
+    throw new Error(
+      converter
+        ? `No convertible audio files found in source folder: ${sourceDir}`
+        : `No ${codec} files found in source folder: ${sourceDir}`,
+    );
   }
 
-  sourceTracks.sort((a, b) => a.number - b.number);
+  const sourceTracks = await readSourceTracks(sourceDir, usableFiles, codec);
 
-  const artist = options.artist ?? sourceTracks.find((t) => t.artist)?.artist ?? 'Unknown Artist';
+  // Apply caller-supplied per-track overrides (from an import review view),
+  // keyed by the resulting 1..N track number. Blank values keep the inferred
+  // metadata.
+  const overrideByNumber = new Map(
+    (options.trackMeta ?? []).map((t) => [t.number, t] as const),
+  );
+  for (const track of sourceTracks) {
+    const override = overrideByNumber.get(track.number);
+    if (!override) continue;
+    if (override.title && override.title.trim()) track.title = override.title.trim();
+    if (override.artist !== undefined) track.artist = override.artist.trim() || undefined;
+    if (override.album !== undefined) track.album = override.album.trim() || undefined;
+    if (override.year !== undefined) track.year = Number.isFinite(override.year) ? override.year : undefined;
+  }
+
+  const artist = deriveAlbumArtist(sourceTracks, options.artist);
   const album = options.album ?? sourceTracks.find((t) => t.album)?.album ?? 'Unknown Album';
   const releaseYear =
     options.releaseYear ??
@@ -254,22 +434,54 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
   const audioOut = path.join(outDir, AUDIO_DIR);
   await mkdir(audioOut, { recursive: true });
 
-  // Copy audio tracks with normalized, ordered filenames and build track list.
+  // Copy (or transcode) audio tracks with normalized, ordered filenames.
   const tracks: OmdTrack[] = [];
   for (const track of sourceTracks) {
     const padded = track.number.toString().padStart(2, '0');
     const safeTitle = normalizeFilename(track.title);
-    const destName = `${padded} - ${safeTitle}.flac`;
+    const needsConvert = track.sourceCodec !== codec;
+    // Copied files keep their original extension; converted files take the
+    // package codec's canonical extension.
+    const ext = needsConvert ? extensionForCodec(codec) : path.extname(track.sourcePath).toLowerCase();
+    const destName = `${padded} - ${safeTitle}${ext}`;
     const destPath = path.join(audioOut, destName);
-    await copyFile(track.sourcePath, destPath);
+    if (needsConvert && converter) {
+      await convertAudioFile({
+        ffmpegPath: converter.ffmpegPath,
+        input: track.sourcePath,
+        output: destPath,
+        codec,
+        ...(converter.bitrateKbps !== undefined ? { bitrateKbps: converter.bitrateKbps } : {}),
+      });
+    } else {
+      await copyFile(track.sourcePath, destPath);
+    }
 
     const size = (await stat(destPath)).size;
     const sha256 = await sha256File(destPath);
+
+    // Per-track artist/album/year are stored only when they differ from the
+    // album-level value, so ordinary single-artist albums stay uncluttered.
+    const trackArtist =
+      track.artist && track.artist.trim() && track.artist.trim() !== artist
+        ? track.artist.trim()
+        : undefined;
+    const trackAlbum =
+      track.album && track.album.trim() && track.album.trim() !== album
+        ? track.album.trim()
+        : undefined;
+    const trackYear =
+      track.year !== undefined && Number.isFinite(track.year) && track.year !== releaseYear
+        ? track.year
+        : undefined;
 
     tracks.push({
       number: track.number,
       title: track.title,
       filename: `${AUDIO_DIR}/${destName}`,
+      ...(trackArtist ? { artist: trackArtist } : {}),
+      ...(trackAlbum ? { album: trackAlbum } : {}),
+      ...(trackYear !== undefined ? { year: trackYear } : {}),
       ...(track.durationSeconds !== undefined
         ? { durationSeconds: track.durationSeconds }
         : {}),
@@ -301,6 +513,7 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
     discId,
     artist,
     album,
+    audioCodec: codec,
     ...(releaseYear !== undefined ? { releaseYear } : {}),
     tracks,
     ...(coverArt ? { coverArt } : {}),
@@ -347,14 +560,30 @@ export interface CreateMixtapeOptions {
   /** Absolute path to a cover image (.jpg/.jpeg/.png). */
   coverSourcePath?: string;
   overwrite?: boolean;
+  /**
+   * The package codec. Defaults to the codec shared by all tracks, or the most
+   * common codec when they differ.
+   */
+  audioCodec?: AudioCodec;
+  /**
+   * Enable transcoding so tracks not already in the package codec are converted
+   * to it (rather than rejected). Requires a path to an ffmpeg binary.
+   */
+  convert?: {
+    /** Absolute path to an ffmpeg executable. */
+    ffmpegPath: string;
+    /** Target bitrate in kbps for lossy package codecs. */
+    bitrateKbps?: number;
+  };
   generator?: { name: string; version: string };
   createdAt?: Date;
 }
 
 /**
- * Build an OMD package from a curated, ordered list of FLAC tracks pulled from
+ * Build an OMD package from a curated, ordered list of tracks pulled from
  * anywhere (e.g. several catalog albums) — a mixtape. Tracks are renumbered
- * 1..N, copied into `AUDIO/`, and a fresh manifest + checksums are written.
+ * 1..N, copied (or transcoded to a single codec) into `AUDIO/`, and a fresh
+ * manifest + checksums are written.
  */
 export async function createMixtape(options: CreateMixtapeOptions): Promise<CreatePackageResult> {
   const generator = options.generator ?? { name: 'OMD Core', version: OMD_VERSION };
@@ -371,21 +600,46 @@ export async function createMixtape(options: CreateMixtapeOptions): Promise<Crea
   const audioOut = path.join(outDir, AUDIO_DIR);
   await mkdir(audioOut, { recursive: true });
 
+  // A mixtape package is single-codec. Settle on one target codec; tracks in a
+  // different codec are transcoded when a converter is available, else rejected.
+  const trackCodecs = options.tracks.map(
+    (t) => codecForExtension(path.extname(t.sourcePath)) ?? DEFAULT_AUDIO_CODEC,
+  );
+  const codec =
+    options.audioCodec ??
+    dominantCodec(options.tracks.map((t) => t.sourcePath));
+  const converter = options.convert;
+  const canConvert = converter !== undefined && canConvertTo(codec);
+  if (!canConvert && trackCodecs.some((c) => c !== codec)) {
+    throw new Error(
+      'All mixtape tracks must use the same audio codec. Enable conversion or pick a single codec.',
+    );
+  }
+
   const tracks: OmdTrack[] = [];
   let number = 1;
   for (const input of options.tracks) {
-    const prefix = await readPrefix(input.sourcePath, FLAC_PREFIX_BYTES);
-    if (!isFlacBuffer(prefix)) {
-      throw new Error(`File is not a valid FLAC: ${input.sourcePath}`);
-    }
-    const meta = parseFlacMetadata(prefix);
+    const meta = await readAudioMeta(input.sourcePath);
     const title =
-      (input.title ?? meta.tags['title'] ?? titleFromFilename(path.basename(input.sourcePath))).trim() ||
+      (input.title ?? meta.title ?? titleFromFilename(path.basename(input.sourcePath))).trim() ||
       `Track ${number}`;
     const padded = number.toString().padStart(2, '0');
-    const destName = `${padded} - ${normalizeFilename(title)}.flac`;
+    const sourceCodec = codecForExtension(path.extname(input.sourcePath)) ?? codec;
+    const needsConvert = sourceCodec !== codec;
+    const ext = needsConvert ? extensionForCodec(codec) : path.extname(input.sourcePath).toLowerCase();
+    const destName = `${padded} - ${normalizeFilename(title)}${ext}`;
     const destPath = path.join(audioOut, destName);
-    await copyFile(input.sourcePath, destPath);
+    if (needsConvert && converter) {
+      await convertAudioFile({
+        ffmpegPath: converter.ffmpegPath,
+        input: input.sourcePath,
+        output: destPath,
+        codec,
+        ...(converter.bitrateKbps !== undefined ? { bitrateKbps: converter.bitrateKbps } : {}),
+      });
+    } else {
+      await copyFile(input.sourcePath, destPath);
+    }
     const size = (await stat(destPath)).size;
     const sha256 = await sha256File(destPath);
     tracks.push({
@@ -409,6 +663,7 @@ export async function createMixtape(options: CreateMixtapeOptions): Promise<Crea
     discId,
     artist: options.artist,
     album: options.album,
+    audioCodec: codec,
     ...(options.releaseYear !== undefined ? { releaseYear: options.releaseYear } : {}),
     tracks,
     ...(coverArt ? { coverArt } : {}),
@@ -551,10 +806,15 @@ export async function validatePackage(
       );
       continue;
     }
-    const prefix = await readPrefix(trackPath, 8);
-    if (!isFlacBuffer(prefix)) {
+    const trackCodec = codecForExtension(path.extname(track.filename));
+    if (trackCodec !== manifest.audioCodec) {
       issues.push(
-        makeIssue('error', 'TRACK_NOT_FLAC', `Track is not a FLAC file: ${track.filename}`, track.filename),
+        makeIssue(
+          'error',
+          'TRACK_CODEC_MISMATCH',
+          `Track codec (${trackCodec ?? 'unknown'}) does not match package codec ${manifest.audioCodec}: ${track.filename}`,
+          track.filename,
+        ),
       );
     }
   }

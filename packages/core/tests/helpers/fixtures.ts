@@ -34,6 +34,8 @@ export interface TrackSpec {
   title: string;
   seconds?: number;
   fillerBytes?: number;
+  /** Per-track artist tag (else the album artist applies). */
+  artist?: string;
 }
 
 /**
@@ -59,13 +61,52 @@ export async function makeSourceAlbum(
       tags: {
         title: t.title,
         tracknumber: String(t.number),
-        ...(opts.artist ? { artist: opts.artist } : {}),
+        ...(t.artist ?? opts.artist ? { artist: t.artist ?? opts.artist! } : {}),
         ...(opts.album ? { album: opts.album } : {}),
         ...(opts.year ? { date: String(opts.year) } : {}),
       },
     };
     if (t.fillerBytes !== undefined) flacOpts.fillerBytes = t.fillerBytes;
     await writeFlacFixture(path.join(dir, name), flacOpts);
+  }
+  if (opts.cover) {
+    await writeFile(path.join(dir, 'cover.jpg'), tinyJpeg());
+  }
+}
+
+/** Build a minimal valid 16-bit PCM WAV file (silence). */
+export function buildWavBuffer(opts: { sampleRate?: number; seconds?: number } = {}): Buffer {
+  const sampleRate = opts.sampleRate ?? 44100;
+  const channels = 1;
+  const bitsPerSample = 16;
+  const frames = Math.round(sampleRate * (opts.seconds ?? 1));
+  const dataSize = frames * channels * (bitsPerSample / 8);
+  const buf = Buffer.alloc(44 + dataSize);
+  buf.write('RIFF', 0, 'ascii');
+  buf.writeUInt32LE(36 + dataSize, 4);
+  buf.write('WAVE', 8, 'ascii');
+  buf.write('fmt ', 12, 'ascii');
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(channels, 22);
+  buf.writeUInt32LE(sampleRate, 24);
+  buf.writeUInt32LE(sampleRate * channels * (bitsPerSample / 8), 28);
+  buf.writeUInt16LE(channels * (bitsPerSample / 8), 32);
+  buf.writeUInt16LE(bitsPerSample, 34);
+  buf.write('data', 36, 'ascii');
+  buf.writeUInt32LE(dataSize, 40);
+  return buf;
+}
+
+/** Build a source album folder of WAV fixtures (a non-FLAC codec). */
+export async function makeWavSourceAlbum(
+  dir: string,
+  opts: { tracks: TrackSpec[]; cover?: boolean },
+): Promise<void> {
+  await mkdir(dir, { recursive: true });
+  for (const t of opts.tracks) {
+    const name = `${t.number.toString().padStart(2, '0')} ${t.title}.wav`;
+    await writeFile(path.join(dir, name), buildWavBuffer({ seconds: t.seconds ?? 1 }));
   }
   if (opts.cover) {
     await writeFile(path.join(dir, 'cover.jpg'), tinyJpeg());

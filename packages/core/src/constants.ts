@@ -19,6 +19,53 @@ export const DEFAULT_FILESYSTEM_TARGET = 'UDF' as const;
 /** The only audio codec supported in v0.1. */
 export const AUDIO_CODEC = 'FLAC' as const;
 
+/** All audio codecs an OMD package may use (one codec per package). */
+export const AUDIO_CODECS = ['FLAC', 'MP3', 'AAC', 'Vorbis', 'Opus', 'WAV'] as const;
+export type AudioCodec = (typeof AUDIO_CODECS)[number];
+
+/** The default codec when a source has none (or for new empty packages). */
+export const DEFAULT_AUDIO_CODEC: AudioCodec = 'FLAC';
+
+/** File extensions recognized for each codec (first entry is the canonical one). */
+export const AUDIO_CODEC_EXTENSIONS: Record<AudioCodec, string[]> = {
+  FLAC: ['.flac'],
+  MP3: ['.mp3'],
+  AAC: ['.m4a', '.aac', '.mp4'],
+  Vorbis: ['.ogg', '.oga'],
+  Opus: ['.opus'],
+  WAV: ['.wav', '.wave'],
+};
+
+/** Codecs that carry lossless audio (informational; not a quality guarantee). */
+export const LOSSLESS_CODECS: readonly AudioCodec[] = ['FLAC', 'WAV'];
+
+/** MIME type used when streaming a file of a given codec. */
+export const AUDIO_CODEC_MIME: Record<AudioCodec, string> = {
+  FLAC: 'audio/flac',
+  MP3: 'audio/mpeg',
+  AAC: 'audio/mp4',
+  Vorbis: 'audio/ogg',
+  Opus: 'audio/ogg',
+  WAV: 'audio/wav',
+};
+
+/** Every recognized audio file extension, lowercased with a leading dot. */
+export const ALL_AUDIO_EXTENSIONS: readonly string[] = Object.values(AUDIO_CODEC_EXTENSIONS).flat();
+
+/** Resolve a file extension (e.g. ".mp3") to its codec, or undefined. */
+export function codecForExtension(ext: string): AudioCodec | undefined {
+  const lower = ext.toLowerCase();
+  for (const codec of AUDIO_CODECS) {
+    if (AUDIO_CODEC_EXTENSIONS[codec].includes(lower)) return codec;
+  }
+  return undefined;
+}
+
+/** The canonical file extension for a codec (e.g. "FLAC" -> ".flac"). */
+export function extensionForCodec(codec: AudioCodec): string {
+  return AUDIO_CODEC_EXTENSIONS[codec][0]!;
+}
+
 /** Required package file: the album manifest, at the package root. */
 export const MANIFEST_FILENAME = 'OMD-MANIFEST.json' as const;
 

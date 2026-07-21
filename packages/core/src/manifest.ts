@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import {
-  AUDIO_CODEC,
+  AUDIO_CODECS,
+  DEFAULT_AUDIO_CODEC,
   DEFAULT_FILESYSTEM_TARGET,
   DEFAULT_MEDIA_TYPE,
   OMD_FORMAT,
   OMD_VERSION,
+  type AudioCodec,
 } from './constants.js';
 
 /**
@@ -17,7 +19,16 @@ export const trackSchema = z
     title: z.string().min(1),
     filename: z
       .string()
-      .regex(/^AUDIO\/.+\.flac$/, 'track filename must be a relative AUDIO/<name>.flac path'),
+      .regex(
+        /^AUDIO\/.+\.(flac|mp3|m4a|aac|mp4|ogg|oga|opus|wav|wave)$/i,
+        'track filename must be a relative AUDIO/<name>.<audio-ext> path',
+      ),
+    /** Per-track artist, for compilations (else the album artist applies). */
+    artist: z.string().min(1).optional(),
+    /** Per-track source album, for compilations pulled from many releases. */
+    album: z.string().min(1).optional(),
+    /** Per-track release year. */
+    year: z.number().int().min(1900).max(2200).optional(),
     durationSeconds: z.number().min(0).optional(),
     sizeBytes: z.number().int().min(0),
     sha256: z.string().regex(/^[a-f0-9]{64}$/, 'sha256 must be 64 lowercase hex chars'),
@@ -42,7 +53,7 @@ export const manifestSchema = z
     artist: z.string().min(1),
     album: z.string().min(1),
     releaseYear: z.number().int().min(1900).max(2200).optional(),
-    audioCodec: z.literal(AUDIO_CODEC),
+    audioCodec: z.enum(AUDIO_CODECS),
     trackCount: z.number().int().min(1),
     totalDurationSeconds: z.number().min(0),
     totalSizeBytes: z.number().int().min(0),
@@ -80,6 +91,8 @@ export interface CreateManifestInput {
   artist: string;
   album: string;
   releaseYear?: number;
+  /** The single audio codec used by every track in this package. */
+  audioCodec?: AudioCodec;
   tracks: OmdTrack[];
   coverArt?: string;
   booklet?: string;
@@ -110,7 +123,7 @@ export function createManifest(input: CreateManifestInput): OmdManifest {
     artist: input.artist,
     album: input.album,
     ...(input.releaseYear !== undefined ? { releaseYear: input.releaseYear } : {}),
-    audioCodec: AUDIO_CODEC,
+    audioCodec: input.audioCodec ?? DEFAULT_AUDIO_CODEC,
     trackCount: tracks.length,
     totalDurationSeconds,
     totalSizeBytes,
