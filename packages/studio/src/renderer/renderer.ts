@@ -24,7 +24,6 @@ import type {
 import { STUDIO_AUDIO_CODECS } from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 import { renderNowPlaying, updateNowPlaying } from './nowPlaying';
-import { renderBurnView } from './burnView';
 import { renderLabelsView } from './labelsView';
 import * as player from './audioController';
 
@@ -84,7 +83,14 @@ interface AppState {
   verify?: StudioVerifyResult;
   reverifying?: boolean;
   ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
-  albumBurn?: {
+  /** The Create a Disc flow: choose a source package, then burn it. */
+  createDisc?: {
+    /** The package loaded to burn (a StudioDiscInfo). */
+    disc?: StudioDiscInfo;
+    loading?: boolean;
+    error?: string;
+    /** True while showing the catalog package picker. */
+    picking?: boolean;
     drives: StudioDrive[];
     selectedDrive?: string;
     burning: boolean;
@@ -781,19 +787,6 @@ function ripStatusEl(status: NonNullable<AppState['ripStatus']>): HTMLElement {
   return el('div', { class: 'rip-status' }, children);
 }
 
-/* Burn the loaded catalog package to a disc, inline in the album view. */
-const RESULT_CHECK_SVG =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 12.4l2.6 2.6L16 9.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const RESULT_CROSS_SVG =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>';
-
-function statusPill(kind: 'ok' | 'bad' | 'neutral', label: string): HTMLElement {
-  return el('span', { class: `status-pill ${kind}` }, [
-    el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
-    label,
-  ]);
-}
-
 function burnPhaseLabel(phase: string): string {
   switch (phase) {
     case 'building':
@@ -815,154 +808,107 @@ function burnPhaseLabel(phase: string): string {
   }
 }
 
-async function openAlbumBurn(): Promise<void> {
-  state.albumBurn = { drives: [], burning: false };
-  renderMain();
-  let drives: StudioDrive[] = [];
+async function openCreateDisc(disc?: StudioDiscInfo): Promise<void> {
+  state.createDisc = { drives: [], burning: false, ...(disc ? { disc } : {}) };
+  setView('burn');
+  await loadCreateDiscDrives();
+}
+
+/** Ensure the Create a Disc state exists, returning it. */
+function ensureCreateDisc(): NonNullable<AppState['createDisc']> {
+  if (!state.createDisc) state.createDisc = { drives: [], burning: false };
+  return state.createDisc;
+}
+
+async function loadCreateDiscDrives(): Promise<void> {
+  const cd = state.createDisc;
+  if (!cd) return;
   try {
-    drives = await window.omd.listDrives();
+    cd.drives = await window.omd.listDrives();
   } catch {
-    drives = [];
+    cd.drives = [];
   }
-  state.albumBurn = { drives, burning: false, ...(drives[0] ? { selectedDrive: drives[0].mountPath } : {}) };
-  if (state.view === 'catalog') renderMain();
+  if (!cd.selectedDrive && cd.drives[0]) cd.selectedDrive = cd.drives[0].mountPath;
+  if (state.view === 'burn') renderMain();
 }
 
-function driveSelectAlbum(ab: NonNullable<AppState['albumBurn']>): HTMLSelectElement {
-  const select = el('select', {
-    class: 'drive-select',
-    onchange: (event: Event) => {
-      ab.selectedDrive = (event.target as HTMLSelectElement).value;
-    },
-  }) as HTMLSelectElement;
-  for (const drive of ab.drives) {
-    select.append(
-      el('option', {
-        value: drive.mountPath,
-        text: drive.description ? `${drive.mountPath} - ${drive.description}` : drive.mountPath,
-      }),
-    );
-  }
-  if (ab.selectedDrive) select.value = ab.selectedDrive;
-  return select;
+/** Show the catalog package picker inside the burn flow. */
+function pickFromCatalogForBurn(): void {
+  const cd = ensureCreateDisc();
+  cd.picking = true;
+  cd.error = undefined;
+  renderMain();
+  if (state.libraryDir && !state.catalog) void rescanLibrary();
 }
 
-function albumBurnPanel(): HTMLElement {
-  const ab = state.albumBurn!;
-
-  if (ab.result) {
-    const good = ab.result.ok;
-    const detail = `${ab.result.verified ? 'Burned and verified.' : 'Burned.'}${ab.result.ejected ? ' Ejected.' : ''}`;
-    return el('div', { class: 'burn-console' }, [
-      el('div', { class: 'bc-head' }, [
-        el('span', { class: 'bc-title', text: 'Burn to Disc' }),
-        statusPill(good ? 'ok' : 'bad', good ? 'DONE' : 'FAILED'),
-      ]),
-      el('div', { class: 'bc-results' }, [
-        el('div', { class: `bc-result ${good ? 'done' : 'failed'}` }, [
-          rawSvg(good ? RESULT_CHECK_SVG : RESULT_CROSS_SVG),
-          el('span', { class: 'bc-result-text' }, [
-            el('span', {
-              class: 'bc-result-title',
-              text: good ? 'Burned and verified' : 'Burn failed',
-            }),
-            el('span', {
-              class: 'bc-result-sub',
-              text: good ? detail : ab.result.error ?? 'The disc was left in the drive.',
-            }),
-          ]),
-        ]),
-      ]),
-      el('div', { class: 'bc-actions' }, [
-        btn('Burn another copy', () => void openAlbumBurn()),
-        btn('Done', () => {
-          state.albumBurn = undefined;
-          renderMain();
-        }),
-      ]),
-    ]);
+/** Load a catalog package source into the burn flow. */
+async function loadPackageForBurn(source: string): Promise<void> {
+  const cd = ensureCreateDisc();
+  cd.picking = false;
+  cd.loading = true;
+  cd.error = undefined;
+  renderMain();
+  try {
+    const disc = await window.omd.openDisc(source);
+    cd.loading = false;
+    if (disc) cd.disc = disc;
+    else cd.error = 'Could not read that package.';
+  } catch (err) {
+    cd.loading = false;
+    cd.error = (err as Error).message;
   }
-
-  if (ab.burning) {
-    return el('div', { class: 'burn-console' }, [
-      el('div', { class: 'bc-head' }, [
-        el('span', { class: 'bc-title', text: 'Burn to Disc' }),
-        statusPill('neutral', 'WRITING'),
-      ]),
-      el('div', { class: 'bc-status', text: ab.phase ?? 'Working...' }),
-      el('div', { class: 'bc-progress', role: 'progressbar', 'aria-label': 'Burn progress' }, [
-        el('span', { class: 'bc-progress-fill' }),
-      ]),
-    ]);
-  }
-
-  const noDrive = ab.drives.length === 0;
-  return el('div', { class: 'burn-console' }, [
-    el('div', { class: 'bc-head' }, [el('span', { class: 'bc-title', text: 'Burn to Disc' })]),
-    el('div', { class: 'burn-cartridge' }, [
-      el('img', { class: 'cartridge-img', src: cartridgeFor(state.themeId), alt: 'OMD cartridge' }),
-      el('span', { class: 'cartridge-badge' }, [
-        el('span', { class: 'cartridge-type', text: 'DVD\u2011RW' }),
-        el('span', { class: 'cartridge-size', text: '1.4 GB' }),
-      ]),
-    ]),
-    el('div', { class: 'bc-drive' }, [
-      svgIcon('drive', 22),
-      noDrive
-        ? el('span', { class: 'bc-drive-name', text: 'No optical drive detected' })
-        : driveSelectAlbum(ab),
-      el('span', { class: 'bc-media', text: 'DVD-RW · 1.4 GB' }),
-    ]),
-    el('div', {
-      class: 'bc-status',
-      text: noDrive
-        ? 'Insert a rewritable disc in an optical drive. Burning is Windows-only.'
-        : 'Blanks a rewritable disc, writes this album, then verifies it.',
-    }),
-    el('div', { class: 'bc-actions' }, [
-      btn('Burn to Disc', () => void runAlbumBurn(), {
-        primary: true,
-        icon: 'create',
-        disabled: noDrive || !ab.selectedDrive,
-      }),
-      btn('Cancel', () => {
-        state.albumBurn = undefined;
-        renderMain();
-      }),
-    ]),
-  ]);
+  if (!cd.drives.length) await loadCreateDiscDrives();
+  else renderMain();
 }
 
-async function runAlbumBurn(): Promise<void> {
-  const ab = state.albumBurn;
-  if (!ab || !ab.selectedDrive || !state.album) return;
-  const album = state.album;
-  const drive = ab.selectedDrive;
+/** Pick an existing OMD package folder to burn. */
+async function importPackageForBurn(): Promise<void> {
+  const cd = ensureCreateDisc();
+  let disc: StudioDiscInfo | null = null;
+  try {
+    disc = await window.omd.openPackageFolder();
+  } catch (err) {
+    cd.error = (err as Error).message;
+    renderMain();
+    return;
+  }
+  if (!disc) return;
+  cd.disc = disc;
+  cd.error = undefined;
+  if (!cd.drives.length) await loadCreateDiscDrives();
+  else renderMain();
+}
+
+async function runCreateDiscBurn(): Promise<void> {
+  const cd = state.createDisc;
+  if (!cd || !cd.disc || !cd.selectedDrive) return;
+  const disc = cd.disc;
+  const drive = cd.selectedDrive;
   const confirmed = window.confirm(
-    `Burn "${album.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
+    `Burn "${disc.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
   );
   if (!confirmed) return;
-  ab.burning = true;
-  ab.phase = 'Starting...';
+  cd.burning = true;
+  cd.phase = 'Starting...';
   renderMain();
   try {
     const result = await window.omd.burn(
-      { packageDir: album.source, driveMountPath: drive, blank: true, verify: true, eject: true },
+      { packageDir: disc.source, driveMountPath: drive, blank: true, verify: true, eject: true },
       (progress) => {
-        if (state.albumBurn) {
-          state.albumBurn.phase = burnPhaseLabel(progress.phase);
-          if (state.view === 'catalog') renderMain();
+        if (state.createDisc) {
+          state.createDisc.phase = burnPhaseLabel(progress.phase);
+          if (state.view === 'burn') renderMain();
         }
       },
     );
-    if (state.albumBurn) {
-      state.albumBurn.burning = false;
-      state.albumBurn.result = result;
+    if (state.createDisc) {
+      state.createDisc.burning = false;
+      state.createDisc.result = result;
     }
   } catch (err) {
-    if (state.albumBurn) {
-      state.albumBurn.burning = false;
-      state.albumBurn.result = {
+    if (state.createDisc) {
+      state.createDisc.burning = false;
+      state.createDisc.result = {
         ok: false,
         verified: false,
         blanked: false,
@@ -973,7 +919,223 @@ async function runAlbumBurn(): Promise<void> {
       };
     }
   }
-  if (state.view === 'catalog') renderMain();
+  if (state.view === 'burn') renderMain();
+}
+
+/** A token drive picker. */
+function driveSelect(
+  drives: StudioDrive[],
+  selected: string | undefined,
+  onChange: (value: string) => void,
+): HTMLSelectElement {
+  const select = el('select', {
+    class: 'omd-select',
+    onchange: (event: Event) => onChange((event.target as HTMLSelectElement).value),
+  }) as HTMLSelectElement;
+  for (const drive of drives) {
+    select.append(
+      el('option', {
+        value: drive.mountPath,
+        text: drive.description ? `${drive.mountPath} - ${drive.description}` : drive.mountPath,
+      }),
+    );
+  }
+  if (selected) select.value = selected;
+  return select;
+}
+
+/** The Create a Disc source chooser. */
+function createDiscChooser(): HTMLElement {
+  const choice = (icon: IconName, title: string, sub: string, onClick: () => void): HTMLElement =>
+    el('button', { class: 'omd-choice', type: 'button', onclick: onClick }, [
+      el('span', { class: 'omd-choice-icon' }, [svgIcon(icon, 32)]),
+      el('span', { class: 'omd-choice-body' }, [
+        el('span', { class: 'omd-choice-title', text: title }),
+        el('span', { class: 'omd-choice-sub', text: sub }),
+      ]),
+    ]);
+  const grid = el('div', { class: 'omd-choice-grid' }, [
+    choice('catalog', 'From catalog', 'Burn an album already in your library', () =>
+      pickFromCatalogForBurn(),
+    ),
+    choice('folder', 'Import a package', 'Burn an existing OMD package folder', () =>
+      void importPackageForBurn(),
+    ),
+    choice('note', 'Import music', 'Package a folder of audio, then burn it', () => {
+      setView('catalog');
+      void runImport();
+    }),
+    choice('rip', 'New mixtape', 'Compile tracks into a disc, then burn it', () => {
+      setView('catalog');
+      void startMixtape();
+    }),
+  ]);
+  return el('div', { class: 'omd-stack' }, [
+    el('p', { class: 'omd-muted', text: 'Choose what to put on the disc.' }),
+    grid,
+    ...(state.createDisc?.error ? [notice('error', state.createDisc.error)] : []),
+  ]);
+}
+
+function burnPickCard(entry: CatalogEntry): HTMLElement {
+  const load = (): void => void loadPackageForBurn(entry.source);
+  const cover = entry.coverDataUri
+    ? el('img', { class: 'omd-album-cover', src: entry.coverDataUri, alt: 'Cover art', onclick: load })
+    : el('span', { class: 'omd-album-cover-empty', onclick: load }, [svgIcon('note', 40)]);
+  const body = el('div', { class: 'omd-album-body', onclick: load }, [
+    el('div', { class: 'omd-album-title', text: entry.discId }),
+    el('div', { class: 'omd-album-sub', text: `${entry.artist} - ${entry.album}` }),
+  ]);
+  const actions = el('div', { class: 'omd-album-actions' }, [
+    el('button', { class: 'omd-chip-btn', type: 'button', onclick: load }, [svgIcon('create', 15), 'Select']),
+  ]);
+  return el('div', { class: 'omd-album-card' }, [cover, body, actions]);
+}
+
+/** Pick a package from the catalog to burn. */
+function createDiscCatalogPicker(): HTMLElement {
+  const back = el('div', { class: 'omd-actions' }, [
+    omdBtn('Back', 'chevron-left', () => {
+      if (state.createDisc) state.createDisc.picking = false;
+      renderMain();
+    }),
+  ]);
+  let results: HTMLElement;
+  if (!state.libraryDir) {
+    results = el('div', { class: 'omd-scroll' }, [
+      el('div', { class: 'omd-empty' }, [
+        el('div', { class: 'omd-empty-title', text: 'No library folder' }),
+        el('p', { class: 'omd-empty-sub', text: 'Choose your catalog folder to list packages.' }),
+        el('div', { class: 'omd-actions' }, [
+          omdBtn('Choose library folder', 'catalog', () => void chooseLibrary()),
+        ]),
+      ]),
+    ]);
+  } else if (state.catalogLoading) {
+    results = el('div', { class: 'omd-scroll' }, [spinnerRow('Scanning\u2026')]);
+  } else if (state.catalog && state.catalog.length > 0) {
+    const grid = el('div', { class: 'omd-grid' });
+    for (const entry of state.catalog) grid.append(burnPickCard(entry));
+    results = el('div', { class: 'omd-scroll' }, [grid]);
+  } else {
+    results = el('div', { class: 'omd-scroll' }, [
+      el('p', { class: 'omd-muted', text: 'No packages in your library yet.' }),
+    ]);
+  }
+  return el('div', { class: 'omd-stack omd-fill' }, [back, results]);
+}
+
+function createDiscBurnPanel(): HTMLElement {
+  const cd = state.createDisc!;
+  if (cd.result) {
+    const good = cd.result.ok;
+    const detail = good
+      ? `Burned and verified${cd.result.ejected ? ' and ejected' : ''}.`
+      : cd.result.error ?? 'The burn failed and the disc was left in the drive.';
+    return omdPanel('Burn to disc', [
+      notice(good ? 'info' : 'error', detail),
+      el('div', { class: 'omd-actions' }, [
+        omdBtn(
+          'Burn another copy',
+          'create',
+          () => {
+            cd.result = undefined;
+            cd.burning = false;
+            renderMain();
+          },
+          { primary: true },
+        ),
+        omdBtn('Done', undefined, () => {
+          state.createDisc = undefined;
+          setView('home');
+        }),
+      ]),
+    ]);
+  }
+  if (cd.burning) {
+    return omdPanel('Burning', [
+      el('p', { class: 'omd-muted', text: cd.phase ?? 'Working\u2026' }),
+      el('div', { class: 'omd-progress', role: 'progressbar', 'aria-label': 'Burn progress' }, [
+        el('span', { class: 'omd-progress-fill' }),
+      ]),
+    ]);
+  }
+  const noDrive = cd.drives.length === 0;
+  return omdPanel('Burn to disc', [
+    el('div', { class: 'omd-drive-row' }, [
+      svgIcon('drive', 22),
+      noDrive
+        ? el('span', { class: 'omd-muted', text: 'No optical drive detected' })
+        : driveSelect(cd.drives, cd.selectedDrive, (value) => {
+            cd.selectedDrive = value;
+          }),
+      el('span', { class: 'omd-muted', text: 'DVD-RW \u00b7 1.4 GB' }),
+    ]),
+    el('p', {
+      class: 'omd-muted',
+      text: noDrive
+        ? 'Insert a rewritable disc in an optical drive. Burning is Windows-only.'
+        : 'Blanks a rewritable disc, writes this album, then verifies it.',
+    }),
+    el('div', { class: 'omd-actions' }, [
+      omdBtn('Burn to Disc', 'create', () => void runCreateDiscBurn(), {
+        primary: true,
+        disabled: noDrive || !cd.selectedDrive,
+      }),
+    ]),
+  ]);
+}
+
+/** The burn screen for a loaded package: summary + burn controls. */
+function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
+  const cd = state.createDisc!;
+  const change = el('div', { class: 'omd-actions' }, [
+    omdBtn('Change source', 'chevron-left', () => {
+      state.createDisc = {
+        drives: cd.drives,
+        burning: false,
+        ...(cd.selectedDrive ? { selectedDrive: cd.selectedDrive } : {}),
+      };
+      renderMain();
+    }),
+  ]);
+
+  const facts: string[] = [
+    `${disc.trackCount} tracks`,
+    formatClock(disc.totalDurationSeconds),
+    disc.audioCodec,
+    disc.audioLossless ? 'Lossless' : 'Lossy',
+  ];
+  const summary = el('div', { class: 'omd-album-head' }, [
+    el('div', { class: 'omd-album-hero-art' }, [
+      disc.coverDataUri
+        ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
+        : el('span', { class: 'omd-album-hero-empty' }, [svgIcon('note', 56)]),
+    ]),
+    el('div', { class: 'omd-album-info' }, [
+      el('div', { class: 'omd-album-name', text: disc.album }),
+      el('div', { class: 'omd-album-by', text: disc.artist }),
+      el('div', { class: 'omd-facts' }, facts.map((f) => el('span', { class: 'omd-fact', text: f }))),
+      el('div', { class: 'omd-badges' }, [
+        el('span', { class: `omd-badge${disc.valid ? ' ok' : ''}` }, [
+          svgIcon('check', 16),
+          disc.valid ? 'Valid package' : 'Not valid',
+        ]),
+      ]),
+    ]),
+  ]);
+
+  return el('div', { class: 'omd-stack' }, [change, summary, createDiscBurnPanel()]);
+}
+
+/** The Create a Disc view: source chooser, then a populated burn screen. */
+function createDiscView(): HTMLElement {
+  const cd = state.createDisc;
+  if (!cd) return createDiscChooser();
+  if (cd.loading) return el('div', { class: 'omd-stack' }, [spinnerRow('Loading package\u2026')]);
+  if (cd.picking) return createDiscCatalogPicker();
+  if (cd.disc) return createDiscBurn(cd.disc);
+  return createDiscChooser();
 }
 
 function formatClock(seconds: number): string {
@@ -1082,7 +1244,7 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     actions.push(omdBtn('Rip to Catalog', 'rip', () => void ripToCatalog()));
   } else {
     actions.push(
-      omdBtn('Burn to Disc', 'create', () => void openAlbumBurn(), { disabled: !disc.valid }),
+      omdBtn('Burn to Disc', 'create', () => void openCreateDisc(disc), { disabled: !disc.valid }),
       omdBtn('Edit', 'label', () => startEditAlbum(disc)),
       omdBtn('Show in folder', 'folder', () => void window.omd.revealInFolder(disc.source)),
     );
@@ -1110,7 +1272,6 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
 
   return [
     albumBlock,
-    ...(source === 'album' && state.albumBurn ? [albumBurnPanel()] : []),
     ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
   ];
 }
@@ -2161,7 +2322,6 @@ function catalogView(): HTMLElement {
     const back = el('div', { class: 'omd-actions' }, [
       omdBtn('Back to catalog', 'chevron-left', () => {
         state.album = undefined;
-        state.albumBurn = undefined;
         renderMain();
       }),
     ]);
@@ -2295,7 +2455,7 @@ function viewFor(view: ViewId): HTMLElement {
     case 'home':
       return homeView();
     case 'burn':
-      return renderBurnView({ onOpenPlayer: (source) => void openAlbum(source) });
+      return createDiscView();
     case 'labels':
       return renderLabelsView();
     case 'disc':

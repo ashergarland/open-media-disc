@@ -452,6 +452,94 @@
   max-width: 46ch;
 }
 
+/* Create a Disc: source chooser + burn controls. */
+.omd-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: clamp(12px, 1.8vw, 20px);
+}
+.omd-choice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: var(--omd-radius);
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.omd-choice:hover {
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+  transform: translateY(-2px);
+}
+.omd-choice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  color: var(--omd-accent);
+  background: color-mix(in srgb, var(--omd-accent) 14%, transparent);
+}
+.omd-choice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.omd-choice-title {
+  font: 700 17px / 1.2 var(--omd-font);
+}
+.omd-choice-sub {
+  color: var(--omd-text-dim);
+  font-size: 13px;
+}
+.omd-drive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--omd-text-dim);
+}
+.omd-select {
+  min-height: var(--omd-tap);
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface);
+  color: var(--omd-text);
+  font: 500 15px / 1 var(--omd-font);
+}
+.omd-progress {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--omd-surface);
+  border: 1px solid var(--omd-border);
+}
+.omd-progress-fill {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 999px;
+  background: var(--omd-accent);
+  animation: omd-indeterminate 1.2s ease-in-out infinite;
+}
+@keyframes omd-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 /* The Home hub. */
 .hub {
   min-height: 100%;
