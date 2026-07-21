@@ -129,6 +129,10 @@ interface AppState {
     error?: string;
     showErrors?: boolean;
     tally: { imported: number; skipped: number; failed: number };
+    /** Where the flow was launched from (returns/loads there when done). */
+    origin?: 'catalog' | 'burn';
+    /** The most recently imported package (to burn when origin is 'burn'). */
+    lastImported?: StudioDiscInfo;
   };
   /** In-progress mixtape being built from catalog tracks. */
   mixtape?: {
@@ -141,6 +145,8 @@ interface AppState {
     loading?: boolean;
     saving?: boolean;
     error?: string;
+    /** Where the flow was launched from (returns/loads there when done). */
+    origin?: 'catalog' | 'burn';
   };
   themeError?: string;
 }
@@ -962,12 +968,10 @@ function createDiscChooser(): HTMLElement {
       void importPackageForBurn(),
     ),
     choice('note', 'Import music', 'Package a folder of audio, then burn it', () => {
-      setView('catalog');
-      void runImport();
+      void runImport('burn');
     }),
     choice('rip', 'New mixtape', 'Compile tracks into a disc, then burn it', () => {
-      setView('catalog');
-      void startMixtape();
+      void startMixtape('burn');
     }),
   ]);
   return el('div', { class: 'omd-stack' }, [
@@ -1130,6 +1134,10 @@ function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
 
 /** The Create a Disc view: source chooser, then a populated burn screen. */
 function createDiscView(): HTMLElement {
+  // Import-music and new-mixtape flows launched from here render in place, so
+  // the user is not jarred over to the Catalog view.
+  if (state.mixtape) return mixtapeView();
+  if (state.importReview) return importReviewView();
   const cd = state.createDisc;
   if (!cd) return createDiscChooser();
   if (cd.loading) return el('div', { class: 'omd-stack' }, [spinnerRow('Loading package\u2026')]);
@@ -1433,7 +1441,7 @@ async function rescanLibrary(): Promise<void> {
 }
 
 /** Choose a folder to import, then review each album's metadata + format before committing. */
-async function runImport(): Promise<void> {
+async function runImport(origin: 'catalog' | 'burn' = 'catalog'): Promise<void> {
   let dir = state.libraryDir;
   if (!dir) {
     const chosen = await window.omd.chooseLibraryFolder();
@@ -1448,7 +1456,7 @@ async function runImport(): Promise<void> {
       busy: false,
       result: { total: 0, imported: 0, skipped: 0, failed: 0, items: [] },
     };
-    if (state.view === 'catalog') renderMain();
+    renderMain();
     return;
   }
   state.importStatus = undefined;
@@ -1466,8 +1474,9 @@ async function runImport(): Promise<void> {
     codec: 'FLAC',
     codecsPresent: [],
     tally: { imported: 0, skipped: 0, failed: 0 },
+    origin,
   };
-  if (state.view === 'catalog') renderMain();
+  renderMain();
   await loadImportDraft();
 }
 
@@ -1478,7 +1487,7 @@ async function loadImportDraft(): Promise<void> {
   review.loading = true;
   review.error = undefined;
   review.showErrors = false;
-  if (state.view === 'catalog') renderMain();
+  renderMain();
   try {
     const draft = await window.omd.inspectImportAlbum(review.queue[review.index]!);
     review.draft = draft;
@@ -1504,7 +1513,7 @@ async function loadImportDraft(): Promise<void> {
     review.error = (err as Error).message;
   }
   review.loading = false;
-  if (state.view === 'catalog') renderMain();
+  renderMain();
 }
 
 /** Import the currently reviewed album with the edited metadata + chosen codec. */
@@ -1525,7 +1534,7 @@ async function saveImport(): Promise<void> {
   review.error = undefined;
   renderMain();
   try {
-    await window.omd.importAlbum({
+    const imported = await window.omd.importAlbum({
       destDir: review.destDir,
       sourceDir: review.draft.sourceDir,
       audioCodec: review.codec,
@@ -1545,6 +1554,7 @@ async function saveImport(): Promise<void> {
       ...(review.coverSourcePath ? { coverSourcePath: review.coverSourcePath } : {}),
       overwrite: true,
     });
+    if (imported) review.lastImported = imported;
     review.tally.imported += 1;
     review.saving = false;
     await advanceImport();
@@ -1569,14 +1579,27 @@ async function advanceImport(): Promise<void> {
   if (!review) return;
   review.index += 1;
   if (review.index >= review.total) {
+    const origin = review.origin ?? 'catalog';
+    const lastImported = review.lastImported;
     const { imported, skipped, failed } = review.tally;
     state.importReview = undefined;
-    state.importStatus = {
-      busy: false,
-      result: { total: review.total, imported, skipped, failed, items: [] },
-    };
     await rescanLibrary();
-    if (state.view === 'catalog') renderMain();
+    if (origin === 'burn' && lastImported) {
+      const cd = ensureCreateDisc();
+      cd.disc = lastImported;
+      cd.picking = false;
+      cd.loading = false;
+      cd.error = undefined;
+      setView('burn');
+      if (!cd.drives.length) await loadCreateDiscDrives();
+      else renderMain();
+    } else {
+      state.importStatus = {
+        busy: false,
+        result: { total: review.total, imported, skipped, failed, items: [] },
+      };
+      setView('catalog');
+    }
     return;
   }
   await loadImportDraft();
@@ -1584,8 +1607,9 @@ async function advanceImport(): Promise<void> {
 
 /** Cancel the whole import run. */
 function cancelImport(): void {
+  const origin = state.importReview?.origin ?? 'catalog';
   state.importReview = undefined;
-  renderMain();
+  setView(origin);
 }
 
 /** Pick a replacement cover for the album being imported. */
@@ -1600,7 +1624,7 @@ async function chooseImportCover(): Promise<void> {
 }
 
 /** Open the mixtape builder, loading catalog tracks as the source pool. */
-async function startMixtape(): Promise<void> {
+async function startMixtape(origin: 'catalog' | 'burn' = 'catalog'): Promise<void> {
   let dir = state.libraryDir;
   if (!dir) {
     const chosen = await window.omd.chooseLibraryFolder();
@@ -1608,15 +1632,15 @@ async function startMixtape(): Promise<void> {
     setCatalogDir(chosen);
     dir = chosen;
   }
-  state.mixtape = { name: '', artist: 'Various Artists', tracks: [], loading: true };
-  if (state.view === 'catalog') renderMain();
+  state.mixtape = { name: '', artist: 'Various Artists', tracks: [], loading: true, origin };
+  renderMain();
   try {
     state.mixtape.sources = await window.omd.mixtapeSources(dir);
   } catch (err) {
     state.mixtape.error = (err as Error).message;
   }
   state.mixtape.loading = false;
-  if (state.view === 'catalog') renderMain();
+  renderMain();
 }
 
 function addMixtapeTrack(album: StudioMixtapeAlbum, track: StudioMixtapeAlbum['tracks'][number]): void {
@@ -1673,14 +1697,27 @@ async function saveMixtape(): Promise<void> {
       ...(m.coverSourcePath ? { coverSourcePath: m.coverSourcePath } : {}),
       tracks: m.tracks.map((t) => ({ sourcePath: t.sourcePath, title: t.title })),
     });
+    const origin = m.origin ?? 'catalog';
     state.mixtape = undefined;
     await rescanLibrary();
-    if (disc) state.album = disc;
+    if (origin === 'burn' && disc) {
+      const cd = ensureCreateDisc();
+      cd.disc = disc;
+      cd.picking = false;
+      cd.loading = false;
+      cd.error = undefined;
+      setView('burn');
+      if (!cd.drives.length) await loadCreateDiscDrives();
+      else renderMain();
+    } else {
+      if (disc) state.album = disc;
+      setView('catalog');
+    }
   } catch (err) {
     m.saving = false;
     m.error = (err as Error).message;
+    renderMain();
   }
-  if (state.view === 'catalog') renderMain();
 }
 /** A format selector for the import review (current codec shown, choose target). */
 function importCodecField(review: NonNullable<AppState['importReview']>): HTMLElement {
@@ -2140,12 +2177,16 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
 /** The mixtape builder: a source track library on the left, your mix on the right. */
 function mixtapeView(): HTMLElement {
   const m = state.mixtape!;
+  const fromBurn = m.origin === 'burn';
   const cancel = (): void => {
     state.mixtape = undefined;
-    renderMain();
+    setView(fromBurn ? 'burn' : 'catalog');
   };
   const topbar = el('div', { class: 'edit-topbar' }, [
-    btn('Back to catalog', cancel, { small: true, icon: 'chevron-left' }),
+    btn(fromBurn ? 'Back to Create a Disc' : 'Back to catalog', cancel, {
+      small: true,
+      icon: 'chevron-left',
+    }),
     el('div', { class: 'edit-topbar-actions' }, [
       btn(m.saving ? 'Saving\u2026' : 'Save mixtape', () => void saveMixtape(), {
         primary: true,
