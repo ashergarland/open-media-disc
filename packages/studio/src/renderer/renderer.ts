@@ -1824,23 +1824,25 @@ function importReviewView(): HTMLElement {
     ]),
   ]);
 
-  const children: (Node | string)[] = [topbar];
-  children.push(
-    el('div', { class: 'view-head' }, [
-      el('div', { class: 'view-title', text: `Review import${position}` }),
-      el('div', {
-        class: 'view-lead',
-        text: review.loading
-          ? 'Reading the album\u2026'
-          : 'Confirm or edit the details and choose a format, then import.',
-      }),
-    ]),
-  );
-  if (review.error) children.push(notice('error', review.error));
+  const head = el('div', { class: 'view-head' }, [
+    el('div', { class: 'view-title', text: `Review import${position}` }),
+    el('div', {
+      class: 'view-lead',
+      text: review.loading
+        ? 'Reading the album\u2026'
+        : 'Confirm or edit the details and choose a format, then import.',
+    }),
+  ]);
+
+  const frame = (body: (Node | string)[]): HTMLElement =>
+    el('div', { class: 'omd-stack omd-fill' }, [
+      topbar,
+      ...(review.error ? [notice('error', review.error)] : []),
+      el('div', { class: 'omd-scroll' }, [head, ...body]),
+    ]);
 
   if (review.loading || !review.draft) {
-    children.push(el('section', { class: 'card' }, [spinnerRow('Reading the album\u2026')]));
-    return el('div', { class: 'view' }, children);
+    return frame([el('section', { class: 'card' }, [spinnerRow('Reading the album\u2026')])]);
   }
 
   const cover = review.coverPreview;
@@ -1894,8 +1896,7 @@ function importReviewView(): HTMLElement {
     ]),
   ]);
 
-  children.push(el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]));
-  return el('div', { class: 'view' }, children);
+  return frame([el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])])]);
 }
 
 function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
