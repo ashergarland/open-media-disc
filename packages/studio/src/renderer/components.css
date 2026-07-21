@@ -837,3 +837,106 @@
 .status-pill.bad {
   border-color: color-mix(in srgb, #ef4d38 55%, transparent);
 }
+
+/* Transport dock: flatten the glassy showcase controls to the token look. */
+.now-playing-dock {
+  background: var(--omd-surface) !important;
+  border: 1px solid var(--omd-border) !important;
+  box-shadow: none !important;
+}
+.npd-title {
+  color: var(--omd-text) !important;
+}
+.npd-artist,
+.npd-time,
+.npd-vol-num {
+  color: var(--omd-text-dim) !important;
+}
+.npd-thumb {
+  background: var(--omd-surface-2);
+  box-shadow: inset 0 0 0 1px var(--omd-border) !important;
+}
+.npd-thumb::after {
+  display: none !important;
+}
+.npd-vol svg {
+  color: var(--omd-text) !important;
+}
+
+/* Transport buttons (pc-button) flattened. */
+.pc-button {
+  background: var(--omd-surface-2) !important;
+  border: 1px solid var(--omd-border) !important;
+  box-shadow: none !important;
+  color: var(--omd-text) !important;
+}
+.pc-button .pc-rim,
+.pc-button .pc-surface {
+  display: none !important;
+}
+.pc-icon {
+  color: var(--omd-text) !important;
+  filter: none !important;
+}
+.pc-button:hover {
+  border-color: var(--omd-accent) !important;
+  transform: none !important;
+  filter: none !important;
+}
+.pc-button.primary {
+  background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 68%, #000)) !important;
+  border-color: transparent !important;
+}
+.pc-button.primary .pc-icon {
+  color: #04222b !important;
+}
+.pc-button.is-active {
+  border-color: var(--omd-accent) !important;
+}
+.pc-button.is-active .pc-icon {
+  color: var(--omd-accent) !important;
+}
+.pc-button:focus-visible {
+  outline: 2px solid var(--omd-accent) !important;
+  outline-offset: 3px !important;
+}
+
+/* Dock sliders (scrubber + volume). */
+.range-compact .track {
+  background: var(--omd-surface) !important;
+  border-color: var(--omd-border-strong) !important;
+  box-shadow: none !important;
+}
+.range-compact .track::after {
+  display: none !important;
+}
+.range-compact .track-fill {
+  background: var(--omd-accent) !important;
+  box-shadow: none !important;
+}
+.range-compact .thumb {
+  background: var(--omd-text) !important;
+  border: 1px solid var(--omd-border-strong) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+.range-compact .thumb::before,
+.range-compact .thumb::after {
+  display: none !important;
+}
+
+/* Dock spectrum bars + chips. */
+.now-playing-dock .npd-spectrum .spectrum-fill {
+  background: var(--omd-accent) !important;
+}
+.npd-chip {
+  background: var(--omd-surface-2) !important;
+  border: 1px solid var(--omd-border) !important;
+  box-shadow: none !important;
+  color: var(--omd-text-dim) !important;
+}
+.npd-chip svg {
+  color: var(--omd-accent) !important;
+}
+.npd-chip.verified svg {
+  color: #35d17a !important;
+}
