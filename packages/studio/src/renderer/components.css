@@ -39,14 +39,15 @@
 .app-main {
   display: block;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-/* A full-screen view: sticky top bar + scrolling body. */
+/* A full-screen view: sticky top bar + body that fits the viewport. */
 .omd-screen {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   color: var(--omd-text);
   font-family: var(--omd-font);
   background: linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
@@ -68,6 +69,8 @@
 }
 .omd-screen-body {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding: clamp(16px, 2.4vw, 32px);
   display: flex;
   flex-direction: column;
@@ -77,6 +80,17 @@
   display: flex;
   flex-direction: column;
   gap: clamp(14px, 2vw, 22px);
+}
+/* Fill the screen body exactly so only inner scroll regions scroll. */
+.omd-fill {
+  flex: 1;
+  min-height: 0;
+}
+/* A bounded scroll region (lists that overflow scroll here, not the page). */
+.omd-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Buttons. */
@@ -175,6 +189,7 @@
   flex-direction: column;
   gap: 2px;
   cursor: pointer;
+  flex: 1 1 auto;
 }
 .omd-album-title {
   font: 700 15px / 1.25 var(--omd-font);
@@ -219,6 +234,8 @@
   display: flex;
   flex-direction: column;
   gap: clamp(16px, 2.4vw, 28px);
+  flex: 1;
+  min-height: 0;
 }
 .omd-album-head {
   display: flex;
@@ -316,6 +333,15 @@
   border-radius: var(--omd-radius);
   overflow: hidden;
   background: var(--omd-surface-2);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.omd-tracklist-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .omd-tracklist-head {
   display: flex;

@@ -342,6 +342,9 @@ function onPlayerChange(): void {
   if (showsAlbum && key !== lastPlayerKey) {
     renderMain();
   }
+  if (state.view === 'catalog' && !state.album && !state.mixtape && !state.importReview) {
+    updateCatalogPlayButtons();
+  }
   if (pstate.status === 'playing') startEqualizer();
 }
 
@@ -984,11 +987,13 @@ function trackPanel(
   onPlay: (index: number) => void,
 ): HTMLElement {
   const summary = `${disc.trackCount} tracks \u00b7 ${formatClock(disc.totalDurationSeconds)}`;
+  const rows = el('div', { class: 'omd-tracklist-rows' });
   const list = el('div', { class: 'omd-tracklist' }, [
     el('div', { class: 'omd-tracklist-head' }, [
       el('span', { text: 'Tracks' }),
       el('span', { class: 'omd-muted', text: summary }),
     ]),
+    rows,
   ]);
   disc.tracks.forEach((track, index) => {
     const selected = index === currentIndex;
@@ -1009,7 +1014,7 @@ function trackPanel(
       ],
     );
     if (selected) row.setAttribute('aria-current', 'true');
-    list.append(row);
+    rows.append(row);
   });
   return list;
 }
@@ -1129,7 +1134,7 @@ function playerView(): HTMLElement {
     return el('div', { class: 'omd-stack' }, [el('div', { class: 'omd-empty' }, hero)]);
   }
 
-  return el('div', { class: 'omd-stack' }, albumDetail(state.disc, 'disc'));
+  return el('div', { class: 'omd-stack omd-fill' }, albumDetail(state.disc, 'disc'));
 }
 
 function formatKHz(hz: number): string {
@@ -1786,11 +1791,23 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
     el('div', { class: 'omd-album-sub', text: `${entry.artist} - ${entry.album}` }),
     el('div', { class: 'omd-album-sub', text: `${entry.trackCount} tracks` }),
   ]);
+  const isCurrent = state.nowPlaying?.disc.source === entry.source;
+  const playing = isCurrent && player.getState().status === 'playing';
+  const playBtn = el(
+    'button',
+    {
+      class: 'omd-chip-btn',
+      type: 'button',
+      'data-play-src': entry.source,
+      onclick: () => {
+        if (state.nowPlaying?.disc.source === entry.source) player.togglePlayPause();
+        else void playCatalogEntry(entry);
+      },
+    },
+    [svgIcon(playing ? 'pause' : 'play', 15), playing ? 'Pause' : 'Play'],
+  );
   const actions = el('div', { class: 'omd-album-actions' }, [
-    el('button', { class: 'omd-chip-btn', type: 'button', onclick: () => void playCatalogEntry(entry) }, [
-      svgIcon('play', 15),
-      'Play',
-    ]),
+    playBtn,
     el(
       'button',
       {
@@ -1804,6 +1821,18 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
     ),
   ]);
   return el('div', { class: 'omd-album-card' }, [cover, body, actions]);
+}
+
+/** Update catalog Play/Pause buttons in place when playback state changes. */
+function updateCatalogPlayButtons(): void {
+  const status = player.getState().status;
+  const current = state.nowPlaying?.disc.source;
+  document.querySelectorAll<HTMLButtonElement>('.omd-album-card [data-play-src]').forEach((button) => {
+    const src = button.getAttribute('data-play-src');
+    const playing = src === current && status === 'playing';
+    clearChildren(button);
+    button.append(svgIcon(playing ? 'pause' : 'play', 15), document.createTextNode(playing ? 'Pause' : 'Play'));
+  });
 }
 
 /** A reusable inline notice banner (error/warning/info). */
@@ -2136,7 +2165,7 @@ function catalogView(): HTMLElement {
         renderMain();
       }),
     ]);
-    return el('div', { class: 'omd-stack' }, [back, ...albumDetail(state.album, 'album')]);
+    return el('div', { class: 'omd-stack omd-fill' }, [back, ...albumDetail(state.album, 'album')]);
   }
 
   const actions = el('div', { class: 'omd-actions' }, [
@@ -2159,26 +2188,28 @@ function catalogView(): HTMLElement {
   if (state.importStatus) body.push(importStatusEl(state.importStatus));
   if (state.albumError) body.push(el('p', { class: 'omd-muted', text: state.albumError }));
 
+  let results: HTMLElement;
   if (state.catalogLoading) {
-    body.push(spinnerRow('Scanning...'));
+    results = el('div', { class: 'omd-scroll' }, [spinnerRow('Scanning...')]);
   } else if (state.catalogError) {
-    body.push(el('p', { class: 'omd-muted', text: state.catalogError }));
+    results = el('div', { class: 'omd-scroll' }, [el('p', { class: 'omd-muted', text: state.catalogError })]);
   } else if (state.catalog && state.catalog.length > 0) {
     const grid = el('div', { class: 'omd-grid' });
     for (const entry of state.catalog) grid.append(catalogCard(entry));
-    body.push(grid);
+    results = el('div', { class: 'omd-scroll' }, [grid]);
   } else {
-    body.push(
+    results = el('div', { class: 'omd-scroll' }, [
       el('p', {
         class: 'omd-muted',
         text: state.catalog
           ? 'No OMD packages here. Choose a folder that contains package subfolders (for example your build output).'
           : 'Choose a folder that contains OMD package subfolders to list them here.',
       }),
-    );
+    ]);
   }
+  body.push(results);
 
-  return el('div', { class: 'omd-stack' }, body);
+  return el('div', { class: 'omd-stack omd-fill' }, body);
 }
 
 /** A large touch tile on the Home hub. */

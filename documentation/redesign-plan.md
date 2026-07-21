@@ -105,15 +105,50 @@ Navigation model
 
 ## 4. Touch-first interaction principles
 
-- Minimum hit target 44 by 44 CSS px; primary actions larger.
-- Generous spacing and larger base type; a single responsive layout that adapts
-  from a 7 inch landscape panel up to a desktop window. No separate breakpointed
-  designs, just fluid `clamp()`-based sizing.
-- Prefer taps and large controls over hover. No hover-only affordances.
-- Sliders and toggles must be draggable with a finger (the current compact dock
-  slider work is a good base).
-- Keyboard and mouse remain fully supported (desktop is still a first-class use).
+These are the working rules for every screen. The overriding idea: the app is a
+single full-screen surface (a kiosk-style appliance), not a scrolling web page.
+
+Fit-to-viewport (most important)
+- Each screen fits the viewport. The page as a whole never scrolls.
+- Size the frame and primary content with viewport-relative units (`%`, `vh`,
+  `vw`, `clamp()`), so a phone looks like a shrunk-and-reflowed version of the
+  desktop, not a different design.
+- Only genuinely overflowing content scrolls, and it scrolls inside its own
+  bounded region (a catalog grid, a track list), never the whole screen. Fixed
+  chrome (top bar, action row, transport) stays put while a list scrolls.
+- Structure: `screen = topbar (fixed) + body (fills) `; inside the body, one
+  region may be a bounded scroller (`.omd-scroll`) while headers/actions stay
+  fixed. Flex chains use `min-height: 0` so children can shrink and scroll.
+
+Reflow, do not rescale-only
+- Layouts reflow by available width (columns collapse, side-by-side becomes
+  stacked) rather than assuming a device. No per-device breakpoints; use
+  content-driven breakpoints and `auto-fit`/`auto-fill` grids.
+- Target range: roughly a 7 inch landscape panel (Raspberry Pi) up to a desktop
+  window, and down to a phone-sized width.
+
+Touch ergonomics
+- Minimum hit target 44 by 44 CSS px (Apple HIG 44pt / Material 48dp); primary
+  actions larger. Keep at least ~8px between adjacent targets.
+- Design for imprecise input (fingers, possibly gloved on an appliance). Favor
+  large controls, generous padding, and low-density rows.
+- No hover-only affordances; every action is reachable by tap. Provide clear
+  pressed/active states and immediate feedback on tap.
+- Avoid long-press-only or right-click-only actions.
+- Sliders and toggles must be finger-draggable with large thumbs/tracks.
+- Keep interactive elements away from the extreme screen edges where a bezel or
+  rounded panel can interfere.
+
+Legibility and motion
+- Large, legible type with strong contrast; avoid tiny text and thin hairlines
+  as the only separators.
+- Momentum scrolling for lists; do not rely on visible scrollbars as the only
+  affordance (they are thin and hard to grab on touch).
 - Motion is subtle and never blocks input.
+
+Still first-class on desktop
+- Keyboard and mouse remain fully supported; the touch rules above do not remove
+  desktop conveniences, they just set the floor.
 
 ## 5. Unified "Create a Disc" flow
 
