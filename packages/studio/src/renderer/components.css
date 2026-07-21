@@ -526,3 +526,200 @@
   font-size: clamp(13px, 1.4vw, 15px);
   line-height: 1.4;
 }
+
+/*
+ * Legacy token bridge.
+ *
+ * components.css loads after the theme stylesheet, so these plain-class rules
+ * win by source order and restyle the not-yet-rebuilt showcase components
+ * (buttons, cards, inputs, notices, status) with --omd-* tokens. They keep the
+ * remaining legacy views coherent and are deleted as each view is migrated.
+ */
+
+/* Buttons produced by btn() (flatten the glass layers to a token button). */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--omd-tap);
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  font: 600 15px / 1 var(--omd-font);
+  cursor: pointer;
+  box-shadow: none;
+}
+.btn::before,
+.btn::after,
+.btn--primary::before,
+.btn--primary::after,
+.btn--secondary::before,
+.btn--secondary::after {
+  content: none !important;
+}
+.btn .liquid-rim,
+.btn .button-surface {
+  display: none !important;
+}
+.btn .btn__label {
+  position: static;
+  font: inherit;
+  color: inherit;
+  text-shadow: none;
+}
+.btn .btn__icon {
+  width: 18px;
+  height: 18px;
+  filter: none !important;
+}
+.btn--sm {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.btn--primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 68%, #000));
+  color: #04222b;
+}
+.btn:hover {
+  border-color: var(--omd-accent);
+}
+.btn--primary:hover {
+  filter: brightness(1.06);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.link-btn {
+  color: var(--omd-accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: 600 14px / 1 var(--omd-font);
+}
+.mini-btn {
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface);
+  color: var(--omd-text);
+  cursor: pointer;
+}
+.mini-btn:hover {
+  border-color: var(--omd-accent);
+}
+.mini-btn.danger:hover {
+  border-color: #ef4d38;
+  color: #ef4d38;
+}
+
+/* Cards flattened to token surfaces. */
+.card {
+  background: var(--omd-surface-2) !important;
+  border: 1px solid var(--omd-border) !important;
+  border-radius: var(--omd-radius) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: clamp(16px, 2vw, 24px);
+  color: var(--omd-text);
+}
+.card::before,
+.card::after {
+  content: none !important;
+}
+
+/* Inputs and field labels. */
+.edit-input {
+  background: var(--omd-surface) !important;
+  border: 1px solid var(--omd-border-strong) !important;
+  border-radius: 10px !important;
+  color: var(--omd-text) !important;
+  min-height: var(--omd-tap);
+  padding: 0 12px;
+  font: 400 15px / 1.3 var(--omd-font);
+  box-shadow: none !important;
+}
+.edit-input:focus {
+  outline: 2px solid var(--omd-accent);
+  outline-offset: 0;
+  border-color: var(--omd-accent) !important;
+}
+.edit-input.invalid {
+  border-color: #ef4d38 !important;
+}
+.edit-label {
+  color: var(--omd-text-dim);
+  font: 600 13px / 1.2 var(--omd-font);
+}
+.edit-error {
+  color: #ef7d6f;
+  font-size: 12px;
+}
+.eyebrow {
+  color: var(--omd-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font: 700 12px / 1 var(--omd-font);
+}
+.select-lead,
+.burn-source-path,
+.rip-status-text {
+  color: var(--omd-text-dim);
+}
+.select-title {
+  color: var(--omd-text);
+}
+.select-icon {
+  color: var(--omd-accent);
+}
+
+/* Notices. */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+}
+.notice-text {
+  color: inherit;
+}
+.notice-error {
+  border-color: color-mix(in srgb, #ef4d38 55%, transparent);
+}
+.notice-warning {
+  border-color: color-mix(in srgb, #f0a020 55%, transparent);
+}
+.notice-info {
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+}
+
+/* Status pills. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  font: 600 12px / 1 var(--omd-font);
+}
+.status-pill.ok {
+  border-color: color-mix(in srgb, #35d17a 55%, transparent);
+}
+.status-pill.bad {
+  border-color: color-mix(in srgb, #ef4d38 55%, transparent);
+}
