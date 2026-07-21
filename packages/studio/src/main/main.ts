@@ -1,16 +1,22 @@
 import path from 'node:path';
 import { watch } from 'node:fs';
-import { access, readFile, readdir, writeFile, open, rm } from 'node:fs/promises';
+import { access, readFile, readdir, writeFile, rm } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
+  ALL_AUDIO_EXTENSIONS,
+  AUDIO_CODEC_MIME,
+  DEFAULT_AUDIO_CODEC,
+  LOSSLESS_CODECS,
   OMD_FORMAT,
   OMD_VERSION,
   OutputExistsError,
   burnPackage,
+  codecForExtension,
   createMixtape,
   createPackage,
   inspectPackage,
-  parseFlacMetadata,
+  inspectSourceAlbum,
+  readAudioMeta,
   resolveBurnBackend,
   ripPackage,
   slugifyForPath,
@@ -19,6 +25,16 @@ import {
   type MediaInfo,
 } from '@open-album-cartridge/core';
 import { buildPackagesLabelSheet } from '@open-album-cartridge/label';
+import ffmpegStatic from 'ffmpeg-static';
+
+/**
+ * Absolute path to the bundled ffmpeg binary (from `ffmpeg-static`), used to
+ * transcode imported audio to a single package codec. Null if unavailable.
+ */
+const FFMPEG_PATH: string | null = (ffmpegStatic as unknown as string | null) ?? null;
+
+/** Bundled default cover art used for mixtapes when the user picks none. */
+const DEFAULT_MIXTAPE_COVER = path.join(__dirname, '..', 'renderer', 'assets', 'mixtape-default-cover.png');
 import type {
   CatalogEntry,
   StudioBurnRequest,
@@ -26,10 +42,9 @@ import type {
   StudioCoverPick,
   StudioDiscInfo,
   StudioDrive,
-  StudioImportItem,
-  StudioImportProgress,
   StudioImportRequest,
-  StudioImportResult,
+  StudioImportScan,
+  StudioSourceDraft,
   StudioInfo,
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
@@ -179,36 +194,27 @@ async function readCoverDataUri(packageDir: string, coverArt?: string): Promise<
   }
 }
 
-/** Read up to `bytes` from the start of a file (for cheap header parsing). */
-async function readPrefix(filePath: string, bytes: number): Promise<Buffer> {
-  const handle = await open(filePath, 'r');
-  try {
-    const buffer = Buffer.alloc(bytes);
-    const { bytesRead } = await handle.read(buffer, 0, bytes, 0);
-    return buffer.subarray(0, bytesRead);
-  } finally {
-    await handle.close();
-  }
-}
-
-/** Audio codec + bit depth + sample rate, read from the first track's FLAC header. */
+/** Audio codec + bit depth + sample rate, read from the first track's header. */
 async function audioInfo(
   source: string,
   inspection: { audioCodec: string; tracks: { filename: string }[] },
-): Promise<{ codec: string; bitDepth?: number; sampleRate?: number }> {
-  const codec = inspection.audioCodec || 'FLAC';
+): Promise<{ codec: string; bitDepth?: number; sampleRate?: number; bitrate?: number; lossless: boolean }> {
+  const codec = inspection.audioCodec || DEFAULT_AUDIO_CODEC;
+  const lossless = (LOSSLESS_CODECS as readonly string[]).includes(codec);
   const first = inspection.tracks[0];
-  if (!first) return { codec };
+  if (!first) return { codec, lossless };
   try {
     const filePath = path.resolve(source, ...first.filename.split('/'));
-    const meta = parseFlacMetadata(await readPrefix(filePath, 65536));
+    const meta = await readAudioMeta(filePath);
     return {
       codec,
+      lossless,
       ...(meta.bitsPerSample ? { bitDepth: meta.bitsPerSample } : {}),
       ...(meta.sampleRate ? { sampleRate: meta.sampleRate } : {}),
+      ...(meta.bitrate ? { bitrate: Math.round(meta.bitrate) } : {}),
     };
   } catch {
-    return { codec };
+    return { codec, lossless };
   }
 }
 
@@ -253,8 +259,10 @@ async function buildDiscInfo(source: string, quick = false): Promise<StudioDiscI
     totalSizeBytes: inspection.totalSizeBytes,
     valid,
     audioCodec: audio.codec,
+    audioLossless: audio.lossless,
     ...(audio.bitDepth !== undefined ? { audioBitDepth: audio.bitDepth } : {}),
     ...(audio.sampleRate !== undefined ? { audioSampleRate: audio.sampleRate } : {}),
+    ...(audio.bitrate !== undefined ? { audioBitrate: audio.bitrate } : {}),
     ...(inspection.releaseYear !== undefined ? { releaseYear: inspection.releaseYear } : {}),
     ...(coverDataUri ? { coverDataUri } : {}),
     tracks: inspection.tracks.map((track) => ({
@@ -368,6 +376,7 @@ ipcMain.handle(
       const { outDir, manifest, validation } = await createPackage({
         sourceDir,
         ...(overwrite ? { overwrite: true } : {}),
+        ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
         generator: { name: 'OMD Studio', version: STUDIO_VERSION },
       });
       const coverDataUri = await readCoverDataUri(outDir, manifest.coverArt);
@@ -379,6 +388,7 @@ ipcMain.handle(
         album: manifest.album,
         trackCount: manifest.trackCount,
         totalSizeBytes: manifest.totalSizeBytes,
+        audioCodec: manifest.audioCodec,
         valid: validation.valid,
         errors: validation.errors.map(toFinding),
         warnings: validation.warnings.map(toFinding),
@@ -617,8 +627,9 @@ ipcMain.handle(
       album: request.album,
       outDir,
       overwrite: true,
+      ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
       ...(request.releaseYear !== null ? { releaseYear: request.releaseYear } : {}),
-      ...(request.coverSourcePath ? { coverSourcePath: request.coverSourcePath } : {}),
+      coverSourcePath: request.coverSourcePath || DEFAULT_MIXTAPE_COVER,
       generator: { name: 'OMD Studio', version: STUDIO_VERSION },
     });
     return buildDiscInfo(outDir);
@@ -656,11 +667,13 @@ ipcMain.handle(
   },
 );
 
-/** Whether a directory directly contains at least one FLAC file. */
-async function hasFlacFiles(dir: string): Promise<boolean> {
+/** Whether a directory directly contains at least one supported audio file. */
+async function hasAudioFiles(dir: string): Promise<boolean> {
   try {
     const entries = await readdir(dir, { withFileTypes: true });
-    return entries.some((e) => e.isFile() && /\.flac$/i.test(e.name));
+    return entries.some(
+      (e) => e.isFile() && (ALL_AUDIO_EXTENSIONS as readonly string[]).includes(path.extname(e.name).toLowerCase()),
+    );
   } catch {
     return false;
   }
@@ -668,10 +681,10 @@ async function hasFlacFiles(dir: string): Promise<boolean> {
 
 /**
  * Find importable album folders under a chosen root: the root itself when it
- * holds FLAC files, otherwise each immediate subfolder that does.
+ * holds audio files, otherwise each immediate subfolder that does.
  */
 async function findAlbumFolders(root: string): Promise<string[]> {
-  if (await hasFlacFiles(root)) return [root];
+  if (await hasAudioFiles(root)) return [root];
   let entries;
   try {
     entries = await readdir(root, { withFileTypes: true });
@@ -682,52 +695,66 @@ async function findAlbumFolders(root: string): Promise<string[]> {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const sub = path.join(root, entry.name);
-    if (await hasFlacFiles(sub)) albums.push(sub);
+    if (await hasAudioFiles(sub)) albums.push(sub);
   }
   return albums.sort((a, b) => a.localeCompare(b));
 }
 
+ipcMain.handle('omd:scanImportFolder', async (): Promise<StudioImportScan> => {
+  const pick = await dialog.showOpenDialog({
+    title: 'Choose a music folder to import',
+    properties: ['openDirectory'],
+  });
+  if (pick.canceled || pick.filePaths.length === 0) {
+    return { canceled: true, albums: [] };
+  }
+  const sourceDir = pick.filePaths[0]!;
+  const albums = await findAlbumFolders(sourceDir);
+  return { canceled: false, sourceDir, albums };
+});
+
 ipcMain.handle(
-  'omd:importToCatalog',
-  async (event, request: StudioImportRequest): Promise<StudioImportResult> => {
-    const pick = await dialog.showOpenDialog({
-      title: 'Choose a music folder to import (FLAC)',
-      properties: ['openDirectory'],
+  'omd:inspectImportAlbum',
+  async (_event, sourceDir: string): Promise<StudioSourceDraft> => {
+    const draft = await inspectSourceAlbum(sourceDir);
+    const coverPreview = draft.coverSourcePath
+      ? await readCoverDataUri(path.dirname(draft.coverSourcePath), path.basename(draft.coverSourcePath))
+      : undefined;
+    return {
+      sourceDir: draft.sourceDir,
+      detectedCodec: draft.detectedCodec,
+      codecsPresent: draft.codecsPresent,
+      artist: draft.artist,
+      album: draft.album,
+      suggestedDiscId: draft.suggestedDiscId,
+      multipleArtists: draft.multipleArtists,
+      ...(draft.releaseYear !== undefined ? { releaseYear: draft.releaseYear } : {}),
+      ...(draft.coverSourcePath ? { coverSourcePath: draft.coverSourcePath } : {}),
+      ...(coverPreview ? { coverPreview } : {}),
+      tracks: draft.tracks,
+    };
+  },
+);
+
+ipcMain.handle(
+  'omd:importAlbum',
+  async (_event, request: StudioImportRequest): Promise<StudioDiscInfo | null> => {
+    const outDir = path.join(request.destDir, slugifyForPath(request.discId || request.album));
+    await createPackage({
+      sourceDir: request.sourceDir,
+      outDir,
+      discId: request.discId,
+      artist: request.artist,
+      album: request.album,
+      audioCodec: request.audioCodec,
+      trackMeta: request.trackMeta,
+      ...(request.releaseYear !== null ? { releaseYear: request.releaseYear } : {}),
+      ...(request.coverSourcePath ? { coverSourcePath: request.coverSourcePath } : {}),
+      ...(request.overwrite ? { overwrite: true } : {}),
+      ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
+      generator: { name: 'OMD Studio', version: STUDIO_VERSION },
     });
-    if (pick.canceled || pick.filePaths.length === 0) {
-      return { canceled: true, total: 0, imported: 0, skipped: 0, failed: 0, items: [] };
-    }
-    const albums = await findAlbumFolders(pick.filePaths[0]!);
-    const items: StudioImportItem[] = [];
-    let imported = 0;
-    let skipped = 0;
-    let failed = 0;
-    for (let i = 0; i < albums.length; i += 1) {
-      const albumDir = albums[i]!;
-      const name = path.basename(albumDir);
-      const progress: StudioImportProgress = { index: i, total: albums.length, album: name };
-      if (!event.sender.isDestroyed()) event.sender.send('omd:importProgress', progress);
-      try {
-        const outDir = path.join(request.destDir, slugifyForPath(name));
-        const { manifest } = await createPackage({
-          sourceDir: albumDir,
-          outDir,
-          ...(request.overwrite ? { overwrite: true } : {}),
-          generator: { name: 'OMD Studio', version: STUDIO_VERSION },
-        });
-        items.push({ album: manifest.album || name, ok: true, outDir });
-        imported += 1;
-      } catch (err) {
-        if (err instanceof OutputExistsError) {
-          items.push({ album: name, ok: false, skipped: true, error: 'Already in the catalog' });
-          skipped += 1;
-        } else {
-          items.push({ album: name, ok: false, error: (err as Error).message });
-          failed += 1;
-        }
-      }
-    }
-    return { total: albums.length, imported, skipped, failed, items };
+    return buildDiscInfo(outDir);
   },
 );
 
@@ -829,12 +856,13 @@ void app.whenReady().then(() => {
     }
     try {
       const data = await readFile(requested);
-      const lower = requested.toLowerCase();
-      const type = lower.endsWith('.flac')
-        ? 'audio/flac'
-        : lower.endsWith('.png')
+      const ext = path.extname(requested).toLowerCase();
+      const codec = codecForExtension(ext);
+      const type = codec
+        ? AUDIO_CODEC_MIME[codec]
+        : ext === '.png'
           ? 'image/png'
-          : lower.endsWith('.jpg') || lower.endsWith('.jpeg')
+          : ext === '.jpg' || ext === '.jpeg'
             ? 'image/jpeg'
             : 'application/octet-stream';
       const range = request.headers.get('range');

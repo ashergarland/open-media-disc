@@ -10,6 +10,7 @@
 import type {
   CatalogEntry,
   OmdStudioApi,
+  StudioAudioCodec,
   StudioBurnResult,
   StudioDiscInfo,
   StudioDrive,
@@ -17,8 +18,10 @@ import type {
   StudioImportResult,
   StudioInfo,
   StudioMixtapeAlbum,
+  StudioSourceDraft,
   StudioVerifyResult,
 } from '../shared/types';
+import { STUDIO_AUDIO_CODECS } from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 import { renderNowPlaying, updateNowPlaying } from './nowPlaying';
 import { renderBurnView } from './burnView';
@@ -92,6 +95,34 @@ interface AppState {
   catalogLoading: boolean;
   catalogError?: string;
   importStatus?: { busy: boolean; progress?: StudioImportProgress; result?: StudioImportResult };
+  /** Per-album import review: edit the metadata and pick a format before committing. */
+  importReview?: {
+    destDir: string;
+    /** Album source folders queued for review, in order. */
+    queue: string[];
+    index: number;
+    total: number;
+    loading: boolean;
+    draft?: StudioSourceDraft;
+    discId: string;
+    artist: string;
+    album: string;
+    year: string;
+    tracks: { number: number; title: string; artist: string; album: string; year: string }[];
+    /** Whether the per-track metadata section is expanded. */
+    tracksExpanded?: boolean;
+    /** True when the source folder had more than one distinct track artist. */
+    multipleArtists?: boolean;
+    codec: StudioAudioCodec;
+    detectedCodec?: StudioAudioCodec;
+    codecsPresent: StudioAudioCodec[];
+    coverSourcePath?: string;
+    coverPreview?: string;
+    saving?: boolean;
+    error?: string;
+    showErrors?: boolean;
+    tally: { imported: number; skipped: number; failed: number };
+  };
   /** In-progress mixtape being built from catalog tracks. */
   mixtape?: {
     name: string;
@@ -974,6 +1005,7 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
   );
   if (disc.audioBitDepth) rows.push(kvRow('Bit depth', `${disc.audioBitDepth}-bit`));
   if (disc.audioSampleRate) rows.push(kvRow('Sample rate', `${formatKHz(disc.audioSampleRate)} kHz`));
+  if (disc.audioBitrate) rows.push(kvRow('Bitrate', `${Math.round(disc.audioBitrate / 1000)} kbps`));
   if (disc.discFormat) rows.push(kvRow('Disc', disc.discFormat));
 
   const verifying = source === 'disc' && state.reverifying === true;
@@ -1025,7 +1057,10 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     el('dl', { class: 'kv-list' }, rows),
     el('div', { class: 'player-badges' }, [
       badge,
-      el('span', { class: 'npd-chip flac' }, [svgIcon('wave'), 'FLAC lossless']),
+      el('span', { class: 'npd-chip flac' }, [
+        svgIcon('wave'),
+        `${disc.audioCodec} · ${disc.audioLossless ? 'Lossless' : 'Lossy'}`,
+      ]),
     ]),
   ]);
 
@@ -1208,7 +1243,7 @@ async function rescanLibrary(): Promise<void> {
   if (state.view === 'catalog') renderMain();
 }
 
-/** Import FLAC album folder(s) from disk into the catalog library. */
+/** Choose a folder to import, then review each album's metadata + format before committing. */
 async function runImport(): Promise<void> {
   let dir = state.libraryDir;
   if (!dir) {
@@ -1217,34 +1252,162 @@ async function runImport(): Promise<void> {
     setCatalogDir(chosen);
     dir = chosen;
   }
-  state.importStatus = { busy: true };
-  if (state.view === 'catalog') renderMain();
-  try {
-    const result = await window.omd.importToCatalog({ destDir: dir }, (progress) => {
-      if (state.importStatus?.busy) {
-        state.importStatus.progress = progress;
-        if (state.view === 'catalog' && !state.album) renderMain();
-      }
-    });
-    if (result.canceled) {
-      state.importStatus = undefined;
-    } else {
-      state.importStatus = { busy: false, result };
-      await rescanLibrary();
-    }
-  } catch (err) {
+  const scan = await window.omd.scanImportFolder();
+  if (scan.canceled) return;
+  if (scan.albums.length === 0) {
     state.importStatus = {
       busy: false,
-      result: {
-        total: 0,
-        imported: 0,
-        skipped: 0,
-        failed: 1,
-        items: [{ album: 'Import', ok: false, error: (err as Error).message }],
-      },
+      result: { total: 0, imported: 0, skipped: 0, failed: 0, items: [] },
     };
+    if (state.view === 'catalog') renderMain();
+    return;
   }
+  state.importStatus = undefined;
+  state.importReview = {
+    destDir: dir,
+    queue: scan.albums,
+    index: 0,
+    total: scan.albums.length,
+    loading: true,
+    discId: '',
+    artist: '',
+    album: '',
+    year: '',
+    tracks: [],
+    codec: 'FLAC',
+    codecsPresent: [],
+    tally: { imported: 0, skipped: 0, failed: 0 },
+  };
   if (state.view === 'catalog') renderMain();
+  await loadImportDraft();
+}
+
+/** Load the current queued album's detected metadata into the review form. */
+async function loadImportDraft(): Promise<void> {
+  const review = state.importReview;
+  if (!review) return;
+  review.loading = true;
+  review.error = undefined;
+  review.showErrors = false;
+  if (state.view === 'catalog') renderMain();
+  try {
+    const draft = await window.omd.inspectImportAlbum(review.queue[review.index]!);
+    review.draft = draft;
+    review.discId = draft.suggestedDiscId;
+    review.artist = draft.artist;
+    review.album = draft.album;
+    review.year = draft.releaseYear ? String(draft.releaseYear) : '';
+    review.tracks = draft.tracks.map((t) => ({
+      number: t.number,
+      title: t.title,
+      artist: t.artist ?? '',
+      album: t.album ?? '',
+      year: t.year ? String(t.year) : '',
+    }));
+    review.multipleArtists = draft.multipleArtists;
+    review.tracksExpanded = draft.multipleArtists;
+    review.codec = draft.detectedCodec;
+    review.detectedCodec = draft.detectedCodec;
+    review.codecsPresent = draft.codecsPresent;
+    review.coverSourcePath = draft.coverSourcePath;
+    review.coverPreview = draft.coverPreview;
+  } catch (err) {
+    review.error = (err as Error).message;
+  }
+  review.loading = false;
+  if (state.view === 'catalog') renderMain();
+}
+
+/** Import the currently reviewed album with the edited metadata + chosen codec. */
+async function saveImport(): Promise<void> {
+  const review = state.importReview;
+  if (!review || !review.draft) return;
+  const fieldKeys = ['discId', 'artist', 'album', 'year'] as const;
+  const hasFieldError = fieldKeys.some((k) => fieldError(k, review[k]) !== undefined);
+  const hasTrackError = review.tracks.some((t) => t.title.trim().length === 0);
+  if (hasFieldError || hasTrackError) {
+    review.showErrors = true;
+    review.error = 'Please fix the highlighted fields.';
+    renderMain();
+    return;
+  }
+  const year = review.year.trim() ? Number.parseInt(review.year.trim(), 10) : null;
+  review.saving = true;
+  review.error = undefined;
+  renderMain();
+  try {
+    await window.omd.importAlbum({
+      destDir: review.destDir,
+      sourceDir: review.draft.sourceDir,
+      audioCodec: review.codec,
+      discId: review.discId.trim(),
+      artist: review.artist.trim(),
+      album: review.album.trim(),
+      releaseYear: year,
+      trackMeta: review.tracks.map((t) => ({
+        number: t.number,
+        title: t.title.trim(),
+        artist: t.artist.trim(),
+        album: t.album.trim(),
+        ...(t.year.trim() && /^\d{1,4}$/.test(t.year.trim())
+          ? { year: Number.parseInt(t.year.trim(), 10) }
+          : {}),
+      })),
+      ...(review.coverSourcePath ? { coverSourcePath: review.coverSourcePath } : {}),
+      overwrite: true,
+    });
+    review.tally.imported += 1;
+    review.saving = false;
+    await advanceImport();
+  } catch (err) {
+    review.saving = false;
+    review.error = (err as Error).message;
+    renderMain();
+  }
+}
+
+/** Skip the current album without importing it. */
+async function skipImport(): Promise<void> {
+  const review = state.importReview;
+  if (!review) return;
+  review.tally.skipped += 1;
+  await advanceImport();
+}
+
+/** Move to the next queued album, or finish the import run. */
+async function advanceImport(): Promise<void> {
+  const review = state.importReview;
+  if (!review) return;
+  review.index += 1;
+  if (review.index >= review.total) {
+    const { imported, skipped, failed } = review.tally;
+    state.importReview = undefined;
+    state.importStatus = {
+      busy: false,
+      result: { total: review.total, imported, skipped, failed, items: [] },
+    };
+    await rescanLibrary();
+    if (state.view === 'catalog') renderMain();
+    return;
+  }
+  await loadImportDraft();
+}
+
+/** Cancel the whole import run. */
+function cancelImport(): void {
+  state.importReview = undefined;
+  renderMain();
+}
+
+/** Pick a replacement cover for the album being imported. */
+async function chooseImportCover(): Promise<void> {
+  const review = state.importReview;
+  if (!review) return;
+  const picked = await window.omd.chooseCoverImage(review.draft?.sourceDir);
+  if (!picked || !state.importReview) return;
+  state.importReview.coverSourcePath = picked.path;
+  state.importReview.coverPreview = picked.dataUri;
+  renderMain();
 }
 
 /** Open the mixtape builder, loading catalog tracks as the source pool. */
@@ -1330,44 +1493,234 @@ async function saveMixtape(): Promise<void> {
   }
   if (state.view === 'catalog') renderMain();
 }
+/** A format selector for the import review (current codec shown, choose target). */
+function importCodecField(review: NonNullable<AppState['importReview']>): HTMLElement {
+  const present = new Set(review.codecsPresent);
+  const options = el(
+    'div',
+    { class: 'codec-options' },
+    STUDIO_AUDIO_CODECS.map((codec) =>
+      el(
+        'button',
+        {
+          class: `codec-option${review.codec === codec ? ' selected' : ''}`,
+          type: 'button',
+          onclick: () => {
+            review.codec = codec;
+            renderMain();
+          },
+        },
+        [
+          el('span', { class: 'codec-option-name', text: codec }),
+          ...(present.has(codec) ? [el('span', { class: 'codec-option-tag', text: 'in source' })] : []),
+        ],
+      ),
+    ),
+  );
+  const willConvert = review.codecsPresent.some((c) => c !== review.codec);
+  const detected = review.detectedCodec ? ` (source is ${review.detectedCodec})` : '';
+  const note = willConvert
+    ? `Tracks not already ${review.codec} will be converted to ${review.codec}.`
+    : `Tracks are already ${review.codec} and will be copied as-is.`;
+  return el('div', { class: 'edit-field' }, [
+    el('span', { class: 'edit-label', text: `Format${detected}` }),
+    options,
+    el('p', { class: 'import-picker-note', text: note }),
+  ]);
+}
 
-function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
-  if (status.busy) {
-    const p = status.progress;
-    const text = p
-      ? `Importing ${p.index + 1} of ${p.total}: ${p.album}`
-      : 'Scanning for FLAC albums\u2026';
-    return el('div', { class: 'rip-status' }, [busyPill('IMPORTING'), el('span', { class: 'rip-status-text', text })]);
-  }
-  const result = status.result;
-  if (!result) return el('div');
-  const ok = result.failed === 0 && result.total > 0;
-  const summary =
-    result.total === 0
-      ? 'No FLAC albums found in that folder.'
-      : `Imported ${result.imported}` +
-        (result.skipped ? `, skipped ${result.skipped} already in catalog` : '') +
-        (result.failed ? `, ${result.failed} failed` : '') +
-        '.';
-  return el('div', { class: 'rip-status' }, [
-    el('span', { class: `status-pill ${ok ? 'ok' : result.total === 0 ? 'neutral' : 'bad'}` }, [
-      el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
-      result.total === 0 ? 'NOTHING' : ok ? 'IMPORTED' : 'PARTIAL',
+/** A per-track row in the import review: title always, details when expanded. */
+function importTrackRow(review: NonNullable<AppState['importReview']>, index: number): HTMLElement {
+  const track = review.tracks[index]!;
+  const titleInvalid = review.showErrors && track.title.trim().length === 0;
+  const titleInput = el('input', {
+    class: `edit-input${titleInvalid ? ' invalid' : ''}`,
+    type: 'text',
+    value: track.title,
+    'aria-label': `Track ${track.number} title`,
+  }) as HTMLInputElement;
+  titleInput.addEventListener('input', () => {
+    track.title = titleInput.value;
+    titleInput.classList.toggle('invalid', titleInput.value.trim().length === 0);
+  });
+
+  const rowChildren: HTMLElement[] = [
+    el('div', { class: 'edit-track-row' }, [
+      el('span', { class: 'edit-track-num', text: String(track.number) }),
+      titleInput,
     ]),
-    el('span', { class: 'rip-status-text', text: summary }),
+  ];
+
+  if (review.tracksExpanded) {
+    const detail = (label: string, key: 'artist' | 'album' | 'year'): HTMLInputElement => {
+      const input = el('input', {
+        class: 'edit-input',
+        type: 'text',
+        value: track[key],
+        placeholder: label,
+        'aria-label': `Track ${track.number} ${label}`,
+        ...(key === 'year' ? { inputmode: 'numeric', maxlength: '4' } : {}),
+      }) as HTMLInputElement;
+      input.addEventListener('input', () => {
+        track[key] = input.value;
+      });
+      return input;
+    };
+    rowChildren.push(
+      el('div', { class: 'edit-track-details' }, [
+        detail('Artist', 'artist'),
+        detail('Album', 'album'),
+        detail('Year', 'year'),
+      ]),
+    );
+  }
+
+  return el('div', { class: 'edit-track' }, rowChildren);
+}
+
+/** The import review view: edit the detected metadata + format, then commit. */
+function importReviewView(): HTMLElement {
+  const review = state.importReview!;
+  const position = review.total > 1 ? ` (${review.index + 1} of ${review.total})` : '';
+
+  const topbar = el('div', { class: 'edit-topbar' }, [
+    btn('Cancel import', cancelImport, { small: true, icon: 'chevron-left' }),
+    el('div', { class: 'edit-topbar-actions' }, [
+      ...(review.total > 1 && !review.loading
+        ? [btn('Skip', () => void skipImport(), { small: true })]
+        : []),
+      btn(review.saving ? 'Importing\u2026' : 'Import', () => void saveImport(), {
+        primary: true,
+        icon: 'note',
+        disabled: review.saving || review.loading || !review.draft,
+      }),
+      btn('Cancel', cancelImport, { small: true }),
+    ]),
+  ]);
+
+  const children: (Node | string)[] = [topbar];
+  children.push(
+    el('div', { class: 'view-head' }, [
+      el('div', { class: 'view-title', text: `Review import${position}` }),
+      el('div', {
+        class: 'view-lead',
+        text: review.loading
+          ? 'Reading the album\u2026'
+          : 'Confirm or edit the details and choose a format, then import.',
+      }),
+    ]),
+  );
+  if (review.error) children.push(notice('error', review.error));
+
+  if (review.loading || !review.draft) {
+    children.push(el('section', { class: 'card' }, [spinnerRow('Reading the album\u2026')]));
+    return el('div', { class: 'view' }, children);
+  }
+
+  const cover = review.coverPreview;
+  const art = el('div', { class: 'album-col' }, [
+    el('div', { class: 'album-art' }, [
+      cover
+        ? el('img', { src: cover, alt: 'Cover art' })
+        : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
+    ]),
+    el('div', { class: 'bc-actions' }, [
+      btn('Replace cover\u2026', () => void chooseImportCover(), { icon: 'note', small: true }),
+    ]),
+  ]);
+
+  const artistField = editField(review, 'Artist', 'artist');
+  const artistBlock = review.multipleArtists
+    ? el('div', { class: 'edit-field-group' }, [
+        artistField,
+        el('p', {
+          class: 'import-picker-note',
+          text: 'The tracks list more than one artist, so "Various Artists" was suggested. Set each track\u2019s artist below.',
+        }),
+      ])
+    : artistField;
+
+  const tracksHeader = el('div', { class: 'edit-tracks-head' }, [
+    el('span', { class: 'edit-label', text: `Tracks (${review.tracks.length})` }),
     el(
       'button',
       {
         class: 'link-btn',
         type: 'button',
         onclick: () => {
-          state.importStatus = undefined;
+          review.tracksExpanded = !review.tracksExpanded;
           renderMain();
         },
       },
-      ['Dismiss'],
+      [review.tracksExpanded ? 'Hide details' : 'Edit details'],
     ),
   ]);
+
+  const form = el('div', { class: 'album-meta edit-form' }, [
+    editField(review, 'Album', 'album'),
+    artistBlock,
+    editField(review, 'Year', 'year'),
+    editField(review, 'Disc title', 'discId'),
+    importCodecField(review),
+    el('div', { class: 'edit-tracks' }, [
+      tracksHeader,
+      ...review.tracks.map((_track, index) => importTrackRow(review, index)),
+    ]),
+  ]);
+
+  children.push(el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]));
+  return el('div', { class: 'view' }, children);
+}
+
+function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
+  if (status.busy) {
+    const p = status.progress;
+    const text = p
+      ? `Importing ${p.index + 1} of ${p.total}: ${p.album}`
+      : 'Scanning for audio albums\u2026';
+    return el('div', { class: 'rip-status' }, [busyPill('IMPORTING'), el('span', { class: 'rip-status-text', text })]);
+  }
+  const result = status.result;
+  if (!result) return el('div');
+  const ok = result.failed === 0 && result.total > 0;
+  const failures = result.items.filter((it) => !it.ok && !it.skipped);
+  const summary =
+    result.total === 0
+      ? 'No audio albums found in that folder.'
+      : `Imported ${result.imported}` +
+        (result.skipped ? `, skipped ${result.skipped} already in catalog` : '') +
+        (result.failed ? `, ${result.failed} failed` : '') +
+        '.';
+  const rows: HTMLElement[] = [
+    el('div', { class: 'rip-status' }, [
+      el('span', { class: `status-pill ${ok ? 'ok' : result.total === 0 ? 'neutral' : 'bad'}` }, [
+        el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
+        result.total === 0 ? 'NOTHING' : ok ? 'IMPORTED' : 'PARTIAL',
+      ]),
+      el('span', { class: 'rip-status-text', text: summary }),
+      el(
+        'button',
+        {
+          class: 'link-btn',
+          type: 'button',
+          onclick: () => {
+            state.importStatus = undefined;
+            renderMain();
+          },
+        },
+        ['Dismiss'],
+      ),
+    ]),
+  ];
+  for (const fail of failures) {
+    rows.push(
+      el('div', { class: 'import-fail' }, [
+        el('span', { class: 'import-fail-name', text: fail.album }),
+        el('span', { class: 'import-fail-msg', text: fail.error ?? 'Import failed.' }),
+      ]),
+    );
+  }
+  return el('div', { class: 'import-status' }, rows);
 }
 
 /** Play a catalog package immediately (loads the full package, then plays). */
@@ -1452,6 +1805,17 @@ function notice(kind: 'error' | 'warning' | 'info', text: string): HTMLElement {
   ]);
 }
 
+/** The editable album-metadata fields shared by the album editor and import review. */
+interface EditableMeta {
+  discId: string;
+  artist: string;
+  album: string;
+  year: string;
+  tracks: { number: number; title: string }[];
+  /** True once a save has been attempted, so all invalid fields highlight. */
+  showErrors?: boolean;
+}
+
 /** Validate one metadata field against the manifest schema; returns a message or undefined. */
 function fieldError(key: 'discId' | 'artist' | 'album' | 'year', value: string): string | undefined {
   const v = value.trim();
@@ -1471,8 +1835,7 @@ function fieldError(key: 'discId' | 'artist' | 'album' | 'year', value: string):
   return undefined;
 }
 
-function editField(label: string, key: 'discId' | 'artist' | 'album' | 'year'): HTMLElement {
-  const edit = state.albumEdit!;
+function editField(edit: EditableMeta, label: string, key: 'discId' | 'artist' | 'album' | 'year'): HTMLElement {
   const extra: Record<string, string> =
     key === 'year'
       ? { inputmode: 'numeric', placeholder: 'e.g. 2009', maxlength: '4' }
@@ -1504,8 +1867,7 @@ function editField(label: string, key: 'discId' | 'artist' | 'album' | 'year'): 
   ]);
 }
 
-function editTrackRow(index: number): HTMLElement {
-  const edit = state.albumEdit!;
+function editTrackRow(edit: EditableMeta, index: number): HTMLElement {
   const track = edit.tracks[index]!;
   const initialInvalid = edit.showErrors && track.title.trim().length === 0;
   const input = el('input', {
@@ -1544,13 +1906,13 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
   ]);
 
   const form = el('div', { class: 'album-meta edit-form' }, [
-    editField('Album', 'album'),
-    editField('Artist', 'artist'),
-    editField('Year', 'year'),
-    editField('Disc title', 'discId'),
+    editField(edit, 'Album', 'album'),
+    editField(edit, 'Artist', 'artist'),
+    editField(edit, 'Year', 'year'),
+    editField(edit, 'Disc title', 'discId'),
     el('div', { class: 'edit-tracks' }, [
       el('span', { class: 'edit-label', text: 'Track titles' }),
-      ...edit.tracks.map((_track, index) => editTrackRow(index)),
+      ...edit.tracks.map((_track, index) => editTrackRow(edit, index)),
     ]),
   ]);
 
@@ -1652,7 +2014,7 @@ function mixtapeView(): HTMLElement {
   const coverBox = el('div', { class: 'mixtape-cover album-art' }, [
     m.coverPreview
       ? el('img', { src: m.coverPreview, alt: 'Cover' })
-      : el('span', { class: 'album-art-empty' }, [svgIcon('note', 40)]),
+      : el('img', { src: 'assets/mixtape-default-cover.png', alt: 'Default mixtape cover' }),
   ]);
 
   const selList = el('ol', { class: 'mixtape-sel-list' });
@@ -1745,6 +2107,9 @@ function mixtapeView(): HTMLElement {
 function catalogView(): HTMLElement {
   if (state.mixtape) {
     return mixtapeView();
+  }
+  if (state.importReview) {
+    return importReviewView();
   }
   if (state.albumLoading) {
     return el('div', { class: 'view' }, [

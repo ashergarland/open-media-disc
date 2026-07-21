@@ -3,7 +3,6 @@ import type {
   OmdStudioApi,
   StudioBurnProgress,
   StudioDiscInfo,
-  StudioImportProgress,
 } from '../shared/types';
 
 /**
@@ -40,14 +39,9 @@ const api: OmdStudioApi = {
   updatePackage: (request) => ipcRenderer.invoke('omd:updatePackage', request),
   rip: (request) => ipcRenderer.invoke('omd:rip', request),
   chooseRipDestination: () => ipcRenderer.invoke('omd:chooseRipDestination'),
-  importToCatalog: (request, onProgress) => {
-    const listener = (_event: IpcRendererEvent, progress: StudioImportProgress): void =>
-      onProgress(progress);
-    ipcRenderer.on('omd:importProgress', listener);
-    return ipcRenderer
-      .invoke('omd:importToCatalog', request)
-      .finally(() => ipcRenderer.removeListener('omd:importProgress', listener));
-  },
+  scanImportFolder: () => ipcRenderer.invoke('omd:scanImportFolder'),
+  inspectImportAlbum: (sourceDir) => ipcRenderer.invoke('omd:inspectImportAlbum', sourceDir),
+  importAlbum: (request) => ipcRenderer.invoke('omd:importAlbum', request),
   chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
   scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
   mixtapeSources: (dir) => ipcRenderer.invoke('omd:mixtapeSources', dir),

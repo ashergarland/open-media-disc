@@ -528,6 +528,34 @@ body {
 .edit-track-row .edit-input {
   flex: 1;
 }
+.edit-tracks-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.edit-track {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+.edit-track + .edit-track {
+  border-top: 1px solid color-mix(in srgb, var(--ink-strong) 8%, transparent);
+  padding-top: 6px;
+}
+.edit-track-details {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 8px;
+  padding-left: 32px;
+}
+.edit-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 /* Cartridge visual inside the inline Burn panel. */
 .burn-cartridge {
@@ -821,6 +849,81 @@ img.npd-thumb {
 .rip-status-text {
   font: 400 13px/1.4 var(--font);
   color: var(--ink-muted);
+}
+
+/* Per-album failure reasons under an import summary. */
+.import-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.import-fail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #ef4d38 12%, transparent);
+}
+.import-fail-name {
+  font: 600 12px/1.4 var(--font);
+  color: var(--ink-strong);
+}
+.import-fail-msg {
+  font: 400 12px/1.4 var(--font);
+  color: var(--ink-muted);
+  word-break: break-word;
+}
+
+/* Codec picker shown between choosing a folder and importing. */
+.import-picker {
+  margin: 12px 0 4px;
+}
+.import-picker-head {
+  font: 600 14px/1.4 var(--font);
+  color: var(--ink-strong);
+  margin: 2px 0 12px;
+}
+.codec-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.codec-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 72px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ink-strong) 16%, transparent);
+  background: color-mix(in srgb, var(--ink-strong) 5%, transparent);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+.codec-option:hover {
+  border-color: color-mix(in srgb, var(--pal-cyan) 55%, transparent);
+}
+.codec-option.selected {
+  border-color: var(--pal-cyan);
+  background: color-mix(in srgb, var(--pal-cyan) 18%, transparent);
+  color: var(--ink-strong);
+}
+.codec-option-name {
+  font: 600 13px/1.2 var(--font);
+}
+.codec-option-tag {
+  font: 500 10px/1.2 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+.import-picker-note {
+  font: 400 12px/1.4 var(--font);
+  color: var(--ink-muted);
+  margin: 12px 0;
 }
 
 /* Reusable in-progress badge: spinner inside a neutral status pill. */

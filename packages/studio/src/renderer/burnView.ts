@@ -1,7 +1,7 @@
 /**
  * The Burn view.
  *
- * A single adaptive panel: pick a FLAC album folder, review the packaged album,
+ * A single adaptive panel: pick an audio album folder, review the packaged album,
  * then burn it to an 8cm mini DVD-RW. Packaging and validation happen inline;
  * burning is destructive and only ever runs on an explicit, confirmed click.
  */
@@ -77,7 +77,7 @@ function render(): void {
       el('h1', { class: 'view-title', text: 'Burn a Disc' }),
       el('p', {
         class: 'view-lead',
-        text: 'Load a FLAC album folder, then burn it to a verified 8cm mini DVD-RW.',
+        text: 'Load an audio album folder, then burn it to a verified 8cm mini DVD-RW.',
       }),
     ]),
     panel(),
@@ -99,7 +99,7 @@ function panel(): HTMLElement {
         el('span', { class: 'select-icon' }, [svgIcon('create', 54)]),
         el('p', {
           class: 'select-lead',
-          text: 'Choose a folder of FLAC files, with optional cover art. It will be packaged and validated, then you can burn it to disc.',
+          text: 'Choose a folder of audio files, with optional cover art. It will be packaged and validated, then you can burn it to disc.',
         }),
         primaryButton('Select album folder...', pickAlbum, 'create'),
       ]),
@@ -361,7 +361,7 @@ function albumSummary(pkg: StudioPackageSummary): HTMLElement {
       el('dl', { class: 'kv-list' }, [
         kvRow('Disc ID', pkg.discId),
         kvRow('Tracks', String(pkg.trackCount)),
-        kvRow('Format', `FLAC · ${formatBytes(pkg.totalSizeBytes)}`),
+        kvRow('Format', `${pkg.audioCodec} · ${formatBytes(pkg.totalSizeBytes)}`),
       ]),
       statusPill(pkg.valid ? 'ok' : 'bad', pkg.valid ? 'VALID' : 'INVALID'),
     ]),

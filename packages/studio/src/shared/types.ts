@@ -43,6 +43,7 @@ export interface StudioPackageSummary {
   album: string;
   trackCount: number;
   totalSizeBytes: number;
+  audioCodec: string;
   valid: boolean;
   errors: StudioValidationFinding[];
   warnings: StudioValidationFinding[];
@@ -138,10 +139,14 @@ export interface StudioDiscInfo {
   valid: boolean;
   /** Audio codec, e.g. "FLAC". */
   audioCodec: string;
+  /** Whether the codec is lossless (FLAC, WAV). */
+  audioLossless?: boolean;
   /** Bits per sample, e.g. 16 or 24. */
   audioBitDepth?: number;
   /** Sample rate in Hz, e.g. 44100. */
   audioSampleRate?: number;
+  /** Average bitrate in bits per second (lossy codecs). */
+  audioBitrate?: number;
   /** Release year from the manifest. */
   releaseYear?: number;
   /** Physical disc format when read from a drive, e.g. "8cm mini DVD-RW". */
@@ -251,12 +256,77 @@ export interface StudioMixtapeRequest {
   tracks: { sourcePath: string; title?: string }[];
 }
 
-/** A request to import FLAC album folder(s) from disk into the catalog. */
+/** The audio codecs a package can use (one per package). */
+export const STUDIO_AUDIO_CODECS = ['FLAC', 'MP3', 'AAC', 'Vorbis', 'Opus', 'WAV'] as const;
+export type StudioAudioCodec = (typeof STUDIO_AUDIO_CODECS)[number];
+
+/** A request to import one audio album folder into the catalog, with edits. */
 export interface StudioImportRequest {
-  /** The library folder new packages are written into. */
+  /** The library folder the new package is written into. */
   destDir: string;
-  /** Overwrite packages that already exist. */
+  /** The album source folder to import. */
+  sourceDir: string;
+  /** Target audio codec; source files in other codecs are transcoded to it. */
+  audioCodec: StudioAudioCodec;
+  /** Disc title. */
+  discId: string;
+  /** Album artist. */
+  artist: string;
+  /** Album title. */
+  album: string;
+  /** Release year, or null to omit. */
+  releaseYear: number | null;
+  /** Per-track metadata edits by resulting (1..N) track number. */
+  trackMeta: {
+    number: number;
+    title?: string;
+    artist?: string;
+    album?: string;
+    year?: number;
+  }[];
+  /** Replacement cover image path (else the detected cover is used). */
+  coverSourcePath?: string;
+  /** Overwrite an existing package with the same slug. */
   overwrite?: boolean;
+}
+
+/** Result of choosing a folder to import: the album folders found within. */
+export interface StudioImportScan {
+  /** True when the user cancelled the folder picker. */
+  canceled?: boolean;
+  /** The chosen source folder. */
+  sourceDir?: string;
+  /** Absolute paths of the importable album folders found. */
+  albums: string[];
+}
+
+/** A preview of the metadata an import would infer from a source album folder. */
+export interface StudioSourceDraft {
+  sourceDir: string;
+  /** The most common codec present, suggested as the default target. */
+  detectedCodec: StudioAudioCodec;
+  /** The distinct codecs present in the folder. */
+  codecsPresent: StudioAudioCodec[];
+  artist: string;
+  album: string;
+  /** A suggested disc title ("Artist - Album"). */
+  suggestedDiscId: string;
+  releaseYear?: number;
+  /** True when the source tracks carry more than one distinct artist. */
+  multipleArtists: boolean;
+  /** Absolute path to the detected cover image, if any. */
+  coverSourcePath?: string;
+  /** A data URI preview of the detected cover, if any. */
+  coverPreview?: string;
+  tracks: {
+    number: number;
+    title: string;
+    artist?: string;
+    album?: string;
+    year?: number;
+    sourceCodec: StudioAudioCodec;
+    durationSeconds?: number;
+  }[];
 }
 
 /** Progress while importing music into the catalog. */
@@ -315,10 +385,12 @@ export interface OmdStudioApi {
   updatePackage(request: StudioUpdateRequest): Promise<StudioDiscInfo | null>;
   rip(request: StudioRipRequest): Promise<StudioRipResult>;
   chooseRipDestination(): Promise<string | null>;
-  importToCatalog(
-    request: StudioImportRequest,
-    onProgress: (progress: StudioImportProgress) => void,
-  ): Promise<StudioImportResult>;
+  /** Pick a source folder and list the importable album folders within. */
+  scanImportFolder(): Promise<StudioImportScan>;
+  /** Inspect one album folder and return the metadata an import would infer. */
+  inspectImportAlbum(sourceDir: string): Promise<StudioSourceDraft>;
+  /** Import one album folder (with edited metadata + codec) into the catalog. */
+  importAlbum(request: StudioImportRequest): Promise<StudioDiscInfo | null>;
   /** List catalog albums with their tracks (absolute FLAC paths) for the mixtape builder. */
   mixtapeSources(dir: string): Promise<StudioMixtapeAlbum[]>;
   /** Compile a mixtape package into the catalog; returns the new package info. */

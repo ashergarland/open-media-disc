@@ -29,7 +29,9 @@ const configs = [
     platform: 'node',
     format: 'cjs',
     target: 'node18',
-    external: ['electron'],
+    // ffmpeg-static resolves its binary path via __dirname at runtime, so it
+    // must stay external (not inlined) to keep pointing at node_modules.
+    external: ['electron', 'ffmpeg-static'],
   },
   {
     ...shared,
