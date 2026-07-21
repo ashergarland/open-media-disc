@@ -24,16 +24,194 @@
   --omd-font: var(--font, system-ui, "Segoe UI", Roboto, sans-serif);
 }
 
-/* Home hub is full-bleed: hide the sidebar and let the main area span. */
-.app-shell--home {
+/* Full-screen touch shell: no sidebar; content scrolls, transport docked. */
+.app-shell {
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     'main'
     'dock';
-  padding: 14px;
+  padding: 0;
+  gap: 0;
 }
-.app-shell--home .app-sidebar {
+.app-sidebar {
   display: none;
+}
+.app-main {
+  display: block;
+  padding: 0;
+  overflow-y: auto;
+}
+
+/* A full-screen view: sticky top bar + scrolling body. */
+.omd-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: var(--omd-text);
+  font-family: var(--omd-font);
+  background: linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
+}
+.omd-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: clamp(10px, 1.6vw, 16px) clamp(14px, 2.4vw, 28px);
+  background: color-mix(in srgb, var(--omd-bg) 84%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--omd-border);
+}
+.omd-topbar-title {
+  font: 700 clamp(18px, 2.4vw, 26px) / 1 var(--omd-font);
+}
+.omd-screen-body {
+  flex: 1;
+  padding: clamp(16px, 2.4vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vw, 22px);
+}
+.omd-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vw, 22px);
+}
+
+/* Buttons. */
+.omd-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--omd-tap);
+  height: var(--omd-tap);
+  border-radius: 12px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  cursor: pointer;
+}
+.omd-icon-btn:hover {
+  border-color: var(--omd-accent);
+}
+.omd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.omd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--omd-tap);
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  font: 600 15px / 1 var(--omd-font);
+  cursor: pointer;
+}
+.omd-btn:hover {
+  border-color: var(--omd-accent);
+}
+.omd-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.omd-btn--primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 68%, #000));
+  color: #04222b;
+}
+
+.omd-muted {
+  color: var(--omd-text-dim);
+}
+.omd-path {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+/* Album grid (a touch scroll-view of catalog cards). */
+.omd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 22vw, 200px), 1fr));
+  gap: clamp(12px, 1.8vw, 20px);
+}
+.omd-album-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--omd-radius);
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  overflow: hidden;
+  color: var(--omd-text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.omd-album-card:hover {
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+  transform: translateY(-2px);
+}
+.omd-album-cover,
+.omd-album-cover-empty {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  object-fit: cover;
+  background: var(--omd-surface);
+  cursor: pointer;
+  display: block;
+}
+.omd-album-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--omd-text-dim);
+}
+.omd-album-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+.omd-album-title {
+  font: 700 15px / 1.25 var(--omd-font);
+}
+.omd-album-sub {
+  font: 400 13px / 1.3 var(--omd-font);
+  color: var(--omd-text-dim);
+}
+.omd-album-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+.omd-chip-btn {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface);
+  color: var(--omd-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: 600 13px / 1 var(--omd-font);
+}
+.omd-chip-btn.grow0 {
+  flex: 0 0 auto;
+  width: 44px;
+}
+.omd-chip-btn:hover {
+  border-color: var(--omd-accent);
+}
+.omd-chip-btn.danger:hover {
+  border-color: #ef4d38;
+  color: #ef4d38;
 }
 
 /* The Home hub. */
@@ -43,14 +221,12 @@
   flex-direction: column;
   gap: clamp(20px, 4vh, 40px);
   padding: clamp(22px, 4vw, 52px);
-  border-radius: var(--omd-radius-lg);
   color: var(--omd-text);
   font-family: var(--omd-font);
   background:
     radial-gradient(120% 90% at 12% 0%, rgba(53, 192, 224, 0.14), transparent 58%),
     radial-gradient(120% 120% at 100% 100%, rgba(74, 125, 255, 0.14), transparent 55%),
     linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
-  box-shadow: var(--omd-shadow);
 }
 
 .hub-head {

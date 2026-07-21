@@ -170,14 +170,6 @@ function cartridgeFor(id: string): string {
   return `assets/${themeId}/cartridge.png`;
 }
 
-/** The persisted theme id, or the default when none is stored. */
-function loadThemeId(): string {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY) ?? DEFAULT_THEME_ID;
-  } catch {
-    return DEFAULT_THEME_ID;
-  }
-}
 
 const CATALOG_STORAGE_KEY = 'omd.catalogDir';
 
@@ -202,7 +194,9 @@ function setCatalogDir(dir: string): void {
 
 const state: AppState = {
   view: 'home',
-  themeId: loadThemeId(),
+  // Interim: force the dark theme so the app is coherent while views migrate to
+  // the new --omd-* token system. Theme selection returns with the new themes.
+  themeId: 'dark-aero',
   libraryDir: loadCatalogDir(),
   discLoading: false,
   albumLoading: false,
@@ -256,7 +250,45 @@ function setView(view: ViewId): void {
 
 function renderMain(): void {
   clearChildren(mainEl);
-  mainEl.append(viewFor(state.view));
+  if (state.view === 'home') {
+    mainEl.append(viewFor('home'));
+    return;
+  }
+  mainEl.append(screenFrame(state.view, viewFor(state.view)));
+}
+
+/** The title shown in a screen's top bar. */
+function screenTitle(view: ViewId): string {
+  switch (view) {
+    case 'disc':
+      return 'Disc';
+    case 'catalog':
+      return 'Catalog';
+    case 'burn':
+      return 'Create a Disc';
+    case 'labels':
+      return 'Labels';
+    case 'themes':
+      return 'Themes';
+    case 'settings':
+      return 'Settings';
+    default:
+      return 'OMD Studio';
+  }
+}
+
+/** Wrap a view in a full-screen token frame: a sticky top bar plus its content. */
+function screenFrame(view: ViewId, content: HTMLElement): HTMLElement {
+  const home = el(
+    'button',
+    { class: 'omd-icon-btn', type: 'button', title: 'Home', 'aria-label': 'Home', onclick: () => setView('home') },
+    [svgIcon('home', 22)],
+  );
+  const topbar = el('div', { class: 'omd-topbar' }, [
+    home,
+    el('div', { class: 'omd-topbar-title', text: screenTitle(view) }),
+  ]);
+  return el('div', { class: 'omd-screen' }, [topbar, el('div', { class: 'omd-screen-body' }, [content])]);
 }
 
 /** Whether the album loaded in the transport passed verification (undefined when none). */
@@ -1758,47 +1790,33 @@ async function deleteCatalogEntry(entry: CatalogEntry): Promise<void> {
 }
 
 function catalogCard(entry: CatalogEntry): HTMLElement {
+  const open = (): void => void openAlbum(entry.source);
   const cover = entry.coverDataUri
-    ? el('img', {
-        class: 'ct-cover',
-        src: entry.coverDataUri,
-        alt: 'Cover art',
-        onclick: () => void openAlbum(entry.source),
-      })
-    : el(
-        'span',
-        { class: 'ct-cover ct-cover-empty', onclick: () => void openAlbum(entry.source) },
-        [svgIcon('note', 34)],
-      );
-  const body = el('div', { class: 'ct-body', onclick: () => void openAlbum(entry.source) }, [
-    el('div', { class: 'ct-title', text: entry.discId }),
-    el('div', { class: 'ct-sub', text: `${entry.artist} \u2014 ${entry.album}` }),
-    el('div', { class: 'ct-sub', text: `${entry.trackCount} tracks` }),
+    ? el('img', { class: 'omd-album-cover', src: entry.coverDataUri, alt: 'Cover art', onclick: open })
+    : el('span', { class: 'omd-album-cover-empty', onclick: open }, [svgIcon('note', 40)]);
+  const body = el('div', { class: 'omd-album-body', onclick: open }, [
+    el('div', { class: 'omd-album-title', text: entry.discId }),
+    el('div', { class: 'omd-album-sub', text: `${entry.artist} - ${entry.album}` }),
+    el('div', { class: 'omd-album-sub', text: `${entry.trackCount} tracks` }),
   ]);
-  const playIcon = svgIcon('play', 16);
-  const trashIcon = svgIcon('trash', 16);
-  const actions = el('div', { class: 'ct-actions' }, [
-    el(
-      'button',
-      { class: 'ct-btn play', type: 'button', onclick: () => void playCatalogEntry(entry) },
-      [playIcon, 'Play'],
-    ),
-    el('button', { class: 'ct-btn ghost', type: 'button', onclick: () => void openAlbum(entry.source) }, [
-      'Open',
+  const actions = el('div', { class: 'omd-album-actions' }, [
+    el('button', { class: 'omd-chip-btn', type: 'button', onclick: () => void playCatalogEntry(entry) }, [
+      svgIcon('play', 15),
+      'Play',
     ]),
     el(
       'button',
       {
-        class: 'ct-btn danger ct-icon',
+        class: 'omd-chip-btn grow0 danger',
         type: 'button',
         title: 'Delete from catalog',
         'aria-label': 'Delete from catalog',
         onclick: () => void deleteCatalogEntry(entry),
       },
-      [trashIcon],
+      [svgIcon('trash', 15)],
     ),
   ]);
-  return el('div', { class: 'catalog-tile' }, [cover, body, actions]);
+  return el('div', { class: 'omd-album-card' }, [cover, body, actions]);
 }
 
 /** A reusable inline notice banner (error/warning/info). */
@@ -2138,28 +2156,38 @@ function catalogView(): HTMLElement {
     return el('div', { class: 'view' }, [back, ...albumDetail(state.album, 'album')]);
   }
 
-  const actions = el('div', { class: 'bc-actions' }, [
-    btn('Choose library folder\u2026', () => void chooseLibrary(), { primary: true, icon: 'catalog' }),
-    btn('Import music\u2026', () => void runImport(), { icon: 'note' }),
-    btn('New mixtape\u2026', () => void startMixtape(), { icon: 'rip' }),
+  const actions = el('div', { class: 'omd-actions' }, [
+    el(
+      'button',
+      { class: 'omd-btn omd-btn--primary', type: 'button', onclick: () => void chooseLibrary() },
+      [svgIcon('catalog', 18), 'Library folder'],
+    ),
+    el('button', { class: 'omd-btn', type: 'button', onclick: () => void runImport() }, [
+      svgIcon('note', 18),
+      'Import music',
+    ]),
+    el('button', { class: 'omd-btn', type: 'button', onclick: () => void startMixtape() }, [
+      svgIcon('rip', 18),
+      'New mixtape',
+    ]),
   ]);
   const body: (Node | string)[] = [actions];
-  if (state.libraryDir) body.push(el('p', { class: 'burn-source-path', text: state.libraryDir }));
+  if (state.libraryDir) body.push(el('p', { class: 'omd-muted omd-path', text: state.libraryDir }));
   if (state.importStatus) body.push(importStatusEl(state.importStatus));
-  if (state.albumError) body.push(el('p', { class: 'select-lead muted', text: state.albumError }));
+  if (state.albumError) body.push(el('p', { class: 'omd-muted', text: state.albumError }));
 
   if (state.catalogLoading) {
     body.push(spinnerRow('Scanning...'));
   } else if (state.catalogError) {
-    body.push(el('p', { class: 'select-lead', text: state.catalogError }));
+    body.push(el('p', { class: 'omd-muted', text: state.catalogError }));
   } else if (state.catalog && state.catalog.length > 0) {
-    const grid = el('div', { class: 'catalog-grid' });
+    const grid = el('div', { class: 'omd-grid' });
     for (const entry of state.catalog) grid.append(catalogCard(entry));
     body.push(grid);
   } else {
     body.push(
       el('p', {
-        class: 'select-lead',
+        class: 'omd-muted',
         text: state.catalog
           ? 'No OMD packages here. Choose a folder that contains package subfolders (for example your build output).'
           : 'Choose a folder that contains OMD package subfolders to list them here.',
@@ -2167,7 +2195,7 @@ function catalogView(): HTMLElement {
     );
   }
 
-  return el('div', { class: 'view' }, [el('section', { class: 'card' }, body)]);
+  return el('div', { class: 'omd-stack' }, body);
 }
 
 /** A large touch tile on the Home hub. */
