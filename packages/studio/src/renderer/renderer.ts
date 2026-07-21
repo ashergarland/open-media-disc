@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-type ViewId = 'burn' | 'labels' | 'disc' | 'catalog' | 'themes' | 'settings';
+type ViewId = 'home' | 'burn' | 'labels' | 'disc' | 'catalog' | 'themes' | 'settings';
 
 interface NavItem {
   id: ViewId;
@@ -43,6 +43,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { id: 'home', label: 'Home', icon: 'home' },
   { id: 'disc', label: 'Disc', icon: 'disc' },
   { id: 'catalog', label: 'Catalog', icon: 'catalog' },
   { id: 'burn', label: 'Burn', icon: 'create' },
@@ -200,7 +201,7 @@ function setCatalogDir(dir: string): void {
 }
 
 const state: AppState = {
-  view: 'disc',
+  view: 'home',
   themeId: loadThemeId(),
   libraryDir: loadCatalogDir(),
   discLoading: false,
@@ -210,6 +211,7 @@ const state: AppState = {
 
 const navButtons = new Map<ViewId, HTMLElement>();
 let mainEl: HTMLElement;
+let shellEl: HTMLElement;
 let nowPlayingHost: HTMLElement;
 let versionLabel: HTMLElement;
 let brandDisc: HTMLImageElement;
@@ -247,6 +249,8 @@ function setView(view: ViewId): void {
   // Entering the Catalog re-scans the library folder so newly ripped/burned
   // packages appear without a manual refresh.
   if (view === 'catalog' && state.libraryDir && !state.album) void rescanLibrary();
+  // The Home hub is full-bleed (no sidebar); every other view keeps the sidebar.
+  shellEl?.classList.toggle('app-shell--home', view === 'home');
   renderMain();
 }
 
@@ -2166,8 +2170,88 @@ function catalogView(): HTMLElement {
   return el('div', { class: 'view' }, [el('section', { class: 'card' }, body)]);
 }
 
+/** A large touch tile on the Home hub. */
+function hubTile(opts: {
+  icon: IconName;
+  title: string;
+  sub: string;
+  primary?: boolean;
+  onClick: () => void;
+}): HTMLElement {
+  return el(
+    'button',
+    { class: `hub-tile${opts.primary ? ' hub-tile--primary' : ''}`, type: 'button', onclick: opts.onClick },
+    [
+      el('span', { class: 'hub-tile-icon' }, [svgIcon(opts.icon, 40)]),
+      el('span', { class: 'hub-tile-body' }, [
+        el('span', { class: 'hub-tile-title', text: opts.title }),
+        el('span', { class: 'hub-tile-sub', text: opts.sub }),
+      ]),
+    ],
+  );
+}
+
+/** The Home hub: large touch tiles for the primary jobs. */
+function homeView(): HTMLElement {
+  const np = state.nowPlaying;
+  const nowPlayingSub = np ? `${np.disc.artist} - ${np.disc.album}` : 'Nothing playing yet';
+  return el('div', { class: 'hub' }, [
+    el('header', { class: 'hub-head' }, [
+      el('div', { class: 'hub-title', text: 'OMD Studio' }),
+      el('div', { class: 'hub-sub', text: 'Your music, pressed to real discs.' }),
+    ]),
+    el('div', { class: 'hub-grid' }, [
+      hubTile({
+        icon: 'disc',
+        title: 'Play a Disc',
+        sub: 'Insert and play an OMD disc',
+        primary: true,
+        onClick: () => setView('disc'),
+      }),
+      hubTile({
+        icon: 'create',
+        title: 'Create a Disc',
+        sub: 'Import, build, and burn',
+        primary: true,
+        onClick: () => setView('burn'),
+      }),
+      hubTile({
+        icon: 'catalog',
+        title: 'Catalog',
+        sub: 'Browse your library',
+        primary: true,
+        onClick: () => setView('catalog'),
+      }),
+      hubTile({
+        icon: 'play',
+        title: 'Now Playing',
+        sub: nowPlayingSub,
+        onClick: () => {
+          const playing = state.nowPlaying;
+          if (playing?.source === 'album') void openAlbum(playing.disc.source);
+          else setView('disc');
+        },
+      }),
+      hubTile({
+        icon: 'themes',
+        title: 'Themes',
+        sub: 'Change the look',
+        onClick: () => setView('themes'),
+      }),
+      hubTile({
+        icon: 'settings',
+        title: 'Settings',
+        sub: 'Drives and info',
+        onClick: () => setView('settings'),
+      }),
+    ]),
+  ]);
+}
+
 function viewFor(view: ViewId): HTMLElement {
   switch (view) {
+    case 'home':
+      return homeView();
     case 'burn':
       return renderBurnView({ onOpenPlayer: (source) => void openAlbum(source) });
     case 'labels':
@@ -2238,7 +2322,7 @@ function buildShell(): void {
     ),
   ]);
 
-  const brand = el('div', { class: 'app-brand' }, [
+  const brand = el('div', { class: 'app-brand', role: 'button', tabindex: '0', title: 'Home', onclick: () => setView('home') }, [
     el('div', { class: 'brand-word' }, [
       el('div', { class: 'omd', text: 'OMD' }),
       el('div', { class: 'studio', text: 'STUDIO' }),
@@ -2250,7 +2334,7 @@ function buildShell(): void {
     }) as HTMLImageElement),
     el('div', {
       class: 'app-brand-tag',
-      text: 'Turn FLAC albums into real, playable 8cm mini DVD-RW discs.',
+      text: 'Turn audio albums into real, playable 8cm mini DVD-RW discs.',
     }),
   ]);
 
@@ -2269,7 +2353,9 @@ function buildShell(): void {
   mainEl = el('main', { class: 'app-main' });
   nowPlayingHost = el('div', { class: 'app-dock' });
 
-  root.append(backdrop, el('div', { class: 'app-shell' }, [sidebar, mainEl, nowPlayingHost]));
+  shellEl = el('div', { class: 'app-shell' }, [sidebar, mainEl, nowPlayingHost]);
+  shellEl.classList.toggle('app-shell--home', state.view === 'home');
+  root.append(backdrop, shellEl);
 }
 
 async function init(): Promise<void> {

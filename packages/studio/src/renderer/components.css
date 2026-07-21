@@ -1,0 +1,140 @@
+/*
+ * OMD design-system foundation (redesign, phase 1).
+ *
+ * Defines the `--omd-*` token contract and the first shared components. These
+ * are theme-agnostic and preview the new dark direction; legacy views keep
+ * their old theme styling until they are migrated. See
+ * documentation/redesign-plan.md.
+ */
+
+:root {
+  --omd-bg: #0d131e;
+  --omd-surface: #161f2c;
+  --omd-surface-2: #1d2836;
+  --omd-border: rgba(255, 255, 255, 0.08);
+  --omd-border-strong: rgba(255, 255, 255, 0.14);
+  --omd-text: #e8eef6;
+  --omd-text-dim: #9db0c6;
+  --omd-accent: #35c0e0;
+  --omd-accent-2: #4a7dff;
+  --omd-radius: 16px;
+  --omd-radius-lg: 24px;
+  --omd-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+  --omd-tap: 44px;
+  --omd-font: var(--font, system-ui, "Segoe UI", Roboto, sans-serif);
+}
+
+/* Home hub is full-bleed: hide the sidebar and let the main area span. */
+.app-shell--home {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'main'
+    'dock';
+  padding: 14px;
+}
+.app-shell--home .app-sidebar {
+  display: none;
+}
+
+/* The Home hub. */
+.hub {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 4vh, 40px);
+  padding: clamp(22px, 4vw, 52px);
+  border-radius: var(--omd-radius-lg);
+  color: var(--omd-text);
+  font-family: var(--omd-font);
+  background:
+    radial-gradient(120% 90% at 12% 0%, rgba(53, 192, 224, 0.14), transparent 58%),
+    radial-gradient(120% 120% at 100% 100%, rgba(74, 125, 255, 0.14), transparent 55%),
+    linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
+  box-shadow: var(--omd-shadow);
+}
+
+.hub-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hub-title {
+  font: 800 clamp(30px, 4.4vw, 48px) / 1.02 var(--omd-font);
+  letter-spacing: -0.02em;
+}
+.hub-sub {
+  color: var(--omd-text-dim);
+  font-size: clamp(15px, 2vw, 20px);
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: clamp(14px, 2vw, 22px);
+}
+
+.hub-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  text-align: left;
+  min-height: clamp(150px, 20vh, 210px);
+  padding: clamp(18px, 2.4vw, 28px);
+  border-radius: var(--omd-radius-lg);
+  border: 1px solid var(--omd-border);
+  background: linear-gradient(160deg, var(--omd-surface-2), var(--omd-surface));
+  color: var(--omd-text);
+  font-family: var(--omd-font);
+  cursor: pointer;
+  box-shadow: var(--omd-shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.hub-tile:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+}
+.hub-tile:active {
+  transform: translateY(0);
+}
+.hub-tile:focus-visible {
+  outline: 2px solid var(--omd-accent);
+  outline-offset: 3px;
+}
+.hub-tile--primary {
+  min-height: clamp(190px, 26vh, 270px);
+  border-color: var(--omd-border-strong);
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--omd-accent) 12%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--omd-surface-2), var(--omd-surface));
+}
+
+.hub-tile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  color: var(--omd-accent);
+  background: color-mix(in srgb, var(--omd-accent) 14%, transparent);
+}
+.hub-tile--primary .hub-tile-icon {
+  width: 72px;
+  height: 72px;
+}
+
+.hub-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+}
+.hub-tile-title {
+  font: 700 clamp(18px, 2vw, 24px) / 1.1 var(--omd-font);
+}
+.hub-tile-sub {
+  color: var(--omd-text-dim);
+  font-size: clamp(13px, 1.4vw, 15px);
+  line-height: 1.4;
+}

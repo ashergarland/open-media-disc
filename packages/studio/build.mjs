@@ -56,6 +56,7 @@ const configs = [
 async function copyStatic() {
   await cp('src/renderer/index.html', 'dist/renderer/index.html');
   await cp('src/renderer/shell.css', 'dist/renderer/shell.css');
+  await cp('src/renderer/components.css', 'dist/renderer/components.css');
   if (existsSync('src/renderer/themes')) {
     await cp('src/renderer/themes', 'dist/renderer/themes', { recursive: true });
   }
