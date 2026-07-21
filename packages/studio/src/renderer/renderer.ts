@@ -482,50 +482,57 @@ function themesView(): HTMLElement {
   ]);
 }
 
-function kvRow(label: string, value: string): HTMLElement {
-  return el('div', { class: 'kv-row' }, [el('dt', { text: label }), el('dd', { text: value })]);
+/** A titled token panel (card) used by migrated views. */
+function omdPanel(title: string, children: (Node | string)[]): HTMLElement {
+  return el('section', { class: 'omd-panel' }, [
+    el('div', { class: 'omd-panel-title', text: title }),
+    ...children,
+  ]);
+}
+
+/** A token key/value row. */
+function omdKv(label: string, value: string): HTMLElement {
+  return el('div', { class: 'omd-kv-row' }, [
+    el('span', { class: 'omd-kv-label', text: label }),
+    el('span', { class: 'omd-kv-value', text: value }),
+  ]);
 }
 
 function settingsView(): HTMLElement {
   const info = state.info;
-  const about = info
-    ? card('About', [
-        el('dl', { class: 'kv-list' }, [
-          kvRow('OMD Studio', `${info.studioVersion} (alpha)`),
-          kvRow('Disc format', `${info.omdFormat} v${info.omdVersion}`),
-          kvRow('Electron', info.electron),
-          kvRow('Node', info.node),
-          kvRow(
-            'Active theme',
-            THEME_OPTIONS.find((t) => t.id === state.themeId)?.name ?? state.themeId,
-          ),
-        ]),
-      ])
-    : card('About', [el('p', { class: 'select-lead', text: 'Loading version info...' })]);
+  const about = omdPanel(
+    'About',
+    info
+      ? [
+          el('div', { class: 'omd-kv' }, [
+            omdKv('OMD Studio', `${info.studioVersion} (alpha)`),
+            omdKv('Disc format', `${info.omdFormat} v${info.omdVersion}`),
+            omdKv('Electron', info.electron),
+            omdKv('Node', info.node),
+          ]),
+        ]
+      : [el('p', { class: 'omd-muted', text: 'Loading version info\u2026' })],
+  );
 
   const drives = state.drives;
   const driveBody: (Node | string)[] =
     drives === undefined
-      ? [el('p', { class: 'select-lead', text: 'Scanning...' })]
+      ? [el('p', { class: 'omd-muted', text: 'Scanning\u2026' })]
       : drives.length === 0
-        ? [el('p', { class: 'select-lead', text: 'No optical drives detected (burning is Windows-only).' })]
+        ? [el('p', { class: 'omd-muted', text: 'No optical drives detected (burning is Windows-only).' })]
         : [
             el(
-              'dl',
-              { class: 'kv-list' },
-              drives.map((drive) => kvRow(drive.mountPath, drive.description ?? 'Optical drive')),
+              'div',
+              { class: 'omd-kv' },
+              drives.map((drive) => omdKv(drive.mountPath, drive.description ?? 'Optical drive')),
             ),
           ];
 
-  return el('div', { class: 'view' }, [
-    el('div', { class: 'view-head' }, [
-      el('h1', { class: 'view-title', text: 'Settings' }),
-      el('p', { class: 'view-lead', text: 'Environment and detected hardware.' }),
-    ]),
+  return el('div', { class: 'omd-stack' }, [
     about,
-    card('Optical drives', [
+    omdPanel('Optical drives', [
       ...driveBody,
-      el('div', { class: 'bc-actions' }, [btn('Rescan drives', () => void rescanDrives())]),
+      el('div', { class: 'omd-actions' }, [omdBtn('Rescan drives', undefined, () => void rescanDrives())]),
     ]),
   ]);
 }
@@ -976,51 +983,57 @@ function trackPanel(
   currentIndex: number,
   onPlay: (index: number) => void,
 ): HTMLElement {
-  const list = el('ol', { class: 'track-list' });
+  const summary = `${disc.trackCount} tracks \u00b7 ${formatClock(disc.totalDurationSeconds)}`;
+  const list = el('div', { class: 'omd-tracklist' }, [
+    el('div', { class: 'omd-tracklist-head' }, [
+      el('span', { text: 'Tracks' }),
+      el('span', { class: 'omd-muted', text: summary }),
+    ]),
+  ]);
   disc.tracks.forEach((track, index) => {
     const selected = index === currentIndex;
     const row = el(
       'button',
       {
-        class: `track-row${selected ? ' selected' : ''}`,
+        class: `omd-track${selected ? ' selected' : ''}`,
         type: 'button',
         onclick: () => onPlay(index),
       },
       [
-        el('span', { class: 'track-position' }, [
-          el('span', { class: 'track-index', text: String(track.number) }),
-          rawSvg('<svg class="play-icon" viewBox="0 0 24 24"><path d="M7 4.8L19 12L7 19.2Z" fill="currentColor"/></svg>'),
-        ]),
-        el('span', { class: 'track-name', text: track.title }),
+        el('span', { class: 'omd-track-num', text: String(track.number) }),
+        el('span', { class: 'omd-track-name', text: track.title }),
         el('span', {
-          class: 'track-time',
+          class: 'omd-track-time',
           text: track.durationSeconds !== undefined ? formatClock(track.durationSeconds) : '',
         }),
-        el('span', { class: 'equalizer' }, [
-          el('span'),
-          el('span'),
-          el('span'),
-          el('span'),
-          el('span'),
-        ]),
       ],
     );
     if (selected) row.setAttribute('aria-current', 'true');
-    list.append(el('li', {}, [row]));
+    list.append(row);
   });
-  const summary = `${disc.trackCount} Tracks \u00b7 ${formatClock(disc.totalDurationSeconds)}`;
-  return el('div', { class: 'track-panel' }, [
-    el('span', { class: 'glass-rim', 'aria-hidden': 'true' }),
-    el('span', { class: 'glass-seam', 'aria-hidden': 'true' }),
-    el('span', { class: 'panel-surface', 'aria-hidden': 'true' }),
-    el('div', { class: 'panel-content' }, [
-      el('header', { class: 'panel-header' }, [
-        el('h3', { class: 'panel-title', text: 'Track List' }),
-        el('span', { class: 'track-summary', text: summary }),
-      ]),
-      list,
-    ]),
-  ]);
+  return list;
+}
+
+/** A token action button used across migrated views. */
+function omdBtn(
+  label: string,
+  icon: IconName | undefined,
+  onClick: () => void,
+  opts?: { primary?: boolean; disabled?: boolean },
+): HTMLButtonElement {
+  const children: (Node | string)[] = [];
+  if (icon) children.push(svgIcon(icon, 18));
+  children.push(label);
+  return el(
+    'button',
+    {
+      class: `omd-btn${opts?.primary ? ' omd-btn--primary' : ''}`,
+      type: 'button',
+      disabled: opts?.disabled ? true : null,
+      onclick: onClick,
+    },
+    children,
+  ) as HTMLButtonElement;
 }
 
 /** The shared album detail (art | info | track list [+ usage]) used by Disc and Catalog. */
@@ -1031,92 +1044,68 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
   const currentIndex = active ? (pstate.order[pstate.position] ?? -1) : -1;
   const playing = active && pstate.status === 'playing';
 
-  const rows: HTMLElement[] = [];
-  if (disc.releaseYear) rows.push(kvRow('Year', String(disc.releaseYear)));
-  rows.push(
-    kvRow('Disc ID', disc.discId),
-    kvRow('Tracks', String(disc.trackCount)),
-    kvRow('Total time', formatClock(disc.totalDurationSeconds)),
-    kvRow('Format', disc.audioCodec),
-  );
-  if (disc.audioBitDepth) rows.push(kvRow('Bit depth', `${disc.audioBitDepth}-bit`));
-  if (disc.audioSampleRate) rows.push(kvRow('Sample rate', `${formatKHz(disc.audioSampleRate)} kHz`));
-  if (disc.audioBitrate) rows.push(kvRow('Bitrate', `${Math.round(disc.audioBitrate / 1000)} kbps`));
-  if (disc.discFormat) rows.push(kvRow('Disc', disc.discFormat));
+  const facts: string[] = [
+    `${disc.trackCount} tracks`,
+    formatClock(disc.totalDurationSeconds),
+    disc.audioCodec,
+    disc.audioLossless ? 'Lossless' : 'Lossy',
+  ];
+  if (disc.audioSampleRate) facts.push(`${formatKHz(disc.audioSampleRate)} kHz`);
+  if (disc.audioBitDepth) facts.push(`${disc.audioBitDepth}-bit`);
+  if (disc.audioBitrate) facts.push(`${Math.round(disc.audioBitrate / 1000)} kbps`);
+  if (disc.releaseYear) facts.push(String(disc.releaseYear));
+  if (disc.discFormat) facts.push(disc.discFormat);
 
   const verifying = source === 'disc' && state.reverifying === true;
   const verified = source === 'disc' && state.verify ? state.verify.valid : disc.valid;
   const badge = verifying
-    ? el('span', { class: 'npd-chip' }, [
+    ? el('span', { class: 'omd-badge' }, [
         el('span', { class: 'spinner', 'aria-hidden': 'true' }),
-        'Verifying...',
+        'Verifying\u2026',
       ])
-    : el('span', { class: `npd-chip${verified ? ' verified' : ''}` }, [
-        svgIcon('check'),
+    : el('span', { class: `omd-badge${verified ? ' ok' : ''}` }, [
+        svgIcon('check', 16),
         verified ? 'Verified' : 'Not verified',
       ]);
 
   const actions: HTMLElement[] = [
-    btn(playing ? 'Pause' : 'Play', () => playFrom(disc, source), {
+    omdBtn(playing ? 'Pause' : 'Play', playing ? 'pause' : 'play', () => playFrom(disc, source), {
       primary: true,
-      small: true,
-      icon: playing ? 'pause' : 'play',
     }),
   ];
   if (source === 'disc') {
-    actions.push(btn('Rip to Catalog', () => void ripToCatalog(), { icon: 'rip', small: true }));
+    actions.push(omdBtn('Rip to Catalog', 'rip', () => void ripToCatalog()));
   } else {
     actions.push(
-      btn('Burn to Disc', () => void openAlbumBurn(), {
-        icon: 'create',
-        small: true,
-        disabled: !disc.valid,
-      }),
-      btn('Edit', () => startEditAlbum(disc), { icon: 'label', small: true }),
-      btn('Show in folder', () => void window.omd.revealInFolder(disc.source), { small: true }),
+      omdBtn('Burn to Disc', 'create', () => void openAlbumBurn(), { disabled: !disc.valid }),
+      omdBtn('Edit', 'label', () => startEditAlbum(disc)),
+      omdBtn('Show in folder', 'folder', () => void window.omd.revealInFolder(disc.source)),
     );
   }
 
-  const albumCol = el('div', { class: 'album-col' }, [
-    el('div', { class: 'album-art' }, [
-      disc.coverDataUri
-        ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
-        : el('span', { class: 'album-art-empty' }, [svgIcon('note', 64)]),
-    ]),
-    el('div', { class: 'album-heading' }, [
-      el('div', { class: 'album-title', text: disc.album }),
-      el('div', { class: 'album-artist', text: disc.artist }),
-    ]),
+  const heroArt = el('div', { class: 'omd-album-hero-art' }, [
+    disc.coverDataUri
+      ? el('img', { src: disc.coverDataUri, alt: 'Cover art' })
+      : el('span', { class: 'omd-album-hero-empty' }, [svgIcon('note', 56)]),
   ]);
 
-  const meta = el('div', { class: 'album-meta' }, [
-    el('dl', { class: 'kv-list' }, rows),
-    el('div', { class: 'player-badges' }, [
-      badge,
-      el('span', { class: 'npd-chip flac' }, [
-        svgIcon('wave'),
-        `${disc.audioCodec} · ${disc.audioLossless ? 'Lossless' : 'Lossy'}`,
-      ]),
-    ]),
-  ]);
-
-  const actionsRow = el('div', { class: 'disc-actions' }, [
-    el('div', { class: 'bc-actions' }, actions),
+  const info = el('div', { class: 'omd-album-info' }, [
+    el('div', { class: 'omd-album-name', text: disc.album }),
+    el('div', { class: 'omd-album-by', text: disc.artist }),
+    el('div', { class: 'omd-facts' }, facts.map((f) => el('span', { class: 'omd-fact', text: f }))),
+    el('div', { class: 'omd-badges' }, [badge]),
+    el('div', { class: 'omd-actions' }, actions),
     ...(source === 'disc' && state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
   ]);
 
-  const discMain = el('div', { class: 'disc-main' }, [albumCol, meta, actionsRow]);
-
-  const layout = el('div', { class: 'disc-layout' }, [
-    discMain,
+  const albumBlock = el('div', { class: 'omd-album' }, [
+    el('div', { class: 'omd-album-head' }, [heroArt, info]),
     trackPanel(disc, currentIndex, (index) => playFrom(disc, source, index)),
   ]);
 
   return [
-    el('section', { class: 'card' }, [layout]),
-    ...(source === 'album' && state.albumBurn
-      ? [el('section', { class: 'card' }, [albumBurnPanel()])]
-      : []),
+    albumBlock,
+    ...(source === 'album' && state.albumBurn ? [albumBurnPanel()] : []),
     ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
   ];
 }
@@ -1127,22 +1116,20 @@ function playerView(): HTMLElement {
 
   if (!state.disc) {
     const hero: (Node | string)[] = [
-      el('span', { class: 'select-icon disc-empty-icon' }, [svgIcon('disc', 56)]),
-      el('h2', { class: 'select-title', text: 'No disc inserted' }),
+      el('span', { class: 'omd-empty-icon' }, [svgIcon('disc', 56)]),
+      el('div', { class: 'omd-empty-title', text: 'No disc inserted' }),
       el('p', {
-        class: 'select-lead',
+        class: 'omd-empty-sub',
         text: 'Insert a burned OMD disc and it will load here automatically.',
       }),
       state.discLoading ? spinnerRow('Reading disc\u2026') : spinnerRow('Watching the drive\u2026'),
-      el('div', { class: 'bc-actions' }, [btn('Scan again', () => void detectDisc(), { small: true })]),
+      el('div', { class: 'omd-actions' }, [omdBtn('Scan again', undefined, () => void detectDisc())]),
     ];
-    if (state.discError) hero.push(el('p', { class: 'select-lead muted', text: state.discError }));
-    return el('div', { class: 'view' }, [
-      el('section', { class: 'card' }, [el('div', { class: 'select-hero disc-empty' }, hero)]),
-    ]);
+    if (state.discError) hero.push(el('p', { class: 'omd-muted', text: state.discError }));
+    return el('div', { class: 'omd-stack' }, [el('div', { class: 'omd-empty' }, hero)]);
   }
 
-  return el('div', { class: 'view' }, albumDetail(state.disc, 'disc'));
+  return el('div', { class: 'omd-stack' }, albumDetail(state.disc, 'disc'));
 }
 
 function formatKHz(hz: number): string {
@@ -2142,18 +2129,14 @@ function catalogView(): HTMLElement {
     return albumEditView(state.album);
   }
   if (state.album) {
-    const back = el('div', { class: 'bc-actions' }, [
-      btn(
-        'Back to catalog',
-        () => {
-          state.album = undefined;
-          state.albumBurn = undefined;
-          renderMain();
-        },
-        { small: true, icon: 'chevron-left' },
-      ),
+    const back = el('div', { class: 'omd-actions' }, [
+      omdBtn('Back to catalog', 'chevron-left', () => {
+        state.album = undefined;
+        state.albumBurn = undefined;
+        renderMain();
+      }),
     ]);
-    return el('div', { class: 'view' }, [back, ...albumDetail(state.album, 'album')]);
+    return el('div', { class: 'omd-stack' }, [back, ...albumDetail(state.album, 'album')]);
   }
 
   const actions = el('div', { class: 'omd-actions' }, [
