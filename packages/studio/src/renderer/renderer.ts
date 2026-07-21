@@ -2171,8 +2171,12 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
 
   const children: (Node | string)[] = [topbar];
   if (edit.error) children.push(notice('error', edit.error));
-  children.push(el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]));
-  return el('div', { class: 'view' }, children);
+  children.push(
+    el('div', { class: 'omd-scroll' }, [
+      el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]),
+    ]),
+  );
+  return el('div', { class: 'omd-stack omd-fill' }, children);
 }
 
 /** The mixtape builder: a source track library on the left, your mix on the right. */
@@ -2332,17 +2336,19 @@ function mixtapeView(): HTMLElement {
   const children: (Node | string)[] = [topbar];
   if (m.error) children.push(notice('error', m.error));
   children.push(
-    el('section', { class: 'card' }, [
-      el('div', { class: 'mixtape-layout' }, [
-        el('div', { class: 'mixtape-col' }, [el('p', { class: 'eyebrow', text: 'Library' }), sourcesCol]),
-        el('div', { class: 'mixtape-col' }, [
-          el('p', { class: 'eyebrow', text: 'Your mixtape' }),
-          detail,
+    el('div', { class: 'omd-scroll' }, [
+      el('section', { class: 'card' }, [
+        el('div', { class: 'mixtape-layout' }, [
+          el('div', { class: 'mixtape-col' }, [el('p', { class: 'eyebrow', text: 'Library' }), sourcesCol]),
+          el('div', { class: 'mixtape-col' }, [
+            el('p', { class: 'eyebrow', text: 'Your mixtape' }),
+            detail,
+          ]),
         ]),
       ]),
     ]),
   );
-  return el('div', { class: 'view' }, children);
+  return el('div', { class: 'omd-stack omd-fill' }, children);
 }
 
 function catalogView(): HTMLElement {
