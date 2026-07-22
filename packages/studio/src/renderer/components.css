@@ -863,6 +863,21 @@
   color: var(--omd-text) !important;
 }
 
+/* Keep long titles from squishing the spectrum: meta truncates, spectrum is
+   a stable width. */
+.npd-now {
+  min-width: 0;
+}
+.npd-meta {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+.now-playing-dock .npd-spectrum {
+  flex: 0 0 auto !important;
+  width: clamp(56px, 11vw, 150px) !important;
+}
+
 /* Transport buttons (pc-button) flattened. */
 .pc-button {
   background: var(--omd-surface-2) !important;

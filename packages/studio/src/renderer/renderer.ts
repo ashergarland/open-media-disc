@@ -82,6 +82,8 @@ interface AppState {
   nowPlaying?: { disc: StudioDiscInfo; source: 'disc' | 'album' };
   verify?: StudioVerifyResult;
   reverifying?: boolean;
+  /** True while a background integrity verify of the opened catalog album runs. */
+  albumVerifying?: boolean;
   ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
   /** The Create a Disc flow: choose a source package, then burn it. */
   createDisc?: {
@@ -630,13 +632,37 @@ async function openAlbum(source: string): Promise<void> {
   renderMain();
   try {
     const disc = await window.omd.openDisc(source);
-    if (disc) state.album = disc;
-    else state.albumError = 'Could not open the package.';
+    if (disc) {
+      state.album = disc;
+      state.albumVerifying = true;
+      void verifyOpenedAlbum(source);
+    } else {
+      state.albumError = 'Could not open the package.';
+    }
   } catch (err) {
     state.albumError = (err as Error).message;
   }
   state.albumLoading = false;
   if (state.view === 'catalog') renderMain();
+}
+
+/** Verify the opened catalog album's integrity in the background, updating its badge. */
+async function verifyOpenedAlbum(source: string): Promise<void> {
+  let valid = false;
+  try {
+    valid = (await window.omd.verifyDisc(source)).valid;
+  } catch {
+    valid = false;
+  }
+  if (state.album?.source === source) {
+    state.album = { ...state.album, valid };
+    state.albumVerifying = false;
+    if (state.view === 'catalog' && !state.albumEdit && !state.mixtape && !state.importReview) {
+      renderMain();
+    }
+  } else if (state.albumVerifying) {
+    state.albumVerifying = false;
+  }
 }
 
 /** Enter edit mode for the opened catalog album, seeded from its current data. */
@@ -857,14 +883,31 @@ async function loadPackageForBurn(source: string): Promise<void> {
   try {
     const disc = await window.omd.openDisc(source);
     cd.loading = false;
-    if (disc) cd.disc = disc;
-    else cd.error = 'Could not read that package.';
+    if (disc) {
+      cd.disc = disc;
+      void verifyBurnPackage(source);
+    } else cd.error = 'Could not read that package.';
   } catch (err) {
     cd.loading = false;
     cd.error = (err as Error).message;
   }
   if (!cd.drives.length) await loadCreateDiscDrives();
   else renderMain();
+}
+
+/** Verify the loaded burn package's integrity in the background, updating its badge. */
+async function verifyBurnPackage(source: string): Promise<void> {
+  let valid = false;
+  try {
+    valid = (await window.omd.verifyDisc(source)).valid;
+  } catch {
+    valid = false;
+  }
+  const cd = state.createDisc;
+  if (cd?.disc && cd.disc.source === source) {
+    cd.disc = { ...cd.disc, valid };
+    if (state.view === 'burn') renderMain();
+  }
 }
 
 /** Pick an existing OMD package folder to burn. */
@@ -1231,7 +1274,9 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
   if (disc.releaseYear) facts.push(String(disc.releaseYear));
   if (disc.discFormat) facts.push(disc.discFormat);
 
-  const verifying = source === 'disc' && state.reverifying === true;
+  const verifying =
+    (source === 'disc' && state.reverifying === true) ||
+    (source === 'album' && state.albumVerifying === true);
   const verified = source === 'disc' && state.verify ? state.verify.valid : disc.valid;
   const badge = verifying
     ? el('span', { class: 'omd-badge' }, [

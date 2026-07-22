@@ -577,7 +577,9 @@ ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<Stu
 });
 
 ipcMain.handle('omd:openDisc', async (_event, source: string): Promise<StudioDiscInfo | null> => {
-  return buildDiscInfo(source);
+  // Quick load (skip the full re-hash) so opening/playing a catalog album is
+  // instant; the renderer verifies integrity in the background.
+  return buildDiscInfo(source, true);
 });
 
 ipcMain.handle('omd:mixtapeSources', async (_event, dir: string): Promise<StudioMixtapeAlbum[]> => {
