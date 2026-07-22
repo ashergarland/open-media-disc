@@ -50,7 +50,6 @@ import type {
   StudioLabelSheetResult,
   StudioMixtapeAlbum,
   StudioMixtapeRequest,
-  StudioPackageResponse,
   StudioRipRequest,
   StudioRipResult,
   StudioUpdateRequest,
@@ -360,53 +359,6 @@ function startDiscWatch(window: BrowserWindow): void {
   window.on('closed', () => clearInterval(timer));
   void tick();
 }
-
-ipcMain.handle('omd:selectAlbumFolder', async (): Promise<string | null> => {
-  const result = await dialog.showOpenDialog({
-    title: 'Select an album folder',
-    properties: ['openDirectory'],
-  });
-  return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]!;
-});
-
-ipcMain.handle(
-  'omd:createPackage',
-  async (_event, sourceDir: string, overwrite?: boolean): Promise<StudioPackageResponse> => {
-    try {
-      const { outDir, manifest, validation } = await createPackage({
-        sourceDir,
-        ...(overwrite ? { overwrite: true } : {}),
-        ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
-        generator: { name: 'OMD Studio', version: STUDIO_VERSION },
-      });
-      const coverDataUri = await readCoverDataUri(outDir, manifest.coverArt);
-      return {
-        kind: 'ok',
-        outDir,
-        discId: manifest.discId,
-        artist: manifest.artist,
-        album: manifest.album,
-        trackCount: manifest.trackCount,
-        totalSizeBytes: manifest.totalSizeBytes,
-        audioCodec: manifest.audioCodec,
-        valid: validation.valid,
-        errors: validation.errors.map(toFinding),
-        warnings: validation.warnings.map(toFinding),
-        tracks: manifest.tracks.map((track) => ({
-          number: track.number,
-          title: track.title,
-          ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
-        })),
-        ...(coverDataUri ? { coverDataUri } : {}),
-      };
-    } catch (err) {
-      if (err instanceof OutputExistsError) {
-        return { kind: 'exists', outDir: err.outDir };
-      }
-      throw err;
-    }
-  },
-);
 
 function labelOptions(request: StudioLabelSheetRequest) {
   return {

@@ -12,9 +12,6 @@ import type {
 const api: OmdStudioApi = {
   getInfo: () => ipcRenderer.invoke('omd:info'),
   listDrives: () => ipcRenderer.invoke('omd:listDrives'),
-  selectAlbumFolder: () => ipcRenderer.invoke('omd:selectAlbumFolder'),
-  createPackage: (sourceDir, overwrite) =>
-    ipcRenderer.invoke('omd:createPackage', sourceDir, overwrite),
   buildLabelSheet: (request) => ipcRenderer.invoke('omd:buildLabelSheet', request),
   saveLabelSheet: (request) => ipcRenderer.invoke('omd:saveLabelSheet', request),
   printLabelSheet: (request) => ipcRenderer.invoke('omd:printLabelSheet', request),

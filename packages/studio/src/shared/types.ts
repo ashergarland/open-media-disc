@@ -27,38 +27,6 @@ export interface StudioValidationFinding {
   path?: string;
 }
 
-/** A packaged track summary. */
-export interface StudioTrack {
-  number: number;
-  title: string;
-  durationSeconds?: number;
-}
-
-/** A successful package result. */
-export interface StudioPackageSummary {
-  kind: 'ok';
-  outDir: string;
-  discId: string;
-  artist: string;
-  album: string;
-  trackCount: number;
-  totalSizeBytes: number;
-  audioCodec: string;
-  valid: boolean;
-  errors: StudioValidationFinding[];
-  warnings: StudioValidationFinding[];
-  tracks: StudioTrack[];
-  coverDataUri?: string;
-}
-
-/** Returned when the output folder already exists and overwrite was not set. */
-export interface StudioPackageExists {
-  kind: 'exists';
-  outDir: string;
-}
-
-export type StudioPackageResponse = StudioPackageSummary | StudioPackageExists;
-
 /** A rendered label sheet. */
 /** One package chosen for a batch label sheet, with how many copies to place. */
 export interface StudioLabelSelection {
@@ -360,8 +328,6 @@ export interface StudioImportResult {
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
   listDrives(): Promise<StudioDrive[]>;
-  selectAlbumFolder(): Promise<string | null>;
-  createPackage(sourceDir: string, overwrite?: boolean): Promise<StudioPackageResponse>;
   buildLabelSheet(request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult>;
   saveLabelSheet(request: StudioLabelSheetRequest): Promise<string | null>;
   printLabelSheet(request: StudioLabelSheetRequest): Promise<boolean>;
