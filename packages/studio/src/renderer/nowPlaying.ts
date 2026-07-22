@@ -134,11 +134,9 @@ export function renderNowPlaying(
     ]),
   ];
   if (playing) {
-    const spectrum = el('div', { class: 'spectrum npd-spectrum', 'aria-hidden': 'true' });
-    for (let i = 0; i < 24; i += 1) {
-      spectrum.append(el('span', { class: 'spectrum-bar' }, [el('span', { class: 'spectrum-fill' })]));
-    }
-    nowChildren.push(spectrum);
+    const eq = el('div', { class: 'npd-eq', 'aria-hidden': 'true' });
+    for (let i = 0; i < 4; i += 1) eq.append(el('span'));
+    nowChildren.push(eq);
   }
   const now = el('div', { class: 'npd-now' }, nowChildren);
 
