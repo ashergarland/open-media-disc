@@ -863,19 +863,25 @@
   color: var(--omd-text) !important;
 }
 
-/* Keep long titles from squishing the spectrum: meta truncates, spectrum is
-   a stable width. */
+/* Keep long titles from squishing the spectrum: cap the meta text and let the
+   spectrum grow to fill the rest of the now-playing cell (which gets more of
+   the dock width). */
+.now-playing-dock {
+  grid-template-columns: minmax(320px, 1.7fr) minmax(240px, 1.2fr) minmax(170px, 0.9fr) !important;
+}
 .npd-now {
   min-width: 0;
 }
 .npd-meta {
-  flex: 1 1 auto !important;
+  flex: 0 1 auto !important;
   min-width: 0 !important;
+  max-width: clamp(130px, 18vw, 280px) !important;
   overflow: hidden !important;
 }
 .now-playing-dock .npd-spectrum {
-  flex: 0 0 auto !important;
-  width: clamp(56px, 11vw, 150px) !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 90px !important;
 }
 
 /* Transport buttons (pc-button) flattened. */
