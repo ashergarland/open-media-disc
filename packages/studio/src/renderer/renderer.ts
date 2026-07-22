@@ -162,15 +162,12 @@ interface ThemeOption {
   swatches: string[];
 }
 
-/** The four visual themes, matching the showcase theme-picker swatches. */
+/** The available themes. A full token-based theme system is planned. */
 const THEME_OPTIONS: ThemeOption[] = [
-  { id: 'frutiger-aero', name: 'Frutiger Aero', type: 'Light', swatches: ['#00d4e7', '#55c7f2', '#bee9fb', '#2b3a42', '#36d17a'] },
-  { id: 'dorfic', name: 'DORFic', type: 'Light', swatches: ['#ff6a00', '#ff8c00', '#ffc400', '#1e1e1e', '#36d17a'] },
-  { id: 'technozen', name: 'Technozen', type: 'Light', swatches: ['#9edb7a', '#9fe8e2', '#dff5b3', '#3c3f42', '#58af7e'] },
-  { id: 'dark-aero', name: 'Dark Aero', type: 'Dark', swatches: ['#00d4e7', '#1a7bff', '#0b3d6b', '#0f141a', '#00c896'] },
+  { id: 'dark-aero', name: 'Dark', type: 'Dark', swatches: ['#35c0e0', '#4a7dff', '#0b3d6b', '#0d131e', '#00c896'] },
 ];
 
-const DEFAULT_THEME_ID = 'frutiger-aero';
+const DEFAULT_THEME_ID = 'dark-aero';
 
 /** The brand disc image path for a theme id (each theme ships assets/<id>/logo.png). */
 function logoFor(id: string): string {
@@ -419,59 +416,15 @@ function placeholderView(title: string, lead: string, steps: string[]): HTMLElem
   ]);
 }
 
-function rawSvg(markup: string): SVGElement {
-  const wrap = document.createElement('div');
-  wrap.innerHTML = markup.trim();
-  return wrap.firstElementChild as SVGElement;
-}
-
-function checkGlyph(): SVGElement {
-  return rawSvg(
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  );
-}
-
 function themesView(): HTMLElement {
-  const cards = el('div', { class: 'theme-cards' });
-  for (const theme of THEME_OPTIONS) {
-    const active = theme.id === state.themeId;
-    const swatches = el('span', { class: 'tc-swatches', 'aria-hidden': 'true' });
-    for (const color of theme.swatches) {
-      const chip = el('span');
-      chip.style.setProperty('background', color);
-      swatches.append(chip);
-    }
-    cards.append(
-      el(
-        'button',
-        {
-          class: `theme-card${active ? ' is-active' : ''}`,
-          type: 'button',
-          onclick: () => {
-            applyThemeById(theme.id);
-            renderMain();
-          },
-        },
-        [
-          swatches,
-          el('span', { class: 'tc-meta' }, [
-            el('span', { class: 'tc-name', text: theme.name }),
-            el('span', { class: 'tc-type', text: theme.type }),
-          ]),
-          el('span', { class: 'tc-check' }, [checkGlyph()]),
-        ],
-      ),
-    );
-  }
-  return el('div', { class: 'view' }, [
-    el('div', { class: 'view-head' }, [
-      el('h1', { class: 'view-title', text: 'Themes' }),
+  return el('div', { class: 'omd-stack' }, [
+    omdPanel('Appearance', [
+      el('div', { class: 'omd-kv' }, [omdKv('Theme', 'Dark')]),
       el('p', {
-        class: 'view-lead',
-        text: 'Pick a look. Themes change styling only; the layout never changes.',
+        class: 'omd-muted',
+        text: 'OMD Studio uses a single dark theme for now. A new theme system with more looks is on the way.',
       }),
     ]),
-    el('section', { class: 'card' }, [cards]),
   ]);
 }
 
