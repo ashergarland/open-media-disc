@@ -1,6 +1,7 @@
 import path from 'node:path';
+import os from 'node:os';
 import { watch } from 'node:fs';
-import { access, readFile, readdir, writeFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, readdir, writeFile, rm } from 'node:fs/promises';
 import { app, BrowserWindow, dialog, ipcMain, protocol, shell } from 'electron';
 import {
   ALL_AUDIO_EXTENSIONS,
@@ -396,14 +397,21 @@ async function printSheets(
     img { display: block; width: ${w}; height: ${h}; }
   </style></head><body>${body}</body></html>`;
 
+  // Load from a temp file, not a data: URL: the embedded SVG pages make the URL
+  // exceed Chromium's navigation length limit (ERR_INVALID_URL).
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'omd-print-'));
+  const file = path.join(dir, 'sheet.html');
+  await writeFile(file, html, 'utf8');
+
   const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
   try {
-    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    await win.loadFile(file);
     return await new Promise<boolean>((resolve) => {
       win.webContents.print({ silent: false, printBackground: true }, (success) => resolve(success));
     });
   } finally {
     if (!win.isDestroyed()) win.close();
+    await rm(dir, { recursive: true, force: true });
   }
 }
 
