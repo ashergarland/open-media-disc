@@ -100,6 +100,18 @@ export interface CreatePackageOptions {
   generator?: { name: string; version: string };
   /** Fixed timestamp for deterministic output (tests). Defaults to now. */
   createdAt?: Date;
+  /** Optional progress callback, for a UI progress bar. */
+  onProgress?: (progress: CreatePackageProgress) => void;
+}
+
+/** Progress of {@link createPackage}, for a UI progress bar. */
+export interface CreatePackageProgress {
+  /** 'reading' source metadata, 'processing' each track, or 'finalizing'. */
+  phase: 'reading' | 'processing' | 'finalizing';
+  /** Tracks processed so far (during the 'processing' phase). */
+  done: number;
+  /** Total tracks to process (0 until known). */
+  total: number;
 }
 
 /** Result of {@link createPackage}. */
@@ -393,6 +405,8 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
   }
 
   const sourceTracks = await readSourceTracks(sourceDir, usableFiles, codec);
+  const trackTotal = sourceTracks.length;
+  options.onProgress?.({ phase: 'reading', done: 0, total: trackTotal });
 
   // Apply caller-supplied per-track overrides (from an import review view),
   // keyed by the resulting 1..N track number. Blank values keep the inferred
@@ -436,7 +450,9 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
 
   // Copy (or transcode) audio tracks with normalized, ordered filenames.
   const tracks: OmdTrack[] = [];
+  let processed = 0;
   for (const track of sourceTracks) {
+    options.onProgress?.({ phase: 'processing', done: processed, total: trackTotal });
     const padded = track.number.toString().padStart(2, '0');
     const safeTitle = normalizeFilename(track.title);
     const needsConvert = track.sourceCodec !== codec;
@@ -488,7 +504,10 @@ export async function createPackage(options: CreatePackageOptions): Promise<Crea
       sizeBytes: size,
       sha256,
     });
+    processed += 1;
   }
+
+  options.onProgress?.({ phase: 'finalizing', done: trackTotal, total: trackTotal });
 
   // Detect and copy cover art (resilient to non-standard filenames).
   let coverArt: string | undefined;

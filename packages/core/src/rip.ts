@@ -26,6 +26,18 @@ export interface RipOptions {
   overwrite?: boolean;
   /** Validate the source before ripping. Defaults to `true`. */
   validate?: boolean;
+  /** Optional progress callback, for a UI progress bar. */
+  onProgress?: (progress: RipProgress) => void;
+}
+
+/** Progress of {@link ripPackage}, for a UI progress bar. */
+export interface RipProgress {
+  /** 'validating' the source, 'copying' each track, or 'finalizing' the clone. */
+  phase: 'validating' | 'copying' | 'finalizing';
+  /** Tracks copied so far (during the 'copying' phase). */
+  done: number;
+  /** Total tracks to copy. */
+  total: number;
 }
 
 /** Per-track result of a rip: the copied file and whether it verified. */
@@ -81,6 +93,7 @@ export async function ripPackage(options: RipOptions): Promise<RipResult> {
 
   // A rip must start from an intact source unless the caller opts out.
   if (options.validate !== false) {
+    options.onProgress?.({ phase: 'validating', done: 0, total: manifest.tracks.length });
     const sourceValidation = await validatePackage(sourceDir);
     if (!sourceValidation.valid) {
       const detail = sourceValidation.errors.map((e) => `[${e.code}] ${e.message}`).join('; ');
@@ -102,7 +115,9 @@ export async function ripPackage(options: RipOptions): Promise<RipResult> {
   const tracks = [...manifest.tracks].sort((a, b) => a.number - b.number);
   const files: RippedFile[] = [];
 
+  let copied = 0;
   for (const track of tracks) {
+    options.onProgress?.({ phase: 'copying', done: copied, total: tracks.length });
     const segments = track.filename.split('/');
     const srcPath = path.join(sourceDir, ...segments);
     // package mode keeps the AUDIO/ layout; album mode flattens to the basename.
@@ -112,7 +127,10 @@ export async function ripPackage(options: RipOptions): Promise<RipResult> {
     await copyFile(srcPath, destPath);
     const digest = await sha256File(destPath);
     files.push({ filename: relPath, sha256: digest, matched: digest === track.sha256 });
+    copied += 1;
   }
+
+  options.onProgress?.({ phase: 'finalizing', done: tracks.length, total: tracks.length });
 
   // Cover art travels with both modes. A full clone also carries the manifest,
   // checksums, and booklet so the output re-validates and can be re-burned.

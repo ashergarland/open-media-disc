@@ -18,6 +18,7 @@ import type {
   StudioImportResult,
   StudioInfo,
   StudioMixtapeAlbum,
+  StudioRipProgress,
   StudioSourceDraft,
   StudioVerifyResult,
 } from '../shared/types';
@@ -84,7 +85,7 @@ interface AppState {
   reverifying?: boolean;
   /** True while a background integrity verify of the opened catalog album runs. */
   albumVerifying?: boolean;
-  ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string };
+  ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string; progress?: StudioRipProgress };
   /** The Create a Disc flow: choose a source package, then burn it. */
   createDisc?: {
     /** The package loaded to burn (a StudioDiscInfo). */
@@ -103,7 +104,7 @@ interface AppState {
   catalog?: CatalogEntry[];
   catalogLoading: boolean;
   catalogError?: string;
-  importStatus?: { busy: boolean; progress?: StudioImportProgress; result?: StudioImportResult };
+  importStatus?: { busy: boolean; result?: StudioImportResult };
   /** Per-album import review: edit the metadata and pick a format before committing. */
   importReview?: {
     destDir: string;
@@ -128,6 +129,7 @@ interface AppState {
     coverSourcePath?: string;
     coverPreview?: string;
     saving?: boolean;
+    progress?: StudioImportProgress;
     error?: string;
     showErrors?: boolean;
     tally: { imported: number; skipped: number; failed: number };
@@ -733,15 +735,23 @@ async function ripToCatalog(): Promise<void> {
 
 async function runRip(destDir: string, overwrite: boolean): Promise<void> {
   if (!state.disc) return;
-  state.ripStatus = { busy: true, text: 'Ripping and verifying...' };
+  const rip = { busy: true, text: 'Ripping and verifying...' } as NonNullable<AppState['ripStatus']>;
+  state.ripStatus = rip;
   if (state.view === 'disc') renderMain();
   try {
-    const result = await window.omd.rip({
-      source: state.disc.source,
-      destDir,
-      mode: 'package',
-      overwrite,
-    });
+    const result = await window.omd.rip(
+      {
+        source: state.disc.source,
+        destDir,
+        mode: 'package',
+        overwrite,
+      },
+      (progress) => {
+        if (state.ripStatus !== rip) return;
+        rip.progress = progress;
+        if (state.view === 'disc') renderMain();
+      },
+    );
     if (result.exists) {
       const proceed = window.confirm(`A copy already exists at:\n${result.outDir}\n\nOverwrite it?`);
       if (proceed) {
@@ -770,7 +780,10 @@ async function runRip(destDir: string, overwrite: boolean): Promise<void> {
 }
 
 function ripStatusEl(status: NonNullable<AppState['ripStatus']>): HTMLElement {
-  if (status.busy) return spinnerRow(status.text);
+  if (status.busy) {
+    const { fraction, label } = ripProgressInfo(status.progress);
+    return omdProgress(fraction, label);
+  }
   const children: (Node | string)[] = [
     el('span', { class: `status-pill ${status.ok ? 'ok' : 'bad'}` }, [
       el('span', { class: 'status-dot', 'aria-hidden': 'true' }),
@@ -1419,6 +1432,44 @@ function spinnerRow(text: string): HTMLElement {
   ]);
 }
 
+/** A determinate progress bar (indeterminate when fraction is null). */
+function omdProgress(fraction: number | null, label: string): HTMLElement {
+  const track = el('div', { class: 'omd-progressbar-track' });
+  if (fraction === null) {
+    track.append(el('span', { class: 'omd-progressbar-fill is-indeterminate' }));
+  } else {
+    const fill = el('span', { class: 'omd-progressbar-fill' });
+    fill.style.width = `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`;
+    track.append(fill);
+  }
+  return el('div', { class: 'omd-progressbar', role: 'progressbar' }, [
+    el('div', { class: 'omd-progressbar-label', text: label }),
+    track,
+  ]);
+}
+
+/** Map an import progress update to a bar fraction (null = indeterminate) + label. */
+function importProgressInfo(p: StudioImportProgress | undefined): {
+  fraction: number | null;
+  label: string;
+} {
+  if (!p || p.phase === 'reading') return { fraction: null, label: 'Reading the album\u2026' };
+  if (p.phase === 'finalizing') return { fraction: 1, label: 'Writing the package\u2026' };
+  const total = p.total || 1;
+  return { fraction: p.done / total, label: `Importing track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026` };
+}
+
+/** Map a rip progress update to a bar fraction (null = indeterminate) + label. */
+function ripProgressInfo(p: StudioRipProgress | undefined): {
+  fraction: number | null;
+  label: string;
+} {
+  if (!p || p.phase === 'validating') return { fraction: null, label: 'Verifying the source disc\u2026' };
+  if (p.phase === 'finalizing') return { fraction: 1, label: 'Finishing the copy\u2026' };
+  const total = p.total || 1;
+  return { fraction: p.done / total, label: `Copying track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026` };
+}
+
 /** A reusable "in progress" badge: a spinner inside a neutral status pill. */
 function busyPill(label: string): HTMLElement {
   return el('span', { class: 'status-pill neutral busy' }, [
@@ -1550,29 +1601,37 @@ async function saveImport(): Promise<void> {
   }
   const year = review.year.trim() ? Number.parseInt(review.year.trim(), 10) : null;
   review.saving = true;
+  review.progress = { phase: 'reading', done: 0, total: review.tracks.length };
   review.error = undefined;
   renderMain();
   try {
-    const imported = await window.omd.importAlbum({
-      destDir: review.destDir,
-      sourceDir: review.draft.sourceDir,
-      audioCodec: review.codec,
-      discId: review.discId.trim(),
-      artist: review.artist.trim(),
-      album: review.album.trim(),
-      releaseYear: year,
-      trackMeta: review.tracks.map((t) => ({
-        number: t.number,
-        title: t.title.trim(),
-        artist: t.artist.trim(),
-        album: t.album.trim(),
-        ...(t.year.trim() && /^\d{1,4}$/.test(t.year.trim())
-          ? { year: Number.parseInt(t.year.trim(), 10) }
-          : {}),
-      })),
-      ...(review.coverSourcePath ? { coverSourcePath: review.coverSourcePath } : {}),
-      overwrite: true,
-    });
+    const imported = await window.omd.importAlbum(
+      {
+        destDir: review.destDir,
+        sourceDir: review.draft.sourceDir,
+        audioCodec: review.codec,
+        discId: review.discId.trim(),
+        artist: review.artist.trim(),
+        album: review.album.trim(),
+        releaseYear: year,
+        trackMeta: review.tracks.map((t) => ({
+          number: t.number,
+          title: t.title.trim(),
+          artist: t.artist.trim(),
+          album: t.album.trim(),
+          ...(t.year.trim() && /^\d{1,4}$/.test(t.year.trim())
+            ? { year: Number.parseInt(t.year.trim(), 10) }
+            : {}),
+        })),
+        ...(review.coverSourcePath ? { coverSourcePath: review.coverSourcePath } : {}),
+        overwrite: true,
+      },
+      (progress) => {
+        if (state.importReview !== review) return;
+        review.progress = progress;
+        renderMain();
+      },
+    );
     if (imported) review.lastImported = imported;
     review.tally.imported += 1;
     review.saving = false;
@@ -1865,12 +1924,8 @@ function importReviewView(): HTMLElement {
   }
 
   if (review.saving) {
-    const name = review.album.trim() || 'album';
-    return frame([
-      el('section', { class: 'card' }, [
-        spinnerRow(`Importing ${name}\u2026 copying and verifying tracks, this can take a moment.`),
-      ]),
-    ]);
+    const { fraction, label } = importProgressInfo(review.progress);
+    return frame([el('section', { class: 'card' }, [omdProgress(fraction, label)])]);
   }
   const cover = review.coverPreview;
   const art = el('div', { class: 'album-col' }, [
@@ -1928,11 +1983,10 @@ function importReviewView(): HTMLElement {
 
 function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
   if (status.busy) {
-    const p = status.progress;
-    const text = p
-      ? `Importing ${p.index + 1} of ${p.total}: ${p.album}`
-      : 'Scanning for audio albums\u2026';
-    return el('div', { class: 'rip-status' }, [busyPill('IMPORTING'), el('span', { class: 'rip-status-text', text })]);
+    return el('div', { class: 'rip-status' }, [
+      busyPill('IMPORTING'),
+      el('span', { class: 'rip-status-text', text: 'Scanning for audio albums\u2026' }),
+    ]);
   }
   const result = status.result;
   if (!result) return el('div');

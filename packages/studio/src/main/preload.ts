@@ -3,6 +3,8 @@ import type {
   OmdStudioApi,
   StudioBurnProgress,
   StudioDiscInfo,
+  StudioImportProgress,
+  StudioRipProgress,
 } from '../shared/types';
 
 /**
@@ -38,11 +40,27 @@ const api: OmdStudioApi = {
   verifyDisc: (source) => ipcRenderer.invoke('omd:verifyDisc', source),
   chooseCoverImage: (defaultDir) => ipcRenderer.invoke('omd:chooseCoverImage', defaultDir),
   updatePackage: (request) => ipcRenderer.invoke('omd:updatePackage', request),
-  rip: (request) => ipcRenderer.invoke('omd:rip', request),
+  rip: (request, onProgress) => {
+    if (!onProgress) return ipcRenderer.invoke('omd:rip', request);
+    const listener = (_event: IpcRendererEvent, progress: StudioRipProgress): void =>
+      onProgress(progress);
+    ipcRenderer.on('omd:rip:progress', listener);
+    return ipcRenderer
+      .invoke('omd:rip', request)
+      .finally(() => ipcRenderer.removeListener('omd:rip:progress', listener));
+  },
   chooseRipDestination: () => ipcRenderer.invoke('omd:chooseRipDestination'),
   scanImportFolder: () => ipcRenderer.invoke('omd:scanImportFolder'),
   inspectImportAlbum: (sourceDir) => ipcRenderer.invoke('omd:inspectImportAlbum', sourceDir),
-  importAlbum: (request) => ipcRenderer.invoke('omd:importAlbum', request),
+  importAlbum: (request, onProgress) => {
+    if (!onProgress) return ipcRenderer.invoke('omd:importAlbum', request);
+    const listener = (_event: IpcRendererEvent, progress: StudioImportProgress): void =>
+      onProgress(progress);
+    ipcRenderer.on('omd:import:progress', listener);
+    return ipcRenderer
+      .invoke('omd:importAlbum', request)
+      .finally(() => ipcRenderer.removeListener('omd:import:progress', listener));
+  },
   chooseLibraryFolder: () => ipcRenderer.invoke('omd:chooseLibraryFolder'),
   scanLibrary: (dir) => ipcRenderer.invoke('omd:scanLibrary', dir),
   mixtapeSources: (dir) => ipcRenderer.invoke('omd:mixtapeSources', dir),

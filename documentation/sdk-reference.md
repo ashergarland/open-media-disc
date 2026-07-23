@@ -47,10 +47,12 @@ const { outDir, manifest, validation } = await createPackage({
 
 `CreatePackageOptions` fields: `sourceDir` (required); `outDir`, `discId`,
 `overwrite`, `artist`, `album`, `releaseYear`, `budgetBytes`, `generator`,
-`createdAt` (optional). `discId` is the disc title and defaults to the resolved
-album title; `outDir` defaults to `build/<slugified title>`; `overwrite` replaces
-an existing folder (otherwise an `OutputExistsError` is thrown). Returns
-`{ outDir, manifest, validation }`.
+`createdAt`, `onProgress` (optional). `discId` is the disc title and defaults to
+the resolved album title; `outDir` defaults to `build/<slugified title>`;
+`overwrite` replaces an existing folder (otherwise an `OutputExistsError` is
+thrown). `onProgress(p)` reports `{ phase: 'reading' | 'processing' |
+'finalizing', done, total }` as each track is packaged, for a UI progress bar.
+Returns `{ outDir, manifest, validation }`.
 
 ### `validatePackage(packageDir, options?): Promise<PackageValidationResult>`
 
@@ -212,9 +214,11 @@ console.log(result.verified, `${result.filesMatched}/${result.filesTotal}`);
 
 `package` mode reproduces the whole tree and re-validates the clone
 (`result.validation`); `album` mode writes only the FLAC tracks and cover art.
-`result.files` lists each track with its `sha256` and whether it `matched`.
+`result.files` lists each track with its `sha256` and whether it `matched`. An
+optional `onProgress(p)` reports `{ phase: 'validating' | 'copying' |
+'finalizing', done, total }` as each track is copied, for a UI progress bar.
 
-Types: `RipOptions`, `RipResult`, `RippedFile`, `RipMode`.
+Types: `RipOptions`, `RipResult`, `RippedFile`, `RipMode`, `RipProgress`.
 
 ---
 

@@ -466,6 +466,40 @@ body {
   animation: omd-indeterminate 1.1s ease-in-out infinite;
 }
 
+/* Determinate progress bar (import + rip). */
+.omd-progressbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.omd-progressbar-label {
+  font: 600 13px / 1.3 var(--omd-font);
+  color: var(--omd-text-dim);
+}
+.omd-progressbar-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--omd-text) 12%, transparent);
+  border: 1px solid var(--omd-border);
+}
+.omd-progressbar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  border-radius: inherit;
+  background: var(--omd-accent);
+  transition: width 0.2s ease;
+}
+.omd-progressbar-fill.is-indeterminate {
+  width: 40%;
+  transition: none;
+  animation: omd-indeterminate 1.1s ease-in-out infinite;
+}
+
 /* Track scroll-view. */
 .omd-tracklist {
   border: 1px solid var(--omd-border);

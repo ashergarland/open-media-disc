@@ -643,7 +643,7 @@ ipcMain.handle('omd:chooseRipDestination', async (): Promise<string | null> => {
   return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]!;
 });
 
-ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<StudioRipResult> => {
+ipcMain.handle('omd:rip', async (event, request: StudioRipRequest): Promise<StudioRipResult> => {
   try {
     const { manifest } = await inspectPackage(request.source);
     const outDir = path.join(request.destDir, slugifyForPath(manifest.discId));
@@ -652,6 +652,9 @@ ipcMain.handle('omd:rip', async (_event, request: StudioRipRequest): Promise<Stu
       mode: request.mode,
       outDir,
       ...(request.overwrite !== undefined ? { overwrite: request.overwrite } : {}),
+      onProgress: (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send('omd:rip:progress', progress);
+      },
     });
     return {
       ok: true,
@@ -834,7 +837,7 @@ ipcMain.handle(
 
 ipcMain.handle(
   'omd:importAlbum',
-  async (_event, request: StudioImportRequest): Promise<StudioDiscInfo | null> => {
+  async (event, request: StudioImportRequest): Promise<StudioDiscInfo | null> => {
     const outDir = path.join(request.destDir, slugifyForPath(request.discId || request.album));
     await createPackage({
       sourceDir: request.sourceDir,
@@ -849,6 +852,9 @@ ipcMain.handle(
       ...(request.overwrite ? { overwrite: true } : {}),
       ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
       generator: { name: 'OMD Studio', version: STUDIO_VERSION },
+      onProgress: (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send('omd:import:progress', progress);
+      },
     });
     return buildDiscInfo(outDir);
   },

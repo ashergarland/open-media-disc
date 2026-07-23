@@ -90,6 +90,20 @@ export interface StudioBurnProgress {
   phase: StudioBurnPhase;
 }
 
+/** Progress of an import (createPackage), for a 0..100% bar. */
+export interface StudioImportProgress {
+  phase: 'reading' | 'processing' | 'finalizing';
+  done: number;
+  total: number;
+}
+
+/** Progress of a rip (ripPackage), for a 0..100% bar. */
+export interface StudioRipProgress {
+  phase: 'validating' | 'copying' | 'finalizing';
+  done: number;
+  total: number;
+}
+
 /** A burn request from the renderer. */
 export interface StudioBurnRequest {
   packageDir: string;
@@ -321,13 +335,6 @@ export interface StudioSourceDraft {
   }[];
 }
 
-/** Progress while importing music into the catalog. */
-export interface StudioImportProgress {
-  index: number;
-  total: number;
-  album: string;
-}
-
 /** The outcome of importing one album folder. */
 export interface StudioImportItem {
   album: string;
@@ -377,14 +384,20 @@ export interface OmdStudioApi {
   chooseCoverImage(defaultDir?: string): Promise<StudioCoverPick | null>;
   /** Edit a catalog package's album metadata (and optionally cover); returns the refreshed info. */
   updatePackage(request: StudioUpdateRequest): Promise<StudioDiscInfo | null>;
-  rip(request: StudioRipRequest): Promise<StudioRipResult>;
+  rip(
+    request: StudioRipRequest,
+    onProgress?: (progress: StudioRipProgress) => void,
+  ): Promise<StudioRipResult>;
   chooseRipDestination(): Promise<string | null>;
   /** Pick a source folder and list the importable album folders within. */
   scanImportFolder(): Promise<StudioImportScan>;
   /** Inspect one album folder and return the metadata an import would infer. */
   inspectImportAlbum(sourceDir: string): Promise<StudioSourceDraft>;
   /** Import one album folder (with edited metadata + codec) into the catalog. */
-  importAlbum(request: StudioImportRequest): Promise<StudioDiscInfo | null>;
+  importAlbum(
+    request: StudioImportRequest,
+    onProgress?: (progress: StudioImportProgress) => void,
+  ): Promise<StudioDiscInfo | null>;
   /** List catalog albums with their tracks (absolute FLAC paths) for the mixtape builder. */
   mixtapeSources(dir: string): Promise<StudioMixtapeAlbum[]>;
   /** Compile a mixtape package into the catalog; returns the new package info. */
