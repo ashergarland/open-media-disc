@@ -1698,12 +1698,12 @@ function importCodecField(review: NonNullable<AppState['importReview']>): HTMLEl
   const present = new Set(review.codecsPresent);
   const options = el(
     'div',
-    { class: 'codec-options' },
+    { class: 'omd-segment' },
     STUDIO_AUDIO_CODECS.map((codec) =>
       el(
         'button',
         {
-          class: `codec-option${review.codec === codec ? ' selected' : ''}`,
+          class: `omd-segment-btn${review.codec === codec ? ' selected' : ''}`,
           type: 'button',
           onclick: () => {
             review.codec = codec;
@@ -1711,8 +1711,8 @@ function importCodecField(review: NonNullable<AppState['importReview']>): HTMLEl
           },
         },
         [
-          el('span', { class: 'codec-option-name', text: codec }),
-          ...(present.has(codec) ? [el('span', { class: 'codec-option-tag', text: 'in source' })] : []),
+          el('span', { text: codec }),
+          ...(present.has(codec) ? [el('span', { class: 'omd-segment-tag', text: 'in source' })] : []),
         ],
       ),
     ),
@@ -1722,10 +1722,10 @@ function importCodecField(review: NonNullable<AppState['importReview']>): HTMLEl
   const note = willConvert
     ? `Tracks not already ${review.codec} will be converted to ${review.codec}.`
     : `Tracks are already ${review.codec} and will be copied as-is.`;
-  return el('div', { class: 'edit-field' }, [
-    el('span', { class: 'edit-label', text: `Format${detected}` }),
+  return el('div', { class: 'omd-field' }, [
+    el('span', { class: 'omd-field-label', text: `Format${detected}` }),
     options,
-    el('p', { class: 'import-picker-note', text: note }),
+    el('p', { class: 'omd-field-hint', text: note }),
   ]);
 }
 
@@ -1734,7 +1734,7 @@ function importTrackRow(review: NonNullable<AppState['importReview']>, index: nu
   const track = review.tracks[index]!;
   const titleInvalid = review.showErrors && track.title.trim().length === 0;
   const titleInput = el('input', {
-    class: `edit-input${titleInvalid ? ' invalid' : ''}`,
+    class: `omd-input${titleInvalid ? ' invalid' : ''}`,
     type: 'text',
     value: track.title,
     'aria-label': `Track ${track.number} title`,
@@ -1745,8 +1745,8 @@ function importTrackRow(review: NonNullable<AppState['importReview']>, index: nu
   });
 
   const rowChildren: HTMLElement[] = [
-    el('div', { class: 'edit-track-row' }, [
-      el('span', { class: 'edit-track-num', text: String(track.number) }),
+    el('div', { class: 'omd-track-edit-row' }, [
+      el('span', { class: 'omd-track-edit-num', text: String(track.number) }),
       titleInput,
     ]),
   ];
@@ -1754,7 +1754,7 @@ function importTrackRow(review: NonNullable<AppState['importReview']>, index: nu
   if (review.tracksExpanded) {
     const detail = (label: string, key: 'artist' | 'album' | 'year'): HTMLInputElement => {
       const input = el('input', {
-        class: 'edit-input',
+        class: 'omd-input',
         type: 'text',
         value: track[key],
         placeholder: label,
@@ -1767,7 +1767,7 @@ function importTrackRow(review: NonNullable<AppState['importReview']>, index: nu
       return input;
     };
     rowChildren.push(
-      el('div', { class: 'edit-track-details' }, [
+      el('div', { class: 'omd-track-edit-details' }, [
         detail('Artist', 'artist'),
         detail('Album', 'album'),
         detail('Year', 'year'),
@@ -1775,7 +1775,7 @@ function importTrackRow(review: NonNullable<AppState['importReview']>, index: nu
     );
   }
 
-  return el('div', { class: 'edit-track' }, rowChildren);
+  return el('div', { class: 'omd-track-edit' }, rowChildren);
 }
 
 /** The import review view: edit the detected metadata + format, then commit. */
@@ -1783,9 +1783,9 @@ function importReviewView(): HTMLElement {
   const review = state.importReview!;
   const position = review.total > 1 ? ` (${review.index + 1} of ${review.total})` : '';
 
-  const topbar = el('div', { class: 'edit-topbar' }, [
+  const topbar = el('div', { class: 'omd-editbar' }, [
     btn('Cancel import', cancelImport, { small: true, icon: 'chevron-left' }),
-    el('div', { class: 'edit-topbar-actions' }, [
+    el('div', { class: 'omd-editbar-actions' }, [
       ...(review.total > 1 && !review.loading
         ? [btn('Skip', () => void skipImport(), { small: true })]
         : []),
@@ -1833,17 +1833,17 @@ function importReviewView(): HTMLElement {
 
   const artistField = editField(review, 'Artist', 'artist');
   const artistBlock = review.multipleArtists
-    ? el('div', { class: 'edit-field-group' }, [
+    ? el('div', { class: 'omd-field-group' }, [
         artistField,
         el('p', {
-          class: 'import-picker-note',
+          class: 'omd-field-hint',
           text: 'The tracks list more than one artist, so "Various Artists" was suggested. Set each track\u2019s artist below.',
         }),
       ])
     : artistField;
 
-  const tracksHeader = el('div', { class: 'edit-tracks-head' }, [
-    el('span', { class: 'edit-label', text: `Tracks (${review.tracks.length})` }),
+  const tracksHeader = el('div', { class: 'omd-tracks-head' }, [
+    el('span', { class: 'omd-field-label', text: `Tracks (${review.tracks.length})` }),
     el(
       'button',
       {
@@ -1858,13 +1858,13 @@ function importReviewView(): HTMLElement {
     ),
   ]);
 
-  const form = el('div', { class: 'album-meta edit-form' }, [
+  const form = el('div', { class: 'album-meta omd-form' }, [
     editField(review, 'Album', 'album'),
     artistBlock,
     editField(review, 'Year', 'year'),
     editField(review, 'Disc title', 'discId'),
     importCodecField(review),
-    el('div', { class: 'edit-tracks' }, [
+    el('div', { class: 'omd-tracks' }, [
       tracksHeader,
       ...review.tracks.map((_track, index) => importTrackRow(review, index)),
     ]),
@@ -2055,12 +2055,12 @@ function editField(edit: EditableMeta, label: string, key: 'discId' | 'artist' |
         : {};
   const initialErr = edit.showErrors ? fieldError(key, edit[key]) : undefined;
   const input = el('input', {
-    class: `edit-input${initialErr ? ' invalid' : ''}`,
+    class: `omd-input${initialErr ? ' invalid' : ''}`,
     type: 'text',
     value: edit[key],
     ...extra,
   }) as HTMLInputElement;
-  const errorSpan = el('span', { class: 'edit-error', text: initialErr ?? '' });
+  const errorSpan = el('span', { class: 'omd-field-error', text: initialErr ?? '' });
   const apply = (msg: string | undefined): void => {
     errorSpan.textContent = msg ?? '';
     input.classList.toggle('invalid', Boolean(msg));
@@ -2071,8 +2071,8 @@ function editField(edit: EditableMeta, label: string, key: 'discId' | 'artist' |
     if (input.classList.contains('invalid')) apply(fieldError(key, edit[key]));
   });
   input.addEventListener('blur', () => apply(fieldError(key, edit[key])));
-  return el('label', { class: 'edit-field' }, [
-    el('span', { class: 'edit-label', text: label }),
+  return el('label', { class: 'omd-field' }, [
+    el('span', { class: 'omd-field-label', text: label }),
     input,
     errorSpan,
   ]);
@@ -2082,7 +2082,7 @@ function editTrackRow(edit: EditableMeta, index: number): HTMLElement {
   const track = edit.tracks[index]!;
   const initialInvalid = edit.showErrors && track.title.trim().length === 0;
   const input = el('input', {
-    class: `edit-input${initialInvalid ? ' invalid' : ''}`,
+    class: `omd-input${initialInvalid ? ' invalid' : ''}`,
     type: 'text',
     value: track.title,
     'aria-label': `Track ${track.number} title`,
@@ -2095,8 +2095,8 @@ function editTrackRow(edit: EditableMeta, index: number): HTMLElement {
     if (input.classList.contains('invalid')) mark();
   });
   input.addEventListener('blur', mark);
-  return el('div', { class: 'edit-track-row' }, [
-    el('span', { class: 'edit-track-num', text: String(track.number) }),
+  return el('div', { class: 'omd-track-edit-row' }, [
+    el('span', { class: 'omd-track-edit-num', text: String(track.number) }),
     input,
   ]);
 }
@@ -2116,13 +2116,13 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
     ]),
   ]);
 
-  const form = el('div', { class: 'album-meta edit-form' }, [
+  const form = el('div', { class: 'album-meta omd-form' }, [
     editField(edit, 'Album', 'album'),
     editField(edit, 'Artist', 'artist'),
     editField(edit, 'Year', 'year'),
     editField(edit, 'Disc title', 'discId'),
-    el('div', { class: 'edit-tracks' }, [
-      el('span', { class: 'edit-label', text: 'Track titles' }),
+    el('div', { class: 'omd-tracks' }, [
+      el('span', { class: 'omd-field-label', text: 'Track titles' }),
       ...edit.tracks.map((_track, index) => editTrackRow(edit, index)),
     ]),
   ]);
@@ -2131,9 +2131,9 @@ function albumEditView(disc: StudioDiscInfo): HTMLElement {
     state.albumEdit = undefined;
     renderMain();
   };
-  const topbar = el('div', { class: 'edit-topbar' }, [
+  const topbar = el('div', { class: 'omd-editbar' }, [
     btn('Back to album', cancel, { small: true, icon: 'chevron-left' }),
-    el('div', { class: 'edit-topbar-actions' }, [
+    el('div', { class: 'omd-editbar-actions' }, [
       btn(edit.saving ? 'Saving\u2026' : 'Save', () => void saveEdit(), {
         primary: true,
         icon: 'check',
@@ -2161,12 +2161,12 @@ function mixtapeView(): HTMLElement {
     state.mixtape = undefined;
     setView(fromBurn ? 'burn' : 'catalog');
   };
-  const topbar = el('div', { class: 'edit-topbar' }, [
+  const topbar = el('div', { class: 'omd-editbar' }, [
     btn(fromBurn ? 'Back to Create a Disc' : 'Back to catalog', cancel, {
       small: true,
       icon: 'chevron-left',
     }),
-    el('div', { class: 'edit-topbar-actions' }, [
+    el('div', { class: 'omd-editbar-actions' }, [
       btn(m.saving ? 'Saving\u2026' : 'Save mixtape', () => void saveMixtape(), {
         primary: true,
         icon: 'check',
@@ -2211,7 +2211,7 @@ function mixtapeView(): HTMLElement {
   }
 
   const nameInput = el('input', {
-    class: 'edit-input',
+    class: 'omd-input',
     type: 'text',
     value: m.name,
     placeholder: 'Mixtape name',
@@ -2221,7 +2221,7 @@ function mixtapeView(): HTMLElement {
     m.name = nameInput.value;
   });
   const artistInput = el('input', {
-    class: 'edit-input',
+    class: 'omd-input',
     type: 'text',
     value: m.artist,
     placeholder: 'Artist',
@@ -2290,12 +2290,12 @@ function mixtapeView(): HTMLElement {
     el('div', { class: 'mixtape-head-row' }, [
       coverBox,
       el('div', { class: 'mixtape-fields' }, [
-        el('label', { class: 'edit-field' }, [
-          el('span', { class: 'edit-label', text: 'Mixtape name' }),
+        el('label', { class: 'omd-field' }, [
+          el('span', { class: 'omd-field-label', text: 'Mixtape name' }),
           nameInput,
         ]),
-        el('label', { class: 'edit-field' }, [
-          el('span', { class: 'edit-label', text: 'Artist' }),
+        el('label', { class: 'omd-field' }, [
+          el('span', { class: 'omd-field-label', text: 'Artist' }),
           artistInput,
         ]),
         el('div', { class: 'bc-actions' }, [
@@ -2303,7 +2303,7 @@ function mixtapeView(): HTMLElement {
         ]),
       ]),
     ]),
-    el('div', { class: 'edit-label', text: `Tracks (${m.tracks.length})` }),
+    el('div', { class: 'omd-field-label', text: `Tracks (${m.tracks.length})` }),
     selList,
   ]);
 

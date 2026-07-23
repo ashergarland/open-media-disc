@@ -789,6 +789,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+}
+.omd-fields > .omd-field {
   flex: 1;
   min-width: 150px;
 }
@@ -826,6 +829,149 @@
   width: 100%;
   height: auto;
   display: block;
+}
+
+/*
+ * Editor fields: the shared metadata form kit used by import review, the
+ * mixtape builder, and the catalog album editor. Text/number inputs, inline
+ * field errors, a segmented format chooser, and editable track rows. All read
+ * only --omd-* tokens.
+ */
+
+/* Fixed action bar (Back on the left, Save/Cancel on the right). */
+.omd-editbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.omd-editbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* A vertical stack of fields. */
+.omd-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.omd-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.omd-input {
+  width: 100%;
+  min-height: var(--omd-tap);
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface);
+  color: var(--omd-text);
+  font: 400 15px / 1.3 var(--omd-font);
+}
+.omd-input:focus {
+  outline: 2px solid var(--omd-accent);
+  outline-offset: 0;
+  border-color: var(--omd-accent);
+}
+.omd-input.invalid {
+  border-color: #ef4d38;
+}
+.omd-field-error {
+  min-height: 14px;
+  color: #ef7d6f;
+  font: 600 12px / 1.2 var(--omd-font);
+}
+.omd-field-hint {
+  margin: 0;
+  color: var(--omd-text-dim);
+  font: 400 12.5px / 1.45 var(--omd-font);
+}
+
+/* Segmented format chooser (one codec per package). */
+.omd-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.omd-segment-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 72px;
+  min-height: var(--omd-tap);
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface);
+  color: var(--omd-text);
+  cursor: pointer;
+  font: 600 13px / 1.2 var(--omd-font);
+}
+.omd-segment-btn:hover {
+  border-color: var(--omd-accent);
+}
+.omd-segment-btn.selected {
+  border-color: var(--omd-accent);
+  background: color-mix(in srgb, var(--omd-accent) 16%, transparent);
+}
+.omd-segment-tag {
+  font: 500 10px / 1.2 var(--omd-font);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--omd-text-dim);
+}
+
+/* Editable track rows (title always; artist/album/year when expanded). */
+.omd-tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.omd-tracks-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.omd-track-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+.omd-track-edit + .omd-track-edit {
+  border-top: 1px solid var(--omd-border);
+  padding-top: 6px;
+}
+.omd-track-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.omd-track-edit-num {
+  flex: 0 0 auto;
+  width: 22px;
+  text-align: right;
+  font: 700 13px / 1 var(--omd-font);
+  color: var(--omd-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.omd-track-edit-row .omd-input {
+  flex: 1;
+}
+.omd-track-edit-details {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 8px;
+  padding-left: 32px;
 }
 
 /*
@@ -936,33 +1082,6 @@
   content: none !important;
 }
 
-/* Inputs and field labels. */
-.edit-input {
-  background: var(--omd-surface) !important;
-  border: 1px solid var(--omd-border-strong) !important;
-  border-radius: 10px !important;
-  color: var(--omd-text) !important;
-  min-height: var(--omd-tap);
-  padding: 0 12px;
-  font: 400 15px / 1.3 var(--omd-font);
-  box-shadow: none !important;
-}
-.edit-input:focus {
-  outline: 2px solid var(--omd-accent);
-  outline-offset: 0;
-  border-color: var(--omd-accent) !important;
-}
-.edit-input.invalid {
-  border-color: #ef4d38 !important;
-}
-.edit-label {
-  color: var(--omd-text-dim);
-  font: 600 13px / 1.2 var(--omd-font);
-}
-.edit-error {
-  color: #ef7d6f;
-  font-size: 12px;
-}
 .eyebrow {
   color: var(--omd-text-dim);
   text-transform: uppercase;
