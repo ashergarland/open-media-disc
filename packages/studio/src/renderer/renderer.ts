@@ -650,6 +650,9 @@ async function saveEdit(): Promise<void> {
         state.nowPlaying = { disc: updated, source: 'album' };
         renderNowPlayingBar();
       }
+      // Refresh the catalog grid so it reflects the edited metadata (otherwise
+      // the tile keeps the old name until the catalog is re-entered).
+      if (state.libraryDir) void rescanLibrary();
     }
     state.albumEdit = undefined;
   } catch (err) {
