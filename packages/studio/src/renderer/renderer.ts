@@ -2447,6 +2447,12 @@ function homeView(): HTMLElement {
         onClick: () => setView('catalog'),
       }),
       hubTile({
+        icon: 'label',
+        title: 'Labels',
+        sub: 'Print album-art label sheets',
+        onClick: () => setView('labels'),
+      }),
+      hubTile({
         icon: 'play',
         title: 'Now Playing',
         sub: nowPlayingSub,
