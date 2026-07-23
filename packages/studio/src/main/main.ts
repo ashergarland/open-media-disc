@@ -110,7 +110,7 @@ function createWindow(): void {
   const window = new BrowserWindow({
     width: 1024,
     height: 720,
-    backgroundColor: '#f7fdff',
+    backgroundColor: '#0d131e',
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),

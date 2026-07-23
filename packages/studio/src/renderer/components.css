@@ -82,6 +82,59 @@
   --pal-green: var(--omd-success);
 }
 
+/*
+ * Themes are token maps only: each overrides the base --omd-* primitives, and
+ * the derived tokens (control/focus/slider/compat aliases) follow through their
+ * var() references. Switching is a data-theme swap on the document root, which
+ * is a variable change with no stylesheet fetch, so it is instant and flash
+ * free. The base :root above is the default (Midnight).
+ */
+
+/* Daylight: a clean light theme. */
+:root[data-theme="daylight"] {
+  --omd-bg: #e7edf4;
+  --omd-surface: #ffffff;
+  --omd-surface-2: #eef3f9;
+  --omd-border: rgba(16, 32, 52, 0.12);
+  --omd-border-strong: rgba(16, 32, 52, 0.2);
+  --omd-hairline: rgba(16, 32, 52, 0.1);
+  --omd-text: #15212e;
+  --omd-text-dim: #566575;
+  --omd-accent: #0e9fc4;
+  --omd-accent-2: #3a6ff0;
+  --omd-danger: #d33a28;
+  --omd-danger-text: #c0392b;
+  --omd-success: #1f9d57;
+  --omd-warning: #b9770e;
+  --omd-shadow: 0 12px 30px rgba(30, 55, 90, 0.16);
+}
+
+/* Ember: an accent-forward dark theme with a warm amber accent. */
+:root[data-theme="ember"] {
+  --omd-bg: #15110d;
+  --omd-surface: #1e1811;
+  --omd-surface-2: #271f17;
+  --omd-border: rgba(255, 240, 225, 0.08);
+  --omd-border-strong: rgba(255, 240, 225, 0.15);
+  --omd-hairline: rgba(255, 240, 225, 0.08);
+  --omd-text: #f5ece2;
+  --omd-text-dim: #b6a48f;
+  --omd-on-accent: #2a1503;
+  --omd-accent: #ff8a3d;
+  --omd-accent-2: #ffb765;
+  --omd-danger: #ef5340;
+  --omd-danger-text: #f2937f;
+  --omd-success: #4cc27a;
+  --omd-warning: #f0b429;
+  --omd-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* Base canvas follows the active theme (safety net behind the screens). */
+body {
+  background: var(--omd-bg);
+  color: var(--omd-text);
+}
+
 /* Full-screen touch shell: no sidebar; content scrolls, transport docked. */
 .app-shell {
   grid-template-columns: minmax(0, 1fr);
@@ -488,6 +541,64 @@
   word-break: break-word;
 }
 
+/* Themes picker (a card per theme with a swatch preview). */
+.omd-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.omd-theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--omd-radius);
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--omd-font);
+}
+.omd-theme-card:hover {
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+}
+.omd-theme-card.is-active {
+  border-color: var(--omd-accent);
+  box-shadow: inset 0 0 0 1px var(--omd-accent);
+}
+.omd-theme-card:focus-visible {
+  outline: 2px solid var(--omd-focus);
+  outline-offset: 2px;
+}
+.omd-theme-swatches {
+  display: flex;
+  gap: 6px;
+}
+.omd-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--omd-border-strong);
+}
+.omd-theme-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.omd-theme-name {
+  font: 700 16px / 1.2 var(--omd-font);
+}
+.omd-theme-type {
+  font-size: 12px;
+  color: var(--omd-text-dim);
+}
+.omd-theme-check {
+  display: inline-flex;
+  color: var(--omd-accent);
+}
+
 /* Empty / placeholder state. */
 .omd-empty {
   display: flex;
@@ -608,8 +719,8 @@
   color: var(--omd-text);
   font-family: var(--omd-font);
   background:
-    radial-gradient(120% 90% at 12% 0%, rgba(53, 192, 224, 0.14), transparent 58%),
-    radial-gradient(120% 120% at 100% 100%, rgba(74, 125, 255, 0.14), transparent 55%),
+    radial-gradient(120% 90% at 12% 0%, color-mix(in srgb, var(--omd-accent) 16%, transparent), transparent 58%),
+    radial-gradient(120% 120% at 100% 100%, color-mix(in srgb, var(--omd-accent-2) 16%, transparent), transparent 55%),
     linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
 }
 

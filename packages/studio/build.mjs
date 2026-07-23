@@ -52,14 +52,11 @@ const configs = [
   },
 ];
 
-/** Copy the static renderer files (HTML, shell CSS, theme stylesheets, logo assets) into dist. */
+/** Copy the static renderer files (HTML, CSS, logo assets) into dist. */
 async function copyStatic() {
   await cp('src/renderer/index.html', 'dist/renderer/index.html');
   await cp('src/renderer/shell.css', 'dist/renderer/shell.css');
   await cp('src/renderer/components.css', 'dist/renderer/components.css');
-  if (existsSync('src/renderer/themes')) {
-    await cp('src/renderer/themes', 'dist/renderer/themes', { recursive: true });
-  }
   if (existsSync('src/renderer/assets')) {
     await cp('src/renderer/assets', 'dist/renderer/assets', { recursive: true });
   }

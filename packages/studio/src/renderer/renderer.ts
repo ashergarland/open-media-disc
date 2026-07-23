@@ -162,23 +162,34 @@ interface ThemeOption {
   swatches: string[];
 }
 
-/** The available themes. A full token-based theme system is planned. */
+/** The available themes. Each is a token map applied by setting data-theme. */
 const THEME_OPTIONS: ThemeOption[] = [
-  { id: 'dark-aero', name: 'Dark', type: 'Dark', swatches: ['#35c0e0', '#4a7dff', '#0b3d6b', '#0d131e', '#00c896'] },
+  { id: 'midnight', name: 'Midnight', type: 'Dark', swatches: ['#35c0e0', '#4a7dff', '#1d2836', '#0d131e', '#35d17a'] },
+  { id: 'daylight', name: 'Daylight', type: 'Light', swatches: ['#0e9fc4', '#3a6ff0', '#ffffff', '#15212e', '#1f9d57'] },
+  { id: 'ember', name: 'Ember', type: 'Dark', swatches: ['#ff8a3d', '#ffb765', '#271f17', '#15110d', '#4cc27a'] },
 ];
 
-const DEFAULT_THEME_ID = 'dark-aero';
+const DEFAULT_THEME_ID = 'midnight';
 
-/** The brand disc image path for a theme id (each theme ships assets/<id>/logo.png). */
-function logoFor(id: string): string {
-  const themeId = THEME_OPTIONS.some((entry) => entry.id === id) ? id : DEFAULT_THEME_ID;
-  return `assets/${themeId}/logo.png`;
+/** The persisted theme id, falling back to the default when unset or unknown. */
+function loadThemeId(): string {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved && THEME_OPTIONS.some((entry) => entry.id === saved)) return saved;
+  } catch {
+    // Reading the theme choice is best-effort.
+  }
+  return DEFAULT_THEME_ID;
 }
 
-/** The cartridge image path for a theme id (each theme ships assets/<id>/cartridge.png). */
-function cartridgeFor(id: string): string {
-  const themeId = THEME_OPTIONS.some((entry) => entry.id === id) ? id : DEFAULT_THEME_ID;
-  return `assets/${themeId}/cartridge.png`;
+/** The brand disc image (shared across themes). */
+function logoFor(): string {
+  return 'assets/brand-disc.png';
+}
+
+/** The cartridge image (shared across themes). */
+function cartridgeFor(): string {
+  return 'assets/brand-cartridge.png';
 }
 
 
@@ -205,9 +216,7 @@ function setCatalogDir(dir: string): void {
 
 const state: AppState = {
   view: 'home',
-  // Interim: force the dark theme so the app is coherent while views migrate to
-  // the new --omd-* token system. Theme selection returns with the new themes.
-  themeId: 'dark-aero',
+  themeId: loadThemeId(),
   libraryDir: loadCatalogDir(),
   discLoading: false,
   albumLoading: false,
@@ -219,21 +228,15 @@ let mainEl: HTMLElement;
 let shellEl: HTMLElement;
 let nowPlayingHost: HTMLElement;
 let versionLabel: HTMLElement;
-let brandDisc: HTMLImageElement;
 let lastPlayerKey = '';
 let lastDockKey = '';
 
 function applyThemeById(id: string): void {
   const themeId = THEME_OPTIONS.some((entry) => entry.id === id) ? id : DEFAULT_THEME_ID;
-  // Every theme stylesheet stays loaded and parsed; a non-matching `media` keeps
-  // the inactive ones from applying. Switching just flips `media`, which applies
-  // an already-parsed sheet instantly — no fetch/parse gap, so no unstyled flash.
-  document.querySelectorAll<HTMLLinkElement>('link[data-theme]').forEach((link) => {
-    link.media = link.dataset.theme === themeId ? 'all' : 'not all';
-  });
+  // A theme is a token map keyed on data-theme; setting it swaps the --omd-*
+  // values instantly (no stylesheet fetch, so no unstyled flash).
   document.documentElement.setAttribute('data-theme', themeId);
   state.themeId = themeId;
-  if (brandDisc) brandDisc.src = logoFor(themeId);
   try {
     localStorage.setItem(THEME_STORAGE_KEY, themeId);
   } catch {
@@ -417,13 +420,46 @@ function placeholderView(title: string, lead: string, steps: string[]): HTMLElem
 }
 
 function themesView(): HTMLElement {
+  const cards = THEME_OPTIONS.map((theme) => {
+    const active = state.themeId === theme.id;
+    const swatches = el(
+      'div',
+      { class: 'omd-theme-swatches' },
+      theme.swatches.map((hex) => {
+        const chip = el('span', { class: 'omd-swatch' });
+        chip.style.setProperty('background', hex);
+        return chip;
+      }),
+    );
+    const meta = el('div', { class: 'omd-theme-meta' }, [
+      el('div', {}, [
+        el('div', { class: 'omd-theme-name', text: theme.name }),
+        el('div', { class: 'omd-theme-type', text: theme.type }),
+      ]),
+      ...(active ? [el('span', { class: 'omd-theme-check' }, [svgIcon('check', 20)])] : []),
+    ]);
+    return el(
+      'button',
+      {
+        class: `omd-theme-card${active ? ' is-active' : ''}`,
+        type: 'button',
+        'aria-pressed': active ? 'true' : 'false',
+        onclick: () => {
+          if (state.themeId === theme.id) return;
+          applyThemeById(theme.id);
+          renderMain();
+        },
+      },
+      [swatches, meta],
+    );
+  });
   return el('div', { class: 'omd-stack' }, [
     omdPanel('Appearance', [
-      el('div', { class: 'omd-kv' }, [omdKv('Theme', 'Dark')]),
       el('p', {
         class: 'omd-muted',
-        text: 'OMD Studio uses a single dark theme for now. A new theme system with more looks is on the way.',
+        text: 'Pick a theme. Your choice is saved and restored the next time you open OMD Studio.',
       }),
+      el('div', { class: 'omd-theme-grid' }, cards),
     ]),
   ]);
 }
@@ -1324,7 +1360,7 @@ function mediaBadge(disc: StudioDiscInfo): { family: string; write: string } | n
 function cartridgeVisual(disc: StudioDiscInfo): HTMLElement {
   const badge = mediaBadge(disc);
   const children: (Node | string)[] = [
-    el('img', { class: 'cartridge-img', src: cartridgeFor(state.themeId), alt: 'OMD cartridge' }),
+    el('img', { class: 'cartridge-img', src: cartridgeFor(), alt: 'OMD cartridge' }),
   ];
   if (badge || disc.discCapacityBytes) {
     const rows: HTMLElement[] = [];
@@ -2567,11 +2603,11 @@ function buildShell(): void {
       el('div', { class: 'omd', text: 'OMD' }),
       el('div', { class: 'studio', text: 'STUDIO' }),
     ]),
-    (brandDisc = el('img', {
+    el('img', {
       class: 'app-brand-disc',
-      src: logoFor(state.themeId),
+      src: logoFor(),
       alt: '',
-    }) as HTMLImageElement),
+    }),
     el('div', {
       class: 'app-brand-tag',
       text: 'Turn audio albums into real, playable 8cm mini DVD-RW discs.',
