@@ -132,8 +132,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | # | Prompt | Status | Outcome |
 | --- | --- | --- | --- |
 | 01 | `redesign-01-labels-to-tokens` | Done 4127323 | Labels view rebuilt on the `--omd-*` component kit; its bridge CSS removed. |
-| 02 | `redesign-02-editors-to-tokens` | Next | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
-| 03 | `redesign-03-token-contract` | Not started | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
+| 02 | `redesign-02-editors-to-tokens` | Done df77182 | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
+| 03 | `redesign-03-token-contract` | Next | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
 | 04 | `redesign-04-new-themes` | Not started | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Not started | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
 | 06 | `redesign-06-home-hub` | Not started | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
@@ -144,14 +144,18 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `f81533a` feat(studio): Labels view uses the shared library
-  catalog.
+- Last commit: `df77182` refactor(studio): migrate import/mixtape/album editors
+  to tokens.
 - Working tree: clean.
 - Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
   view is a static "Appearance" panel (no crash). The token migration of the
   main spokes (hub, shell, catalog, album detail, disc, create-a-disc, settings,
-  transport dock) and the Labels view is done; the editors (import review,
-  mixtape, album editor) still rely on the bridge CSS.
+  transport dock), the Labels view, and the three editors (import review,
+  mixtape, album editor) is done. What still leans on the theme stylesheet:
+  editor/album layout classes (`.disc-main`, `.album-col`, `.album-art`,
+  `.album-meta`, `.mixtape-*`) read `--ink-*` / `--surface-*` theme tokens, and
+  the bridge still restyles shared primitives (see Log). Step 03 removes the
+  theme-stylesheet dependency.
 
 ## Gotchas and durable facts
 
@@ -174,6 +178,43 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+- 2026-07-22: Prompt 02 done (commit `df77182`). Migrated the three editor
+  surfaces in `renderer.ts` (import review, mixtape builder, catalog album
+  editor) off the legacy `.edit-*` / `.codec-option` markup onto a new
+  `--omd-*` field kit. New token components in `components.css`: `.omd-form`,
+  `.omd-field-group`, `.omd-input` (+ `.invalid`), `.omd-field-error`,
+  `.omd-field-hint`, `.omd-segment`/`.omd-segment-btn`/`.omd-segment-tag` (the
+  codec chooser), `.omd-tracks`/`.omd-tracks-head`, `.omd-track-edit`/`-row`/
+  `-num`/`-details`, and `.omd-editbar`/`.omd-editbar-actions` (the fixed action
+  bar). Reused the existing `.omd-field` / `.omd-field-label` (refactored so the
+  `flex: 1; min-width` only applies inside `.omd-fields`, keeping Labels intact).
+  `editField` / `editTrackRow` / `importTrackRow` / `importCodecField` and the
+  Various Artists hint now emit token classes; validation behavior is unchanged
+  (inline blur validation, `.invalid` highlight, on-Save error banner via the
+  bridge `.notice`). Inputs keep the 44px `--omd-tap` min height. Kept the
+  fit-to-viewport structure (`.omd-stack.omd-fill` fixed `.omd-editbar` +
+  `.omd-scroll` body). DELETED as unreferenced: from the bridge in
+  `components.css`, `.edit-input` / `.edit-label` / `.edit-error`; from
+  `shell.css`, `.edit-form` / `.edit-field` / `.edit-label` / `.edit-input` (+
+  states) / `.edit-error` / `.edit-topbar` / `.edit-topbar-actions` /
+  `.edit-tracks` / `.edit-track*` / `.edit-field-group`, plus the dead
+  `.import-picker` / `.import-picker-head` and the whole `.codec-option*` /
+  `.import-picker-note` picker block. KEPT (still referenced elsewhere, NOT
+  editor-only): `.notice*` and `.status-pill*` (Create a Disc + import status),
+  `.import-status` / `.import-fail*` (catalog import summary), `.view-head` /
+  `.view-title` / `.view-lead` (placeholderView fallback). The editors still use
+  the layout classes `.disc-main` / `.album-col` / `.album-art` / `.album-meta`
+  and the mixtape keeps `.mixtape-*`; those are not field/picker CSS and read
+  theme tokens, so they stay until step 03.
+  - Bridge status: the "Legacy token bridge" section is NOT empty. It still
+    holds `.btn*`, `.link-btn`, `.mini-btn`, `.card`, `.eyebrow`,
+    `.select-lead` / `.rip-status-text`, `.notice*`, `.status-pill*`, plus the
+    "Transport dock" restyle block. Remaining bridge users: Create a Disc view
+    (`btn`, `card`, `notice`, `status-pill`), mixtape builder (`mini-btn`,
+    `link-btn`, `select-lead`, `eyebrow`, `card`), catalog import status
+    (`status-pill`), spinner rows, and the transport dock. Step 03 folds these
+    into the token contract.
 
 - 2026-07-22: Follow-up (commit `f81533a`). Labels no longer asks for its own
   folder: it now reads the shared library catalog (`state.libraryDir` /
