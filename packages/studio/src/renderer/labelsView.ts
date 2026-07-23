@@ -4,6 +4,10 @@
  * A batch label-sheet builder: choose a library folder, pick one or more OMD
  * packages, set how many copies of each, and lay their covers out across as many
  * printable US Letter pages as needed. The sheet can be saved as SVG or printed.
+ *
+ * Built on the `--omd-*` token component kit. The screen fits the viewport: a
+ * fixed source bar plus two bounded scroll regions (the album picker and the
+ * sheet preview), so the page itself never scrolls.
  */
 
 import type { CatalogEntry, StudioLabelSheetRequest } from '../shared/types';
@@ -66,93 +70,98 @@ function initialState(): LabelsState {
 /** Build (and reset) the Labels view. */
 export function renderLabelsView(): HTMLElement {
   state = initialState();
-  host = el('div', { class: 'view labels-view' });
+  host = el('div', { class: 'omd-stack omd-fill' });
   render();
   return host;
 }
 
 function render(): void {
   clearChildren(host);
-  const children: (Node | string)[] = [
-    el('div', { class: 'view-head' }, [
-      el('h1', { class: 'view-title', text: 'Labels' }),
-      el('p', {
-        class: 'view-lead',
-        text: 'Print album-art label sheets. Pick albums, set copies, and lay them out across pages.',
-      }),
-    ]),
-  ];
 
   if (state.loading) {
-    children.push(el('section', { class: 'card' }, [spinnerRow('Scanning...')]));
-  } else if (state.error) {
-    children.push(el('section', { class: 'card' }, [el('p', { class: 'select-lead', text: state.error })]));
-  } else if (state.entries) {
-    children.push(state.entries.length === 0 ? emptyPanel() : buildPanel(state.entries));
-  } else {
-    children.push(
-      el('section', { class: 'card' }, [
-        el('div', { class: 'select-hero' }, [
-          el('span', { class: 'select-icon' }, [svgIcon('label', 54)]),
-          el('p', {
-            class: 'select-lead',
-            text: 'Choose a folder of OMD packages to pick which albums to make labels for.',
-          }),
-          primaryButton('Choose folder...', chooseFolder, 'label'),
-        ]),
-      ]),
-    );
+    host.append(spinnerRow('Scanning\u2026'));
+    return;
   }
-  host.append(...children);
+  if (state.error) {
+    host.append(emptyState('Could not read that folder', state.error, ['change', 'rescan']));
+    return;
+  }
+  if (!state.entries) {
+    host.append(
+      emptyState(
+        'Print label sheets',
+        'Choose a folder of OMD packages to pick which albums to make labels for.',
+        ['choose'],
+      ),
+    );
+    return;
+  }
+  if (state.entries.length === 0) {
+    host.append(
+      emptyState(
+        'No packages here',
+        'Choose a folder that contains OMD package subfolders (for example your build output).',
+        ['change'],
+      ),
+    );
+    return;
+  }
+
+  host.append(sourceRow(), buildPanel(state.entries));
 }
 
-/** Path + change/rescan row shown atop the loaded panels. */
-function sourceRow(): HTMLElement {
-  return el('div', { class: 'burn-source' }, [
-    el('span', { class: 'burn-source-path', text: state.libraryDir ?? '' }),
-    el('div', { class: 'bc-actions' }, [
-      secondaryButton('Rescan', rescan),
-      secondaryButton('Change folder...', chooseFolder),
-    ]),
+type EmptyAction = 'choose' | 'change' | 'rescan';
+
+function emptyState(title: string, sub: string, actions: EmptyAction[]): HTMLElement {
+  const buttons: HTMLElement[] = [];
+  for (const action of actions) {
+    if (action === 'choose') buttons.push(omdButton('Choose folder\u2026', 'label', chooseFolder, { primary: true }));
+    if (action === 'change') buttons.push(omdButton('Change folder\u2026', 'folder', chooseFolder));
+    if (action === 'rescan') buttons.push(omdButton('Rescan', undefined, rescan));
+  }
+  return el('div', { class: 'omd-empty' }, [
+    el('span', { class: 'omd-empty-icon' }, [svgIcon('label', 54)]),
+    el('div', { class: 'omd-empty-title', text: title }),
+    el('p', { class: 'omd-empty-sub', text: sub }),
+    el('div', { class: 'omd-actions' }, buttons),
   ]);
 }
 
-function emptyPanel(): HTMLElement {
-  return el('section', { class: 'card' }, [
-    sourceRow(),
-    el('p', {
-      class: 'select-lead',
-      text: 'No OMD packages here. Choose a folder that contains package subfolders (for example your build output).',
-    }),
+/** Fixed path + change/rescan bar shown atop the builder. */
+function sourceRow(): HTMLElement {
+  return el('div', { class: 'omd-sourcebar' }, [
+    el('span', { class: 'omd-path omd-muted', text: state.libraryDir ?? '' }),
+    el('div', { class: 'omd-actions' }, [
+      omdButton('Rescan', undefined, rescan),
+      omdButton('Change folder\u2026', 'folder', chooseFolder),
+    ]),
   ]);
 }
 
 function buildPanel(entries: CatalogEntry[]): HTMLElement {
-  return el('section', { class: 'card' }, [
-    sourceRow(),
-    el('div', { class: 'grid cols-2' }, [
-      el('div', { class: 'stack' }, [
-        el('div', { class: 'labels-col-head' }, [
-          el('p', { class: 'eyebrow', text: 'Albums' }),
-          el('div', { class: 'labels-col-tools' }, [
-            textButton('Select all', () => {
-              for (const entry of entries) {
-                if (entry.coverDataUri && !state.selected.has(entry.source)) {
-                  state.selected.set(entry.source, 1);
-                }
-              }
-              scheduleBuild();
-            }),
-            textButton('Clear', () => {
-              state.selected.clear();
-              scheduleBuild();
-            }),
-          ]),
-        ]),
-        el('div', { class: 'label-picker' }, entries.map(pickRow)),
+  return el('div', { class: 'omd-labels' }, [albumsColumn(entries), sheetColumn()]);
+}
+
+function albumsColumn(entries: CatalogEntry[]): HTMLElement {
+  return el('div', { class: 'omd-labels-col' }, [
+    el('div', { class: 'omd-labels-head' }, [
+      el('div', { class: 'omd-panel-title', text: 'Albums' }),
+      el('div', { class: 'omd-labels-tools' }, [
+        omdButton('Select all', undefined, () => {
+          for (const entry of entries) {
+            if (entry.coverDataUri && !state.selected.has(entry.source)) {
+              state.selected.set(entry.source, 1);
+            }
+          }
+          scheduleBuild();
+        }),
+        omdButton('Clear', undefined, () => {
+          state.selected.clear();
+          scheduleBuild();
+        }),
       ]),
-      el('div', { class: 'stack' }, [sheetPanel()]),
     ]),
+    el('div', { class: 'omd-scroll' }, [el('div', { class: 'omd-picker' }, entries.map(pickRow))]),
   ]);
 }
 
@@ -162,12 +171,12 @@ function pickRow(entry: CatalogEntry): HTMLElement {
   const copies = state.selected.get(entry.source) ?? 1;
 
   const cover = entry.coverDataUri
-    ? el('img', { class: 'pick-cover', src: entry.coverDataUri, alt: '' })
-    : el('div', { class: 'pick-cover pick-cover-empty' }, [svgIcon('note', 20)]);
+    ? el('img', { class: 'omd-pick-cover', src: entry.coverDataUri, alt: '' })
+    : el('div', { class: 'omd-pick-cover-empty' }, [svgIcon('note', 20)]);
 
   const check = el('input', {
     type: 'checkbox',
-    class: 'pick-check',
+    class: 'omd-pick-check',
     checked: selected ? true : null,
     disabled: hasCover ? null : true,
   }) as HTMLInputElement;
@@ -177,18 +186,18 @@ function pickRow(entry: CatalogEntry): HTMLElement {
     scheduleBuild();
   });
 
-  const info = el('div', { class: 'pick-info' }, [
-    el('div', { class: 'pick-title', text: entry.discId }),
-    el('div', { class: 'muted small', text: `${entry.artist} - ${entry.album}` }),
+  const info = el('div', { class: 'omd-pick-info' }, [
+    el('div', { class: 'omd-pick-title', text: entry.discId }),
+    el('div', { class: 'omd-pick-sub', text: `${entry.artist} - ${entry.album}` }),
   ]);
 
   const right = hasCover
     ? selected
       ? copiesStepper(entry.source, copies)
-      : el('span', { class: 'muted small', text: `${entry.trackCount} tracks` })
-    : el('span', { class: 'muted small', text: 'No cover art' });
+      : el('span', { class: 'omd-pick-sub', text: `${entry.trackCount} tracks` })
+    : el('span', { class: 'omd-pick-sub', text: 'No cover art' });
 
-  return el('label', { class: `label-pick-row${selected ? ' is-selected' : ''}${hasCover ? '' : ' is-disabled'}` }, [
+  return el('label', { class: `omd-pick${selected ? ' selected' : ''}${hasCover ? '' : ' disabled'}` }, [
     check,
     cover,
     info,
@@ -201,15 +210,15 @@ function copiesStepper(source: string, copies: number): HTMLElement {
     state.selected.set(source, Math.max(1, value));
     scheduleBuild();
   };
-  return el('div', { class: 'stepper', role: 'group', 'aria-label': 'Copies' }, [
+  return el('div', { class: 'omd-stepper', role: 'group', 'aria-label': 'Copies' }, [
     stepBtn('\u2212', 'Decrease copies', () => setCopies(copies - 1)),
-    el('span', { class: 'stepper-num', text: String(copies) }),
+    el('span', { class: 'omd-stepper-num', text: String(copies) }),
     stepBtn('+', 'Increase copies', () => setCopies(copies + 1)),
   ]);
 }
 
 function stepBtn(label: string, aria: string, onClick: () => void): HTMLElement {
-  const button = el('button', { class: 'stepper-btn', type: 'button', 'aria-label': aria }, [label]);
+  const button = el('button', { class: 'omd-stepper-btn', type: 'button', 'aria-label': aria }, [label]);
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -218,83 +227,95 @@ function stepBtn(label: string, aria: string, onClick: () => void): HTMLElement 
   return button;
 }
 
-function sheetPanel(): HTMLElement {
-  const children: (Node | string)[] = [
-    el('p', { class: 'eyebrow', text: 'Sheet' }),
-    el('div', { class: 'label-options' }, [
-      labelField('Label size', selectEl(SIZES.map((s) => ({ value: s.key, label: s.label })), state.sizeKey, (v) => {
-        state.sizeKey = v;
-        scheduleBuild();
-      })),
-      labelField('Image fit', selectEl(FITS.map((f) => ({ value: f.key, label: f.label })), state.fit, (v) => {
-        state.fit = v as Fit;
-        scheduleBuild();
-      })),
-    ]),
-  ];
-
-  if (state.selected.size === 0) {
-    children.push(el('p', { class: 'select-lead', text: 'Select one or more albums to build a label sheet.' }));
-    return el('div', { class: 'stack' }, children);
-  }
-
-  if (state.buildError) {
-    children.push(el('p', { class: 'select-lead', text: state.buildError }));
-    return el('div', { class: 'stack' }, children);
-  }
-
-  if (state.building && !state.pages) {
-    children.push(spinnerRow('Building sheet...'));
-    return el('div', { class: 'stack' }, children);
-  }
-
-  if (state.pages) {
-    const pageWord = state.pages.length === 1 ? 'page' : 'pages';
-    children.push(
-      el('div', { class: 'label-summary' }, [
-        el('span', { class: 'label-summary-count', text: `${state.labelCount} labels` }),
-        el('span', { class: 'select-lead', text: ` on ${state.pages.length} ${pageWord}` }),
-      ]),
-    );
-    children.push(
-      el(
-        'div',
-        { class: 'sheet-preview' },
-        state.pages.map((svg, index) =>
-          el('div', { class: 'sheet-page' }, [
-            el('img', {
-              class: 'sheet-page-img',
-              src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
-              alt: `Label sheet page ${index + 1}`,
-            }),
-          ]),
+function sheetColumn(): HTMLElement {
+  const col = el('div', { class: 'omd-labels-col' }, [
+    el('div', { class: 'omd-labels-head' }, [el('div', { class: 'omd-panel-title', text: 'Sheet' })]),
+    el('div', { class: 'omd-fields' }, [
+      field(
+        'Label size',
+        selectEl(
+          SIZES.map((s) => ({ value: s.key, label: s.label })),
+          state.sizeKey,
+          (v) => {
+            state.sizeKey = v;
+            scheduleBuild();
+          },
         ),
       ),
+      field(
+        'Image fit',
+        selectEl(
+          FITS.map((f) => ({ value: f.key, label: f.label })),
+          state.fit,
+          (v) => {
+            state.fit = v as Fit;
+            scheduleBuild();
+          },
+        ),
+      ),
+    ]),
+  ]);
+
+  if (state.selected.size === 0) {
+    col.append(el('p', { class: 'omd-muted', text: 'Select one or more albums to build a label sheet.' }));
+    return col;
+  }
+  if (state.buildError) {
+    col.append(el('p', { class: 'omd-error', text: state.buildError }));
+    return col;
+  }
+  if (state.building && !state.pages) {
+    col.append(spinnerRow('Building sheet\u2026'));
+    return col;
+  }
+  if (state.pages) {
+    const pageWord = state.pages.length === 1 ? 'page' : 'pages';
+    col.append(
+      el('p', { class: 'omd-summary' }, [
+        el('strong', { text: `${state.labelCount} labels` }),
+        el('span', { text: ` on ${state.pages.length} ${pageWord}` }),
+      ]),
+    );
+    col.append(
+      el('div', { class: 'omd-scroll' }, [
+        el(
+          'div',
+          { class: 'omd-sheet-pages' },
+          state.pages.map((svg, index) =>
+            el('div', { class: 'omd-sheet-page' }, [
+              el('img', {
+                src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+                alt: `Label sheet page ${index + 1}`,
+              }),
+            ]),
+          ),
+        ),
+      ]),
     );
     if (state.skipped.length) {
-      children.push(
+      col.append(
         el('p', {
-          class: 'select-lead',
+          class: 'omd-muted',
           text: `${state.skipped.length} album${state.skipped.length === 1 ? '' : 's'} skipped (no cover art).`,
         }),
       );
     }
-    children.push(
-      el('div', { class: 'bc-actions' }, [
-        primaryButton('Print...', printSheet, 'label'),
-        secondaryButton('Save SVG...', saveSheet),
+    col.append(
+      el('div', { class: 'omd-actions' }, [
+        omdButton('Print\u2026', 'label', printSheet, { primary: true }),
+        omdButton('Save SVG\u2026', undefined, saveSheet),
       ]),
     );
     if (state.saveNotice) {
-      children.push(el('p', { class: 'select-lead', text: state.saveNotice }));
+      col.append(el('p', { class: 'omd-muted', text: state.saveNotice }));
     }
   }
 
-  return el('div', { class: 'stack' }, children);
+  return col;
 }
 
-function labelField(label: string, control: HTMLElement): HTMLElement {
-  return el('label', { class: 'label-field' }, [el('span', { class: 'eyebrow', text: label }), control]);
+function field(label: string, control: HTMLElement): HTMLElement {
+  return el('label', { class: 'omd-field' }, [el('span', { class: 'omd-field-label', text: label }), control]);
 }
 
 function selectEl(
@@ -303,7 +324,7 @@ function selectEl(
   onChange: (value: string) => void,
 ): HTMLSelectElement {
   const select = el('select', {
-    class: 'drive-select',
+    class: 'omd-select',
     onchange: (event: Event) => onChange((event.target as HTMLSelectElement).value),
   }) as HTMLSelectElement;
   for (const option of options) {
@@ -396,36 +417,25 @@ async function printSheet(): Promise<void> {
   }
 }
 
-/* Shared bits */
-function primaryButton(
+/* Shared bits (token kit). */
+function omdButton(
   label: string,
+  icon: IconName | undefined,
   onClick: () => void | Promise<void>,
-  icon?: IconName,
+  opts: { primary?: boolean } = {},
 ): HTMLElement {
-  const kids: (Node | string)[] = [el('span', { class: 'liquid-rim', 'aria-hidden': 'true' })];
-  if (icon) {
-    const glyph = svgIcon(icon, 20);
-    glyph.setAttribute('class', 'btn__icon');
-    kids.push(glyph);
-  }
-  kids.push(el('span', { class: 'btn__label', text: label }));
+  const children: (Node | string)[] = [];
+  if (icon) children.push(svgIcon(icon, 18));
+  children.push(label);
   return el(
     'button',
-    { class: 'btn btn--primary', type: 'button', onclick: () => void onClick() },
-    kids,
+    {
+      class: `omd-btn${opts.primary ? ' omd-btn--primary' : ''}`,
+      type: 'button',
+      onclick: () => void onClick(),
+    },
+    children,
   );
-}
-
-function secondaryButton(label: string, onClick: () => void | Promise<void>): HTMLElement {
-  return el('button', { class: 'btn btn--secondary', type: 'button', onclick: () => void onClick() }, [
-    el('span', { class: 'liquid-rim', 'aria-hidden': 'true' }),
-    el('span', { class: 'button-surface', 'aria-hidden': 'true' }),
-    el('span', { class: 'btn__label', text: label }),
-  ]);
-}
-
-function textButton(label: string, onClick: () => void): HTMLElement {
-  return el('button', { class: 'link-btn', type: 'button', onclick: onClick }, [label]);
 }
 
 function spinnerRow(text: string): HTMLElement {

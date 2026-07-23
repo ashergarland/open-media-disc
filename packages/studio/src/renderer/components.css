@@ -641,6 +641,193 @@
   line-height: 1.4;
 }
 
+/* Labels: source bar, album picker, copies stepper, and sheet preview. */
+.omd-sourcebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.omd-sourcebar .omd-path {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Two columns when wide, stacked when narrow (content-driven, no breakpoints). */
+.omd-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: clamp(14px, 2vw, 22px);
+  flex: 1;
+  min-height: 0;
+}
+.omd-labels-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.omd-labels-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.omd-labels-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.omd-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+.omd-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--omd-tap);
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+  color: var(--omd-text);
+  cursor: pointer;
+}
+.omd-pick.selected {
+  border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
+}
+.omd-pick.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.omd-pick-check {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--omd-accent);
+}
+.omd-pick-cover,
+.omd-pick-cover-empty {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--omd-surface);
+}
+.omd-pick-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--omd-text-dim);
+}
+.omd-pick-info {
+  flex: 1;
+  min-width: 0;
+}
+.omd-pick-title {
+  font: 600 14px / 1.3 var(--omd-font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omd-pick-sub {
+  color: var(--omd-text-dim);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A +/- copies stepper (44px finger targets). */
+.omd-stepper {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1px solid var(--omd-border-strong);
+  background: var(--omd-surface);
+  overflow: hidden;
+}
+.omd-stepper-btn {
+  width: var(--omd-tap);
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--omd-text);
+  font: 700 18px / 1 var(--omd-font);
+  cursor: pointer;
+}
+.omd-stepper-btn:hover {
+  background: color-mix(in srgb, var(--omd-accent) 16%, transparent);
+}
+.omd-stepper-num {
+  min-width: 40px;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  border-inline: 1px solid var(--omd-border);
+  font: 700 15px / 1 var(--omd-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sheet options + preview. */
+.omd-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.omd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+.omd-field-label {
+  color: var(--omd-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font: 700 12px / 1 var(--omd-font);
+}
+.omd-summary {
+  color: var(--omd-text-dim);
+}
+.omd-summary strong {
+  color: var(--omd-text);
+}
+.omd-error {
+  color: #ef7d6f;
+}
+.omd-sheet-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+/* White paper is semantic (a printed sheet), not a theme color. */
+.omd-sheet-page {
+  width: min(240px, 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--omd-border);
+  background: #fff;
+  box-shadow: var(--omd-shadow);
+}
+.omd-sheet-page img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /*
  * Legacy token bridge.
  *
@@ -783,15 +970,8 @@
   font: 700 12px / 1 var(--omd-font);
 }
 .select-lead,
-.burn-source-path,
 .rip-status-text {
   color: var(--omd-text-dim);
-}
-.select-title {
-  color: var(--omd-text);
-}
-.select-icon {
-  color: var(--omd-accent);
 }
 
 /* Notices. */
