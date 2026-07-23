@@ -438,6 +438,34 @@ body {
   height: 16px;
 }
 
+/* Verifying: a compact labeled indeterminate progress affordance. */
+.omd-verify {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 160px;
+}
+.omd-verify-label {
+  font: 600 12px / 1 var(--omd-font);
+  color: var(--omd-text-dim);
+}
+.omd-verify-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--omd-text) 12%, transparent);
+}
+.omd-verify-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--omd-accent);
+  animation: omd-indeterminate 1.1s ease-in-out infinite;
+}
+
 /* Track scroll-view. */
 .omd-tracklist {
   border: 1px solid var(--omd-border);

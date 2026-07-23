@@ -258,6 +258,8 @@ function setView(view: ViewId): void {
   // Entering the Catalog or Labels re-scans the library folder so newly
   // ripped/burned/imported packages appear without a manual refresh.
   if ((view === 'catalog' || view === 'labels') && state.libraryDir && !state.album) void rescanLibrary();
+  // Entering the Disc view auto-detects an already-inserted disc (no manual scan).
+  if (view === 'disc' && !state.disc) void detectDisc(true);
   // The Home hub is full-bleed (no sidebar); every other view keeps the sidebar.
   shellEl?.classList.toggle('app-shell--home', view === 'home');
   renderMain();
@@ -574,16 +576,17 @@ function onDiscChanged(disc: StudioDiscInfo | null): void {
   if (state.view === 'disc') renderMain();
 }
 
-async function detectDisc(): Promise<void> {
+async function detectDisc(auto = false): Promise<void> {
+  if (state.discLoading || state.disc) return;
   state.discLoading = true;
-  state.discError = undefined;
-  renderMain();
+  if (!auto) state.discError = undefined;
+  if (state.view === 'disc') renderMain();
   try {
     const disc = await window.omd.detectDisc();
     if (disc) setDisc(disc);
-    else state.discError = 'No OMD disc detected. Insert a burned OMD disc to play it here.';
+    else if (!auto) state.discError = 'No OMD disc detected. Insert a burned OMD disc to play it here.';
   } catch (err) {
-    state.discError = (err as Error).message;
+    if (!auto) state.discError = (err as Error).message;
   }
   state.discLoading = false;
   if (state.view === 'disc') renderMain();
@@ -1248,9 +1251,11 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     (source === 'album' && state.albumVerifying === true);
   const verified = source === 'disc' && state.verify ? state.verify.valid : disc.valid;
   const badge = verifying
-    ? el('span', { class: 'omd-badge' }, [
-        el('span', { class: 'spinner', 'aria-hidden': 'true' }),
-        'Verifying\u2026',
+    ? el('span', { class: 'omd-verify', role: 'status' }, [
+        el('span', { class: 'omd-verify-label', text: 'Verifying integrity\u2026' }),
+        el('span', { class: 'omd-verify-bar', 'aria-hidden': 'true' }, [
+          el('span', { class: 'omd-verify-bar-fill' }),
+        ]),
       ])
     : el('span', { class: `omd-badge${verified ? ' ok' : ''}` }, [
         svgIcon('check', 16),
@@ -1859,6 +1864,14 @@ function importReviewView(): HTMLElement {
     return frame([el('section', { class: 'card' }, [spinnerRow('Reading the album\u2026')])]);
   }
 
+  if (review.saving) {
+    const name = review.album.trim() || 'album';
+    return frame([
+      el('section', { class: 'card' }, [
+        spinnerRow(`Importing ${name}\u2026 copying and verifying tracks, this can take a moment.`),
+      ]),
+    ]);
+  }
   const cover = review.coverPreview;
   const art = el('div', { class: 'album-col' }, [
     el('div', { class: 'album-art' }, [
@@ -2647,6 +2660,10 @@ async function init(): Promise<void> {
   });
   setView(state.view);
   renderNowPlayingBar();
+  // Proactively detect an already-inserted disc on boot. The live watch only
+  // fires on a change, and its first push can race the listener registration,
+  // so a disc that was already in the drive would otherwise need a manual scan.
+  void detectDisc(true);
 
   try {
     state.info = await window.omd.getInfo();
