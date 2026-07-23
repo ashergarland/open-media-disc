@@ -8,20 +8,78 @@
  */
 
 :root {
+  /*
+   * The --omd-* token contract.
+   *
+   * This is the complete design vocabulary the app styles against. Every value
+   * here is a strong default (the dark direction), so the app renders correctly
+   * from components.css alone, with no theme stylesheet. A theme (step 04) is
+   * just a map that overrides these values; it never ships structural CSS.
+   *
+   * Token groups:
+   *   Base + surfaces  base background, layered surfaces, borders/hairline.
+   *   Text             primary, dim, and on-accent (text over an accent fill).
+   *   Accent           primary + secondary accent.
+   *   Status           danger, success, warning (+ danger text).
+   *   Controls         control fill/border, focus ring, slider colors.
+   *   Shape + motion    radii, shadow/elevation, blur, tap size, font.
+   */
+
+  /* Base + surfaces */
   --omd-bg: #0d131e;
   --omd-surface: #161f2c;
   --omd-surface-2: #1d2836;
   --omd-border: rgba(255, 255, 255, 0.08);
   --omd-border-strong: rgba(255, 255, 255, 0.14);
+  --omd-hairline: rgba(255, 255, 255, 0.08);
+
+  /* Text */
   --omd-text: #e8eef6;
   --omd-text-dim: #9db0c6;
+  --omd-on-accent: #04222b;
+
+  /* Accent */
   --omd-accent: #35c0e0;
   --omd-accent-2: #4a7dff;
+
+  /* Status */
+  --omd-danger: #ef4d38;
+  --omd-danger-text: #ef7d6f;
+  --omd-success: #35d17a;
+  --omd-warning: #f0a020;
+
+  /* Controls */
+  --omd-control: var(--omd-surface);
+  --omd-control-border: var(--omd-border-strong);
+  --omd-focus: var(--omd-accent);
+  --omd-slider-track: var(--omd-surface);
+  --omd-slider-fill: var(--omd-accent);
+  --omd-slider-thumb: var(--omd-text);
+
+  /* Shape + motion */
   --omd-radius: 16px;
   --omd-radius-lg: 24px;
   --omd-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+  --omd-blur: 14px;
   --omd-tap: 44px;
   --omd-font: var(--font, system-ui, "Segoe UI", Roboto, sans-serif);
+
+  /*
+   * Compatibility aliases: legacy theme-token names still read by the layout
+   * classes in shell.css (and the soon-to-go bridge). Resolving them from the
+   * --omd-* contract here means the app is styled entirely from this file, so
+   * dark-aero.css can be dropped in step 04 without regressions. These aliases
+   * are removed once shell.css is fully on --omd-* (step 05 cleanup).
+   */
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ink: var(--omd-text);
+  --ink-strong: var(--omd-text);
+  --ink-muted: var(--omd-text-dim);
+  --surface-1: var(--omd-surface-2);
+  --surface-border: var(--omd-border-strong);
+  --surface-hairline: var(--omd-border);
+  --pal-cyan: var(--omd-accent);
+  --pal-green: var(--omd-success);
 }
 
 /* Full-screen touch shell: no sidebar; content scrolls, transport docked. */
@@ -137,7 +195,7 @@
 .omd-btn--primary {
   border-color: transparent;
   background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 68%, #000));
-  color: #04222b;
+  color: var(--omd-on-accent);
 }
 
 .omd-muted {
@@ -225,8 +283,8 @@
   border-color: var(--omd-accent);
 }
 .omd-chip-btn.danger:hover {
-  border-color: #ef4d38;
-  color: #ef4d38;
+  border-color: var(--omd-danger);
+  color: var(--omd-danger);
 }
 
 /* Album detail: hero art + info, then a track scroll-view. */
@@ -317,10 +375,10 @@
 }
 .omd-badge.ok {
   color: var(--omd-text);
-  border-color: color-mix(in srgb, #35d17a 55%, transparent);
+  border-color: color-mix(in srgb, var(--omd-success) 55%, transparent);
 }
 .omd-badge.ok svg {
-  color: #35d17a;
+  color: var(--omd-success);
 }
 .omd-badge svg {
   width: 16px;
@@ -808,7 +866,7 @@
   color: var(--omd-text);
 }
 .omd-error {
-  color: #ef7d6f;
+  color: var(--omd-danger-text);
 }
 .omd-sheet-pages {
   display: flex;
@@ -881,11 +939,11 @@
   border-color: var(--omd-accent);
 }
 .omd-input.invalid {
-  border-color: #ef4d38;
+  border-color: var(--omd-danger);
 }
 .omd-field-error {
   min-height: 14px;
-  color: #ef7d6f;
+  color: var(--omd-danger-text);
   font: 600 12px / 1.2 var(--omd-font);
 }
 .omd-field-hint {
@@ -1031,7 +1089,7 @@
 .btn--primary {
   border-color: transparent;
   background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 68%, #000));
-  color: #04222b;
+  color: var(--omd-on-accent);
 }
 .btn:hover {
   border-color: var(--omd-accent);
@@ -1063,8 +1121,8 @@
   border-color: var(--omd-accent);
 }
 .mini-btn.danger:hover {
-  border-color: #ef4d38;
-  color: #ef4d38;
+  border-color: var(--omd-danger);
+  color: var(--omd-danger);
 }
 
 /* Cards flattened to token surfaces. */
@@ -1108,10 +1166,10 @@
   color: inherit;
 }
 .notice-error {
-  border-color: color-mix(in srgb, #ef4d38 55%, transparent);
+  border-color: color-mix(in srgb, var(--omd-danger) 55%, transparent);
 }
 .notice-warning {
-  border-color: color-mix(in srgb, #f0a020 55%, transparent);
+  border-color: color-mix(in srgb, var(--omd-warning) 55%, transparent);
 }
 .notice-info {
   border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
@@ -1131,10 +1189,10 @@
   font: 600 12px / 1 var(--omd-font);
 }
 .status-pill.ok {
-  border-color: color-mix(in srgb, #35d17a 55%, transparent);
+  border-color: color-mix(in srgb, var(--omd-success) 55%, transparent);
 }
 .status-pill.bad {
-  border-color: color-mix(in srgb, #ef4d38 55%, transparent);
+  border-color: color-mix(in srgb, var(--omd-danger) 55%, transparent);
 }
 
 /* Transport dock: flatten the glassy showcase controls to the token look. */
@@ -1238,7 +1296,7 @@
   border-color: transparent !important;
 }
 .pc-button.primary .pc-icon {
-  color: #04222b !important;
+  color: var(--omd-on-accent) !important;
 }
 .pc-button.is-active {
   border-color: var(--omd-accent) !important;
@@ -1253,20 +1311,20 @@
 
 /* Dock sliders (scrubber + volume). */
 .range-compact .track {
-  background: var(--omd-surface) !important;
-  border-color: var(--omd-border-strong) !important;
+  background: var(--omd-slider-track) !important;
+  border-color: var(--omd-control-border) !important;
   box-shadow: none !important;
 }
 .range-compact .track::after {
   display: none !important;
 }
 .range-compact .track-fill {
-  background: var(--omd-accent) !important;
+  background: var(--omd-slider-fill) !important;
   box-shadow: none !important;
 }
 .range-compact .thumb {
-  background: var(--omd-text) !important;
-  border: 1px solid var(--omd-border-strong) !important;
+  background: var(--omd-slider-thumb) !important;
+  border: 1px solid var(--omd-control-border) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 .range-compact .thumb::before,
@@ -1288,5 +1346,234 @@
   color: var(--omd-accent) !important;
 }
 .npd-chip.verified svg {
-  color: #35d17a !important;
+  color: var(--omd-success) !important;
+}
+
+/*
+ * Transport dock structure (self-contained).
+ *
+ * Geometry for the Now Playing dock, its player-control buttons, and the
+ * compact themed slider. The color rules above are token-driven; these rules
+ * own the layout so the dock no longer needs the theme stylesheet's structure.
+ */
+.now-playing-dock {
+  display: grid;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+.npd-now {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+.npd-thumb {
+  flex: 0 0 auto;
+  border-radius: 11px;
+}
+.npd-meta {
+  display: grid;
+  min-width: 0;
+}
+.npd-title,
+.npd-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.npd-title {
+  font: 700 15px var(--omd-font);
+}
+.npd-artist {
+  font: 600 13px var(--omd-font);
+}
+.npd-center {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-width: 0;
+}
+.npd-transport {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.npd-scrubber {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.npd-time {
+  flex: 0 0 auto;
+  font: 600 12px var(--omd-font);
+  font-variant-numeric: tabular-nums;
+}
+.npd-side {
+  display: grid;
+  gap: 9px;
+  justify-items: end;
+  align-content: center;
+}
+.npd-vol {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.npd-vol svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+.npd-badges {
+  display: flex;
+  gap: 8px;
+}
+.npd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font: 700 11.5px var(--omd-font);
+  letter-spacing: 0.03em;
+}
+.npd-chip svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+/* Player-control buttons (the dock transport). */
+.pc-button {
+  --pc-size: 48px;
+  position: relative;
+  isolation: isolate;
+  width: var(--pc-size);
+  height: var(--pc-size);
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pc-button.pc-sm {
+  --pc-size: 48px;
+}
+.pc-button.primary {
+  --pc-size: 56px;
+}
+.pc-content {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.pc-icon {
+  width: 22px;
+  height: 22px;
+}
+.pc-button.primary .pc-icon {
+  width: 24px;
+  height: 24px;
+}
+.pc-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact themed slider (dock scrubber + volume). Colors are set above. */
+.range-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.range-control .track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--omd-control-border);
+}
+.range-control .track-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--slider-value, 0%);
+  border-radius: inherit;
+}
+.range-control .range-input {
+  position: absolute;
+  inset: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 30px;
+  width: 100%;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.range-control .range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.range-control .range-input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.range-control .range-input:focus-visible {
+  outline: 2px solid var(--omd-focus);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+.range-control .thumb {
+  position: absolute;
+  z-index: 8;
+  left: var(--slider-value, 0%);
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Busy spinner (self-contained). */
+@keyframes omd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid var(--omd-border-strong);
+  border-top-color: var(--omd-accent);
+  animation: omd-spin 0.8s linear infinite;
+}
+.spinner.spinner-lg {
+  width: 44px;
+  height: 44px;
+  border-width: 4px;
 }
