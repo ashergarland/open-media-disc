@@ -118,6 +118,8 @@ export interface BuildPackagesLabelOptions {
   page?: Partial<LabelPage>;
   /** A label template to render with. When set, it drives page, shape, and layout. */
   template?: LabelTemplate;
+  /** Extra covers (custom images) appended after the package covers. */
+  extraCovers?: { imageHref: string; copies?: number }[];
 }
 
 /** Result of {@link buildPackagesLabelSheet}: one or more paginated sheets. */
@@ -156,6 +158,13 @@ export async function buildPackagesLabelSheet(
     const copies = Math.max(1, Math.floor(selection.copies ?? 1));
     for (let i = 0; i < copies; i += 1) {
       covers.push(imageHref);
+    }
+  }
+
+  for (const extra of options.extraCovers ?? []) {
+    const copies = Math.max(1, Math.floor(extra.copies ?? 1));
+    for (let i = 0; i < copies; i += 1) {
+      covers.push(extra.imageHref);
     }
   }
 

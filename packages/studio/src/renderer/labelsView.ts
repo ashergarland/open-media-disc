@@ -10,10 +10,19 @@
  * sheet preview), so the page itself never scrolls.
  */
 
-import type { CatalogEntry, StudioLabelSheetRequest, StudioLabelTemplate } from '../shared/types';
+import type {
+  CatalogEntry,
+  StudioLabelImage,
+  StudioLabelSession,
+  StudioLabelSheetRequest,
+  StudioLabelTemplate,
+} from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 
 type Fit = 'fill' | 'fit' | 'stretch';
+
+/** A custom image added to the sheet (a data URI plus a copy count). */
+type CustomImage = StudioLabelImage & { copies: number };
 
 /** The default template id (matches the SDK's mini CD jewel insert). */
 const DEFAULT_TEMPLATE_ID = 'mini-cd-jewel';
@@ -39,6 +48,7 @@ export interface LabelsContext {
 
 interface LabelsState {
   selected: Map<string, number>;
+  customImages: CustomImage[];
   templateId: string;
   fit: Fit;
   building: boolean;
@@ -57,6 +67,7 @@ let buildTimer: ReturnType<typeof setTimeout> | undefined;
 function initialState(): LabelsState {
   return {
     selected: new Map(),
+    customImages: [],
     templateId: DEFAULT_TEMPLATE_ID,
     fit: 'fill',
     building: false,
@@ -142,11 +153,13 @@ function emptyState(title: string, sub: string, actions: EmptyAction[]): HTMLEle
   ]);
 }
 
-/** Fixed library-path + change/rescan bar shown atop the builder. */
+/** Fixed library-path + session/rescan bar shown atop the builder. */
 function sourceRow(): HTMLElement {
   return el('div', { class: 'omd-sourcebar' }, [
     el('span', { class: 'omd-path omd-muted', text: ctx.libraryDir ?? '' }),
     el('div', { class: 'omd-actions' }, [
+      omdButton('Open session\u2026', undefined, () => void openSession()),
+      omdButton('Save session\u2026', undefined, () => void saveSession()),
       omdButton('Rescan', undefined, ctx.onRescan),
       omdButton('Change folder\u2026', 'folder', ctx.onChooseLibrary),
     ]),
@@ -162,6 +175,7 @@ function albumsColumn(entries: CatalogEntry[]): HTMLElement {
     el('div', { class: 'omd-labels-head' }, [
       el('div', { class: 'omd-panel-title', text: 'Albums' }),
       el('div', { class: 'omd-labels-tools' }, [
+        omdButton('Add image\u2026', 'note', () => void addCustomImage()),
         omdButton('Select all', undefined, () => {
           for (const entry of entries) {
             if (entry.coverDataUri && !state.selected.has(entry.source)) {
@@ -172,11 +186,17 @@ function albumsColumn(entries: CatalogEntry[]): HTMLElement {
         }),
         omdButton('Clear', undefined, () => {
           state.selected.clear();
+          state.customImages = [];
           scheduleBuild();
         }),
       ]),
     ]),
-    el('div', { class: 'omd-scroll' }, [el('div', { class: 'omd-picker' }, entries.map(pickRow))]),
+    el('div', { class: 'omd-scroll' }, [
+      el('div', { class: 'omd-picker' }, [
+        ...entries.map(pickRow),
+        ...state.customImages.map((img, index) => customRow(img, index)),
+      ]),
+    ]),
   ]);
 }
 
@@ -208,7 +228,10 @@ function pickRow(entry: CatalogEntry): HTMLElement {
 
   const right = hasCover
     ? selected
-      ? copiesStepper(entry.source, copies)
+      ? stepper(copies, (v) => {
+          state.selected.set(entry.source, v);
+          scheduleBuild();
+        })
       : el('span', { class: 'omd-pick-sub', text: `${entry.trackCount} tracks` })
     : el('span', { class: 'omd-pick-sub', text: 'No cover art' });
 
@@ -220,15 +243,43 @@ function pickRow(entry: CatalogEntry): HTMLElement {
   ]);
 }
 
-function copiesStepper(source: string, copies: number): HTMLElement {
-  const setCopies = (value: number): void => {
-    state.selected.set(source, Math.max(1, value));
+/** A row for a user-added custom image (always included, with a remove button). */
+function customRow(img: CustomImage, index: number): HTMLElement {
+  const remove = el(
+    'button',
+    { class: 'omd-chip-btn danger grow0', type: 'button', 'aria-label': 'Remove image' },
+    [svgIcon('trash', 16)],
+  );
+  remove.addEventListener('click', () => {
+    state.customImages.splice(index, 1);
     scheduleBuild();
-  };
+  });
+  return el('div', { class: 'omd-pick selected' }, [
+    el('img', { class: 'omd-pick-cover', src: img.dataUri, alt: '' }),
+    el('div', { class: 'omd-pick-info' }, [
+      el('div', { class: 'omd-pick-title', text: img.name }),
+      el('div', { class: 'omd-pick-sub', text: 'Custom image' }),
+    ]),
+    stepper(img.copies, (v) => {
+      img.copies = v;
+      scheduleBuild();
+    }),
+    remove,
+  ]);
+}
+
+async function addCustomImage(): Promise<void> {
+  const img = await window.omd.pickLabelImage();
+  if (!img) return;
+  state.customImages.push({ ...img, copies: 1 });
+  scheduleBuild();
+}
+
+function stepper(value: number, onChange: (value: number) => void): HTMLElement {
   return el('div', { class: 'omd-stepper', role: 'group', 'aria-label': 'Copies' }, [
-    stepBtn('\u2212', 'Decrease copies', () => setCopies(copies - 1)),
-    el('span', { class: 'omd-stepper-num', text: String(copies) }),
-    stepBtn('+', 'Increase copies', () => setCopies(copies + 1)),
+    stepBtn('\u2212', 'Decrease copies', () => onChange(Math.max(1, value - 1))),
+    el('span', { class: 'omd-stepper-num', text: String(value) }),
+    stepBtn('+', 'Increase copies', () => onChange(value + 1)),
   ]);
 }
 
@@ -270,8 +321,10 @@ function sheetColumn(): HTMLElement {
     ]),
   ]);
 
-  if (state.selected.size === 0) {
-    col.append(el('p', { class: 'omd-muted', text: 'Select one or more albums to build a label sheet.' }));
+  if (!hasLabels()) {
+    col.append(
+      el('p', { class: 'omd-muted', text: 'Select one or more albums, or add an image, to build a label sheet.' }),
+    );
     return col;
   }
   if (state.buildError) {
@@ -353,13 +406,57 @@ function request(): StudioLabelSheetRequest {
     packages: [...state.selected].map(([source, copies]) => ({ source, copies })),
     templateId: state.templateId,
     fit: state.fit,
+    customImages: state.customImages.map((c) => ({ imageHref: c.dataUri, copies: c.copies })),
   };
+}
+
+/** True when the sheet has at least one label (a selected album or a custom image). */
+function hasLabels(): boolean {
+  return state.selected.size > 0 || state.customImages.length > 0;
+}
+
+async function saveSession(): Promise<void> {
+  const session: StudioLabelSession = {
+    version: 1,
+    templateId: state.templateId,
+    fit: state.fit,
+    packages: [...state.selected].map(([source, copies]) => ({ source, copies })),
+    customImages: state.customImages.map((c) => ({ name: c.name, dataUri: c.dataUri, copies: c.copies })),
+  };
+  try {
+    const saved = await window.omd.saveLabelSession(session);
+    state.saveNotice = saved ? `Session saved to ${saved}` : undefined;
+  } catch (err) {
+    state.saveNotice = `Save failed: ${(err as Error).message}`;
+  }
+  render();
+}
+
+async function openSession(): Promise<void> {
+  let session: StudioLabelSession | null;
+  try {
+    session = await window.omd.openLabelSession();
+  } catch (err) {
+    state.saveNotice = `Open failed: ${(err as Error).message}`;
+    render();
+    return;
+  }
+  if (!session) return;
+  state.templateId = session.templateId;
+  state.fit = session.fit;
+  state.selected = new Map(session.packages.map((p) => [p.source, p.copies]));
+  state.customImages = session.customImages.map((c) => ({
+    name: c.name,
+    dataUri: c.dataUri,
+    copies: c.copies,
+  }));
+  scheduleBuild();
 }
 
 function scheduleBuild(): void {
   state.saveNotice = undefined;
   if (buildTimer) clearTimeout(buildTimer);
-  if (state.selected.size === 0) {
+  if (!hasLabels()) {
     state.pages = undefined;
     state.building = false;
     state.buildError = undefined;

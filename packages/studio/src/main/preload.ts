@@ -16,6 +16,9 @@ const api: OmdStudioApi = {
   buildLabelSheet: (request) => ipcRenderer.invoke('omd:buildLabelSheet', request),
   saveLabelSheet: (request) => ipcRenderer.invoke('omd:saveLabelSheet', request),
   printLabelSheet: (request) => ipcRenderer.invoke('omd:printLabelSheet', request),
+  pickLabelImage: () => ipcRenderer.invoke('omd:pickLabelImage'),
+  saveLabelSession: (session) => ipcRenderer.invoke('omd:saveLabelSession', session),
+  openLabelSession: () => ipcRenderer.invoke('omd:openLabelSession'),
   burn: (request, onProgress) => {
     const listener = (_event: IpcRendererEvent, progress: StudioBurnProgress): void =>
       onProgress(progress);

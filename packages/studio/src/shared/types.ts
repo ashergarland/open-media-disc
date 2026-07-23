@@ -40,6 +40,23 @@ export interface StudioLabelSheetRequest {
   /** The label template to render with (see {@link StudioLabelTemplate}). */
   templateId?: string;
   fit?: 'fill' | 'fit' | 'stretch';
+  /** Custom images added to the sheet, as data URIs, with a copy count each. */
+  customImages?: { imageHref: string; copies: number }[];
+}
+
+/** A custom image the user added to a label sheet (kept as a self-contained data URI). */
+export interface StudioLabelImage {
+  name: string;
+  dataUri: string;
+}
+
+/** A saved Labels work session: selections and settings to reopen later. */
+export interface StudioLabelSession {
+  version: 1;
+  templateId: string;
+  fit: 'fill' | 'fit' | 'stretch';
+  packages: StudioLabelSelection[];
+  customImages: { name: string; dataUri: string; copies: number }[];
 }
 
 /** A label template offered in the Labels view (a page + label-stock preset). */
@@ -339,6 +356,9 @@ export interface OmdStudioApi {
   buildLabelSheet(request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult>;
   saveLabelSheet(request: StudioLabelSheetRequest): Promise<string | null>;
   printLabelSheet(request: StudioLabelSheetRequest): Promise<boolean>;
+  pickLabelImage(): Promise<StudioLabelImage | null>;
+  saveLabelSession(session: StudioLabelSession): Promise<string | null>;
+  openLabelSession(): Promise<StudioLabelSession | null>;
   burn(
     request: StudioBurnRequest,
     onProgress: (progress: StudioBurnProgress) => void,

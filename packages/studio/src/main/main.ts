@@ -51,6 +51,8 @@ import type {
   StudioImportScan,
   StudioSourceDraft,
   StudioInfo,
+  StudioLabelImage,
+  StudioLabelSession,
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
   StudioLabelTemplate,
@@ -372,7 +374,18 @@ function labelOptions(request: StudioLabelSheetRequest) {
     packages: request.packages.map((entry) => ({ packageDir: entry.source, copies: entry.copies })),
     ...(template ? { template } : {}),
     ...(request.fit ? { fit: request.fit } : {}),
+    ...(request.customImages && request.customImages.length
+      ? { extraCovers: request.customImages.map((img) => ({ imageHref: img.imageHref, copies: img.copies })) }
+      : {}),
   };
+}
+
+/** MIME type for a cover/label image path, or null if unsupported. */
+function imageMime(filePath: string): string | null {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  return null;
 }
 
 /** Print a batch of SVG pages through a hidden window at true physical size. */
@@ -422,6 +435,61 @@ ipcMain.handle('omd:labelTemplates', (): StudioLabelTemplate[] =>
     shape: template.shape,
   })),
 );
+
+ipcMain.handle('omd:pickLabelImage', async (): Promise<StudioLabelImage | null> => {
+  const pick = await dialog.showOpenDialog({
+    title: 'Add an image to the label sheet',
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }],
+  });
+  if (pick.canceled || pick.filePaths.length === 0) return null;
+  const filePath = pick.filePaths[0]!;
+  const mime = imageMime(filePath);
+  if (!mime) return null;
+  const bytes = await readFile(filePath);
+  return { name: path.basename(filePath), dataUri: `data:${mime};base64,${bytes.toString('base64')}` };
+});
+
+ipcMain.handle(
+  'omd:saveLabelSession',
+  async (_event, session: StudioLabelSession): Promise<string | null> => {
+    const save = await dialog.showSaveDialog({
+      title: 'Save label session',
+      defaultPath: 'labels.omdsession.json',
+      filters: [{ name: 'OMD label session', extensions: ['json'] }],
+    });
+    if (save.canceled || !save.filePath) return null;
+    await writeFile(save.filePath, JSON.stringify(session, null, 2), 'utf8');
+    return save.filePath;
+  },
+);
+
+ipcMain.handle('omd:openLabelSession', async (): Promise<StudioLabelSession | null> => {
+  const pick = await dialog.showOpenDialog({
+    title: 'Open label session',
+    properties: ['openFile'],
+    filters: [{ name: 'OMD label session', extensions: ['json'] }],
+  });
+  if (pick.canceled || pick.filePaths.length === 0) return null;
+  const raw = await readFile(pick.filePaths[0]!, 'utf8');
+  const parsed = JSON.parse(raw) as StudioLabelSession;
+  if (parsed.version !== 1 || !Array.isArray(parsed.packages)) {
+    throw new Error('That file is not a label session.');
+  }
+  return {
+    version: 1,
+    templateId: typeof parsed.templateId === 'string' ? parsed.templateId : 'mini-cd-jewel',
+    fit: parsed.fit ?? 'fill',
+    packages: parsed.packages.map((p) => ({ source: p.source, copies: Math.max(1, Math.floor(p.copies ?? 1)) })),
+    customImages: Array.isArray(parsed.customImages)
+      ? parsed.customImages.map((c) => ({
+          name: c.name,
+          dataUri: c.dataUri,
+          copies: Math.max(1, Math.floor(c.copies ?? 1)),
+        }))
+      : [],
+  };
+});
 
 ipcMain.handle(
   'omd:buildLabelSheet',

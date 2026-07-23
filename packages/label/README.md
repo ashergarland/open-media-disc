@@ -32,7 +32,7 @@ Print `label.svg` from any browser or from OMD Studio at 100% scale on US Letter
 | Export | Purpose |
 | --- | --- |
 | `buildPackageLabelSheet(options)` | Read an OMD package and render a label sheet from its cover art. |
-| `buildPackagesLabelSheet(options)` | Read many packages and lay their covers across as many pages as needed. Pass a `template` to use a preset. |
+| `buildPackagesLabelSheet(options)` | Read many packages and lay their covers across as many pages as needed. Pass a `template` to use a preset, and `extraCovers` to add custom images. |
 | `renderLabelSheet(options)` | Render a single sheet from raw label items (image href + size + fit). |
 | `renderLabelSheets(options)` | Render label items across multiple pages when they overflow one sheet. |
 | `renderTemplateSheets(options)` | Render sheets for a `LabelTemplate` and a list of cover hrefs (supports disc labels). |
