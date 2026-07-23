@@ -382,10 +382,22 @@ function labelOptions(request: StudioLabelSheetRequest) {
 
 /** MIME type for a cover/label image path, or null if unsupported. */
 function imageMime(filePath: string): string | null {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
-  if (ext === '.png') return 'image/png';
-  return null;
+  switch (path.extname(filePath).toLowerCase()) {
+    case '.jpg':
+    case '.jpeg':
+    case '.jfif':
+      return 'image/jpeg';
+    case '.png':
+      return 'image/png';
+    case '.webp':
+      return 'image/webp';
+    case '.gif':
+      return 'image/gif';
+    case '.bmp':
+      return 'image/bmp';
+    default:
+      return null;
+  }
 }
 
 /** Build a self-contained HTML page holding each SVG sheet at true physical size. */
@@ -469,12 +481,15 @@ ipcMain.handle('omd:pickLabelImage', async (): Promise<StudioLabelImage | null> 
   const pick = await dialog.showOpenDialog({
     title: 'Add an image to the label sheet',
     properties: ['openFile'],
-    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }],
+    filters: [
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp'] },
+      { name: 'All files', extensions: ['*'] },
+    ],
   });
   if (pick.canceled || pick.filePaths.length === 0) return null;
   const filePath = pick.filePaths[0]!;
   const mime = imageMime(filePath);
-  if (!mime) return null;
+  if (!mime) throw new Error('Unsupported image type. Use JPG, PNG, WebP, GIF, or BMP.');
   const bytes = await readFile(filePath);
   return { name: path.basename(filePath), dataUri: `data:${mime};base64,${bytes.toString('base64')}` };
 });

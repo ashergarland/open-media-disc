@@ -280,10 +280,14 @@ function customRow(img: CustomImage, index: number): HTMLElement {
 }
 
 async function addCustomImage(): Promise<void> {
-  const img = await window.omd.pickLabelImage();
-  if (!img) return;
-  state.customImages.push({ ...img, copies: 1 });
-  scheduleBuild();
+  try {
+    const img = await window.omd.pickLabelImage();
+    if (!img) return;
+    state.customImages.push({ ...img, copies: 1 });
+    scheduleBuild();
+  } catch (err) {
+    window.alert((err as Error).message);
+  }
 }
 
 function stepper(value: number, onChange: (value: number) => void): HTMLElement {
