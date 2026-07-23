@@ -24,7 +24,11 @@ import {
   validatePackage,
   type MediaInfo,
 } from '@open-album-cartridge/core';
-import { buildPackagesLabelSheet } from '@open-album-cartridge/label';
+import {
+  BUILTIN_LABEL_TEMPLATES,
+  buildPackagesLabelSheet,
+  getLabelTemplate,
+} from '@open-album-cartridge/label';
 import ffmpegStatic from 'ffmpeg-static';
 
 /**
@@ -48,6 +52,7 @@ import type {
   StudioInfo,
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
+  StudioLabelTemplate,
   StudioMixtapeAlbum,
   StudioMixtapeRequest,
   StudioRipRequest,
@@ -361,17 +366,22 @@ function startDiscWatch(window: BrowserWindow): void {
 }
 
 function labelOptions(request: StudioLabelSheetRequest) {
+  const template = request.templateId ? getLabelTemplate(request.templateId) : undefined;
   return {
     packages: request.packages.map((entry) => ({ packageDir: entry.source, copies: entry.copies })),
-    ...(request.widthIn !== undefined ? { widthIn: request.widthIn } : {}),
-    ...(request.heightIn !== undefined ? { heightIn: request.heightIn } : {}),
+    ...(template ? { template } : {}),
     ...(request.fit ? { fit: request.fit } : {}),
   };
 }
 
-/** Print a batch of SVG pages through a hidden window at true Letter size. */
-async function printSheets(svgPages: string[]): Promise<boolean> {
+/** Print a batch of SVG pages through a hidden window at true physical size. */
+async function printSheets(
+  svgPages: string[],
+  page: { widthIn: number; heightIn: number },
+): Promise<boolean> {
   if (svgPages.length === 0) return false;
+  const w = `${page.widthIn}in`;
+  const h = `${page.heightIn}in`;
   const body = svgPages
     .map(
       (svg) =>
@@ -379,11 +389,11 @@ async function printSheets(svgPages: string[]): Promise<boolean> {
     )
     .join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
-    @page { size: Letter; margin: 0; }
+    @page { size: ${w} ${h}; margin: 0; }
     html, body { margin: 0; padding: 0; }
-    .page { width: 8.5in; height: 11in; page-break-after: always; }
+    .page { width: ${w}; height: ${h}; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
-    img { display: block; width: 8.5in; height: 11in; }
+    img { display: block; width: ${w}; height: ${h}; }
   </style></head><body>${body}</body></html>`;
 
   const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
@@ -396,6 +406,14 @@ async function printSheets(svgPages: string[]): Promise<boolean> {
     if (!win.isDestroyed()) win.close();
   }
 }
+
+ipcMain.handle('omd:labelTemplates', (): StudioLabelTemplate[] =>
+  BUILTIN_LABEL_TEMPLATES.map((template) => ({
+    id: template.id,
+    name: template.name,
+    shape: template.shape,
+  })),
+);
 
 ipcMain.handle(
   'omd:buildLabelSheet',
@@ -440,7 +458,11 @@ ipcMain.handle(
   'omd:printLabelSheet',
   async (_event, request: StudioLabelSheetRequest): Promise<boolean> => {
     const result = await buildPackagesLabelSheet(labelOptions(request));
-    return printSheets(result.pages.map((page) => page.svg));
+    const size = result.pages[0]?.page ?? { widthIn: 8.5, heightIn: 11 };
+    return printSheets(
+      result.pages.map((page) => page.svg),
+      { widthIn: size.widthIn, heightIn: size.heightIn },
+    );
   },
 );
 

@@ -5,10 +5,12 @@ import {
   MINI_CD_LABEL,
   renderLabelSheet,
   renderLabelSheets,
+  renderTemplateSheets,
   type LabelFit,
   type LabelItem,
   type LabelPage,
   type LabelSheet,
+  type LabelTemplate,
 } from './labelSheet.js';
 
 /** Cover-art extensions OMD supports, mapped to their data-URI MIME types. */
@@ -114,6 +116,8 @@ export interface BuildPackagesLabelOptions {
   fit?: LabelFit;
   cropMarks?: boolean;
   page?: Partial<LabelPage>;
+  /** A label template to render with. When set, it drives page, shape, and layout. */
+  template?: LabelTemplate;
 }
 
 /** Result of {@link buildPackagesLabelSheet}: one or more paginated sheets. */
@@ -138,7 +142,7 @@ export async function buildPackagesLabelSheet(
   const heightIn = options.heightIn ?? MINI_CD_LABEL.heightIn;
   const fit = options.fit ?? 'fill';
 
-  const items: LabelItem[] = [];
+  const covers: string[] = [];
   const skipped: string[] = [];
   let packageCount = 0;
 
@@ -151,19 +155,21 @@ export async function buildPackagesLabelSheet(
     packageCount += 1;
     const copies = Math.max(1, Math.floor(selection.copies ?? 1));
     for (let i = 0; i < copies; i += 1) {
-      items.push({ imageHref, widthIn, heightIn, fit });
+      covers.push(imageHref);
     }
   }
 
-  if (items.length === 0) {
+  if (covers.length === 0) {
     throw new Error('None of the selected packages have usable cover art to place on a label.');
   }
 
-  const pages = renderLabelSheets({
-    items,
-    ...(options.page ? { page: options.page } : {}),
-    ...(options.cropMarks !== undefined ? { cropMarks: options.cropMarks } : {}),
-  });
+  const pages = options.template
+    ? renderTemplateSheets({ template: options.template, covers, fit })
+    : renderLabelSheets({
+        items: covers.map((imageHref): LabelItem => ({ imageHref, widthIn, heightIn, fit })),
+        ...(options.page ? { page: options.page } : {}),
+        ...(options.cropMarks !== undefined ? { cropMarks: options.cropMarks } : {}),
+      });
 
-  return { pages, packageCount, labelCount: items.length, skipped };
+  return { pages, packageCount, labelCount: covers.length, skipped };
 }

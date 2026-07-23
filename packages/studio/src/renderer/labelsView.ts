@@ -10,24 +10,16 @@
  * sheet preview), so the page itself never scrolls.
  */
 
-import type { CatalogEntry, StudioLabelSheetRequest } from '../shared/types';
+import type { CatalogEntry, StudioLabelSheetRequest, StudioLabelTemplate } from '../shared/types';
 import { clearChildren, el, svgIcon, type IconName } from './dom';
 
-interface LabelSize {
-  key: string;
-  label: string;
-  widthIn: number;
-  heightIn: number;
-}
-
-const SIZES: LabelSize[] = [
-  { key: 'mini', label: 'Mini CD jewel (3.44 in)', widthIn: 3.4375, heightIn: 3.3125 },
-  { key: 'square3', label: 'Square (3 in)', widthIn: 3, heightIn: 3 },
-  { key: 'square4', label: 'Square (4 in)', widthIn: 4, heightIn: 4 },
-  { key: 'cd', label: 'CD jewel (4.75 in)', widthIn: 4.75, heightIn: 4.75 },
-];
-
 type Fit = 'fill' | 'fit' | 'stretch';
+
+/** The default template id (matches the SDK's mini CD jewel insert). */
+const DEFAULT_TEMPLATE_ID = 'mini-cd-jewel';
+
+/** Label stock presets, fetched once from the main process (they are static). */
+let templates: StudioLabelTemplate[] | undefined;
 
 const FITS: { key: Fit; label: string }[] = [
   { key: 'fill', label: 'Fill (crop to fit)' },
@@ -47,7 +39,7 @@ export interface LabelsContext {
 
 interface LabelsState {
   selected: Map<string, number>;
-  sizeKey: string;
+  templateId: string;
   fit: Fit;
   building: boolean;
   pages?: string[];
@@ -65,7 +57,7 @@ let buildTimer: ReturnType<typeof setTimeout> | undefined;
 function initialState(): LabelsState {
   return {
     selected: new Map(),
-    sizeKey: 'mini',
+    templateId: DEFAULT_TEMPLATE_ID,
     fit: 'fill',
     building: false,
     labelCount: 0,
@@ -78,8 +70,18 @@ export function renderLabelsView(context: LabelsContext): HTMLElement {
   ctx = context;
   state = initialState();
   host = el('div', { class: 'omd-stack omd-fill' });
+  if (!templates) void loadTemplates();
   render();
   return host;
+}
+
+async function loadTemplates(): Promise<void> {
+  try {
+    templates = await window.omd.labelTemplates();
+  } catch {
+    templates = [];
+  }
+  render();
 }
 
 function render(): void {
@@ -241,19 +243,18 @@ function stepBtn(label: string, aria: string, onClick: () => void): HTMLElement 
 }
 
 function sheetColumn(): HTMLElement {
+  const templateOptions = (templates ?? []).map((t) => ({ value: t.id, label: t.name }));
+  if (templateOptions.length === 0) templateOptions.push({ value: state.templateId, label: 'Loading\u2026' });
+
   const col = el('div', { class: 'omd-labels-col' }, [
     el('div', { class: 'omd-labels-head' }, [el('div', { class: 'omd-panel-title', text: 'Sheet' })]),
     el('div', { class: 'omd-fields' }, [
       field(
-        'Label size',
-        selectEl(
-          SIZES.map((s) => ({ value: s.key, label: s.label })),
-          state.sizeKey,
-          (v) => {
-            state.sizeKey = v;
-            scheduleBuild();
-          },
-        ),
+        'Template',
+        selectEl(templateOptions, state.templateId, (v) => {
+          state.templateId = v;
+          scheduleBuild();
+        }),
       ),
       field(
         'Image fit',
@@ -348,11 +349,9 @@ function selectEl(
 }
 
 function request(): StudioLabelSheetRequest {
-  const size = SIZES.find((entry) => entry.key === state.sizeKey) ?? SIZES[0]!;
   return {
     packages: [...state.selected].map(([source, copies]) => ({ source, copies })),
-    widthIn: size.widthIn,
-    heightIn: size.heightIn,
+    templateId: state.templateId,
     fit: state.fit,
   };
 }

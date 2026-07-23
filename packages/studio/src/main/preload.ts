@@ -12,6 +12,7 @@ import type {
 const api: OmdStudioApi = {
   getInfo: () => ipcRenderer.invoke('omd:info'),
   listDrives: () => ipcRenderer.invoke('omd:listDrives'),
+  labelTemplates: () => ipcRenderer.invoke('omd:labelTemplates'),
   buildLabelSheet: (request) => ipcRenderer.invoke('omd:buildLabelSheet', request),
   saveLabelSheet: (request) => ipcRenderer.invoke('omd:saveLabelSheet', request),
   printLabelSheet: (request) => ipcRenderer.invoke('omd:printLabelSheet', request),

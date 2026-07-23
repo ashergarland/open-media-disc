@@ -270,3 +270,244 @@ export function renderLabelSheets(options: RenderLabelSheetOptions): LabelSheet[
     }),
   );
 }
+
+/* ------------------------------------------------------------------------- *
+ * Label templates: named page + shape + layout presets.
+ *
+ * A template is plain data, so new label stock is added by describing it, not by
+ * writing render code. Rectangular jewel-case inserts pack left-to-right on US
+ * Letter; disc labels use fixed die-cut grid positions (for example a HERMA
+ * CD-label sheet) and are clipped to a circle with a blank center hole.
+ * ------------------------------------------------------------------------- */
+
+/** The outline shape of a label. */
+export type LabelShape = 'rect' | 'disc';
+
+/** How a template places labels on the sheet. */
+export type LabelLayout =
+  | { kind: 'pack'; marginIn: number; gapIn: number }
+  | {
+      kind: 'grid';
+      columns: number;
+      rows: number;
+      /** Center of the top-left label, from the sheet's top-left corner (inches). */
+      firstCenterXIn: number;
+      firstCenterYIn: number;
+      /** Center-to-center spacing between columns and rows (inches). */
+      pitchXIn: number;
+      pitchYIn: number;
+    };
+
+/** A named label preset: sheet size, label shape/size, and how they lay out. */
+export interface LabelTemplate {
+  id: string;
+  name: string;
+  page: { widthIn: number; heightIn: number };
+  shape: LabelShape;
+  /** Printed label size in inches (diameter when {@link shape} is `disc`). */
+  widthIn: number;
+  heightIn: number;
+  /** Center-hole diameter for a disc label, in inches. */
+  holeDiameterIn?: number;
+  layout: LabelLayout;
+  /** Draw faint alignment outlines. Defaults to off (pre-die-cut sheets). */
+  guides?: boolean;
+}
+
+const MM_PER_INCH = 25.4;
+const mm = (value: number): number => value / MM_PER_INCH;
+
+/** A4 sheet, in inches. */
+export const A4_PAGE = { widthIn: mm(210), heightIn: mm(297) } as const;
+/** US Letter sheet, in inches. */
+export const LETTER_PAGE = { widthIn: 8.5, heightIn: 11 } as const;
+
+/**
+ * Built-in label templates. Rectangular jewel-case sizes print on US Letter and
+ * pack left-to-right; the disc template matches a pre-die-cut A4 CD-label sheet
+ * (HERMA 8619: six Ø78 mm discs in a 2 x 3 grid), printed with a small bleed so
+ * the art reaches the cut edge and a blank hub hole.
+ */
+export const BUILTIN_LABEL_TEMPLATES: LabelTemplate[] = [
+  {
+    id: 'mini-cd-jewel',
+    name: 'Mini CD jewel insert (3.44 in)',
+    page: LETTER_PAGE,
+    shape: 'rect',
+    widthIn: MINI_CD_LABEL.widthIn,
+    heightIn: MINI_CD_LABEL.heightIn,
+    layout: { kind: 'pack', marginIn: 0.5, gapIn: 0.25 },
+  },
+  {
+    id: 'square-3',
+    name: 'Square (3 in)',
+    page: LETTER_PAGE,
+    shape: 'rect',
+    widthIn: 3,
+    heightIn: 3,
+    layout: { kind: 'pack', marginIn: 0.5, gapIn: 0.25 },
+  },
+  {
+    id: 'square-4',
+    name: 'Square (4 in)',
+    page: LETTER_PAGE,
+    shape: 'rect',
+    widthIn: 4,
+    heightIn: 4,
+    layout: { kind: 'pack', marginIn: 0.5, gapIn: 0.25 },
+  },
+  {
+    id: 'cd-jewel',
+    name: 'CD jewel insert (4.75 in)',
+    page: LETTER_PAGE,
+    shape: 'rect',
+    widthIn: 4.75,
+    heightIn: 4.75,
+    layout: { kind: 'pack', marginIn: 0.5, gapIn: 0.25 },
+  },
+  {
+    id: 'herma-8619-cd-a4',
+    name: 'CD/DVD disc labels - 78 mm, 6 per A4 sheet (HERMA 8619)',
+    page: A4_PAGE,
+    shape: 'disc',
+    // 80 mm printed diameter = a ~1 mm bleed over the 78 mm die-cut, so the art
+    // reaches the cut edge with a little overprint rather than a white ring.
+    widthIn: mm(80),
+    heightIn: mm(80),
+    holeDiameterIn: mm(17),
+    layout: {
+      kind: 'grid',
+      columns: 2,
+      rows: 3,
+      firstCenterXIn: mm(59),
+      firstCenterYIn: mm(59),
+      pitchXIn: mm(92),
+      pitchYIn: mm(89.5),
+    },
+  },
+];
+
+/** Look up a built-in label template by id. */
+export function getLabelTemplate(id: string): LabelTemplate | undefined {
+  return BUILTIN_LABEL_TEMPLATES.find((template) => template.id === id);
+}
+
+/** Options for {@link renderTemplateSheets}. */
+export interface RenderTemplateOptions {
+  template: LabelTemplate;
+  /** Cover image hrefs (usually `data:` URIs), already expanded for copies. */
+  covers: string[];
+  /** How each cover fills its label. Defaults to `fill`. */
+  fit?: LabelFit;
+}
+
+/**
+ * Render one or more printable sheets for a template and a list of covers.
+ * `pack` templates flow left-to-right and overflow onto more Letter pages;
+ * `grid` templates place covers at fixed die-cut positions, a page at a time.
+ */
+export function renderTemplateSheets(options: RenderTemplateOptions): LabelSheet[] {
+  const { template, covers } = options;
+  if (covers.length === 0) {
+    throw new Error('At least one cover is required.');
+  }
+  const fit = options.fit ?? 'fill';
+  const layout = template.layout;
+
+  if (layout.kind === 'pack') {
+    const page: LabelPage = {
+      widthIn: template.page.widthIn,
+      heightIn: template.page.heightIn,
+      marginIn: layout.marginIn,
+      gapIn: layout.gapIn,
+    };
+    const items: LabelItem[] = covers.map((imageHref) => ({
+      imageHref,
+      widthIn: template.widthIn,
+      heightIn: template.heightIn,
+      fit,
+    }));
+    return renderLabelSheets({ items, page });
+  }
+
+  const perPage = layout.columns * layout.rows;
+  const pages: LabelSheet[] = [];
+  for (let start = 0; start < covers.length; start += perPage) {
+    pages.push(renderGridSheet(template, layout, covers.slice(start, start + perPage), fit));
+  }
+  return pages;
+}
+
+/** Render a single fixed-grid sheet (used for die-cut disc/rect label stock). */
+function renderGridSheet(
+  template: LabelTemplate,
+  grid: Extract<LabelLayout, { kind: 'grid' }>,
+  covers: string[],
+  fit: LabelFit,
+): LabelSheet {
+  const toUnits = (inches: number): number => round2(inches * UNITS_PER_INCH);
+  const pageW = toUnits(template.page.widthIn);
+  const pageH = toUnits(template.page.heightIn);
+  const par = fitToPreserveAspectRatio(fit);
+  const w = toUnits(template.widthIn);
+  const h = toUnits(template.heightIn);
+  const isDisc = template.shape === 'disc';
+  const holeR = isDisc && template.holeDiameterIn ? round2((template.holeDiameterIn / 2) * UNITS_PER_INCH) : 0;
+
+  const parts: string[] = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${template.page.widthIn}in" height="${template.page.heightIn}in" viewBox="0 0 ${pageW} ${pageH}">`,
+    `<rect x="0" y="0" width="${pageW}" height="${pageH}" fill="#ffffff"/>`,
+  ];
+  const defs: string[] = [];
+  const placements: LabelPlacement[] = [];
+
+  covers.forEach((imageHref, index) => {
+    const col = index % grid.columns;
+    const row = Math.floor(index / grid.columns);
+    const centerXIn = grid.firstCenterXIn + col * grid.pitchXIn;
+    const centerYIn = grid.firstCenterYIn + row * grid.pitchYIn;
+    const xIn = centerXIn - template.widthIn / 2;
+    const yIn = centerYIn - template.heightIn / 2;
+    const cx = toUnits(centerXIn);
+    const cy = toUnits(centerYIn);
+    const x = toUnits(xIn);
+    const y = toUnits(yIn);
+    placements.push({ xIn: round2(xIn), yIn: round2(yIn), widthIn: template.widthIn, heightIn: template.heightIn });
+
+    if (isDisc) {
+      const r = round2(w / 2);
+      const clipId = `omd-disc-${index}`;
+      defs.push(`<clipPath id="${clipId}"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>`);
+      parts.push(
+        `<image x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="${par}" clip-path="url(#${clipId})" href="${xmlEscape(imageHref)}"/>`,
+      );
+      if (template.guides) {
+        parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#9a9a9a" stroke-width="0.4"/>`);
+      }
+      if (holeR > 0) {
+        parts.push(`<circle cx="${cx}" cy="${cy}" r="${holeR}" fill="#ffffff"/>`);
+        if (template.guides) {
+          parts.push(`<circle cx="${cx}" cy="${cy}" r="${holeR}" fill="none" stroke="#9a9a9a" stroke-width="0.4"/>`);
+        }
+      }
+    } else {
+      parts.push(
+        `<image x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="${par}" href="${xmlEscape(imageHref)}"/>`,
+      );
+      if (template.guides) {
+        parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#9a9a9a" stroke-width="0.4"/>`);
+      }
+    }
+  });
+
+  if (defs.length) parts.splice(1, 0, `<defs>${defs.join('')}</defs>`);
+  parts.push('</svg>');
+
+  const page: LabelPage = {
+    widthIn: template.page.widthIn,
+    heightIn: template.page.heightIn,
+    marginIn: 0,
+    gapIn: 0,
+  };
+  return { svg: parts.join('\n'), page, placements };
+}

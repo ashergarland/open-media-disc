@@ -37,9 +37,16 @@ export interface StudioLabelSelection {
 /** A request to build a batch label sheet from one or more packages. */
 export interface StudioLabelSheetRequest {
   packages: StudioLabelSelection[];
-  widthIn?: number;
-  heightIn?: number;
+  /** The label template to render with (see {@link StudioLabelTemplate}). */
+  templateId?: string;
   fit?: 'fill' | 'fit' | 'stretch';
+}
+
+/** A label template offered in the Labels view (a page + label-stock preset). */
+export interface StudioLabelTemplate {
+  id: string;
+  name: string;
+  shape: 'rect' | 'disc';
 }
 
 /** A rendered batch label sheet: one SVG string per printable page. */
@@ -328,6 +335,7 @@ export interface StudioImportResult {
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
   listDrives(): Promise<StudioDrive[]>;
+  labelTemplates(): Promise<StudioLabelTemplate[]>;
   buildLabelSheet(request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult>;
   saveLabelSheet(request: StudioLabelSheetRequest): Promise<string | null>;
   printLabelSheet(request: StudioLabelSheetRequest): Promise<boolean>;
