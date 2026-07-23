@@ -187,9 +187,10 @@ function logoFor(): string {
   return 'assets/brand-disc.png';
 }
 
-/** The cartridge image (shared across themes). */
+/** The cartridge image (a light translucent one on light themes). */
 function cartridgeFor(): string {
-  return 'assets/brand-cartridge.png';
+  const theme = THEME_OPTIONS.find((entry) => entry.id === state.themeId);
+  return theme?.type === 'Light' ? 'assets/brand-cartridge-light.png' : 'assets/brand-cartridge.png';
 }
 
 

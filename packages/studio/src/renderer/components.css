@@ -52,7 +52,7 @@
   --omd-control: var(--omd-surface);
   --omd-control-border: var(--omd-border-strong);
   --omd-focus: var(--omd-accent);
-  --omd-slider-track: var(--omd-surface);
+  --omd-slider-track: var(--omd-surface-2);
   --omd-slider-fill: var(--omd-accent);
   --omd-slider-thumb: var(--omd-text);
 
@@ -1516,6 +1516,11 @@ body {
   align-items: center;
   gap: 12px;
   width: 100%;
+}
+.npd-scrubber .range-control,
+.npd-vol .range-control {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .npd-time {
   flex: 0 0 auto;

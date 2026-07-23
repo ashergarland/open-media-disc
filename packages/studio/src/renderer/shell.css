@@ -340,6 +340,22 @@ body {
 .disc-main .disc-actions {
   grid-area: actions;
 }
+/* Album art frame: a positioned box so the empty-state overlay stays inside it
+ * (without position:relative the absolute overlay covers the whole viewport and
+ * blocks clicks). Frame styling comes from the token contract. */
+.album-art {
+  position: relative;
+  border-radius: var(--omd-radius);
+  overflow: hidden;
+  border: 1px solid var(--omd-border);
+  background: var(--omd-surface-2);
+}
+.album-art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
 .disc-main .album-art {
   aspect-ratio: 1;
   width: 100%;
@@ -607,6 +623,41 @@ body {
 .disc-usage .meter-wrap {
   flex: 1;
   min-width: 160px;
+}
+.disc-usage .storage-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.disc-usage .storage-stat .label {
+  font: 700 11px/1 var(--font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.disc-usage .storage-stat .value {
+  font: 700 17px/1.2 var(--font);
+  color: var(--ink-strong);
+}
+.disc-usage .meter {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink-strong) 12%, transparent);
+  border: 1px solid var(--surface-border);
+}
+.disc-usage .meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--pal-cyan);
+}
+.disc-usage .meter-caption {
+  margin-top: 8px;
+  font: 400 13px/1.4 var(--font);
+  color: var(--ink-muted);
+  text-align: center;
 }
 
 /* Dock cover thumbnail (larger than the showcase default). */
