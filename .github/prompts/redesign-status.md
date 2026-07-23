@@ -144,8 +144,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `4127323` refactor(studio): rebuild Labels view on the token
-  component kit.
+- Last commit: `46b8c9e` feat(studio): add Labels tile to the Home hub so the
+  view is reachable.
 - Working tree: clean.
 - Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
   view is a static "Appearance" panel (no crash). The token migration of the
@@ -175,6 +175,11 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 Append newest entries at the top. One entry per completed prompt.
 
+- 2026-07-22: Follow-up (commit `46b8c9e`). The Labels view had no entry point
+  in the touch shell: the sidebar nav is `display: none` and the Home hub never
+  had a Labels tile, so `labels` was unreachable. Added a Labels tile to
+  `homeView()` (icon `label`, after Catalog). If future hub work reorganizes the
+  tiles, keep an entry point for every reachable `ViewId`.
 - 2026-07-22: Prompt 01 done (commit `4127323`). Rebuilt
   `packages/studio/src/renderer/labelsView.ts` on the `--omd-*` token component
   kit: the view is now `.omd-stack.omd-fill` with a fixed `.omd-sourcebar` plus
