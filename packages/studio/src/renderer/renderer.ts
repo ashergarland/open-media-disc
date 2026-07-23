@@ -251,9 +251,9 @@ function setView(view: ViewId): void {
     oldButton?.replaceWith(newButton);
     navButtons.set(item.id, newButton);
   }
-  // Entering the Catalog re-scans the library folder so newly ripped/burned
-  // packages appear without a manual refresh.
-  if (view === 'catalog' && state.libraryDir && !state.album) void rescanLibrary();
+  // Entering the Catalog or Labels re-scans the library folder so newly
+  // ripped/burned/imported packages appear without a manual refresh.
+  if ((view === 'catalog' || view === 'labels') && state.libraryDir && !state.album) void rescanLibrary();
   // The Home hub is full-bleed (no sidebar); every other view keeps the sidebar.
   shellEl?.classList.toggle('app-shell--home', view === 'home');
   renderMain();
@@ -1411,7 +1411,7 @@ async function rescanLibrary(): Promise<void> {
     state.catalogError = (err as Error).message;
   }
   state.catalogLoading = false;
-  if (state.view === 'catalog') renderMain();
+  if (state.view === 'catalog' || state.view === 'labels') renderMain();
 }
 
 /** Choose a folder to import, then review each album's metadata + format before committing. */
@@ -2485,7 +2485,14 @@ function viewFor(view: ViewId): HTMLElement {
     case 'burn':
       return createDiscView();
     case 'labels':
-      return renderLabelsView();
+      return renderLabelsView({
+        libraryDir: state.libraryDir,
+        entries: state.catalog,
+        loading: state.catalogLoading === true,
+        error: state.catalogError,
+        onChooseLibrary: () => void chooseLibrary(),
+        onRescan: () => void rescanLibrary(),
+      });
     case 'disc':
       return playerView();
     case 'catalog':

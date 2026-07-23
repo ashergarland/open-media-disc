@@ -35,11 +35,17 @@ const FITS: { key: Fit; label: string }[] = [
   { key: 'stretch', label: 'Stretch' },
 ];
 
-interface LabelsState {
+/** The shared library catalog, supplied by the app shell (like Create a Disc). */
+export interface LabelsContext {
   libraryDir?: string;
   entries?: CatalogEntry[];
   loading: boolean;
   error?: string;
+  onChooseLibrary: () => void;
+  onRescan: () => void;
+}
+
+interface LabelsState {
   selected: Map<string, number>;
   sizeKey: string;
   fit: Fit;
@@ -51,13 +57,13 @@ interface LabelsState {
   saveNotice?: string;
 }
 
+let ctx: LabelsContext;
 let state: LabelsState;
 let host: HTMLElement;
 let buildTimer: ReturnType<typeof setTimeout> | undefined;
 
 function initialState(): LabelsState {
   return {
-    loading: false,
     selected: new Map(),
     sizeKey: 'mini',
     fit: 'fill',
@@ -67,8 +73,9 @@ function initialState(): LabelsState {
   };
 }
 
-/** Build (and reset) the Labels view. */
-export function renderLabelsView(): HTMLElement {
+/** Build (and reset) the Labels view from the shared library catalog. */
+export function renderLabelsView(context: LabelsContext): HTMLElement {
+  ctx = context;
   state = initialState();
   host = el('div', { class: 'omd-stack omd-fill' });
   render();
@@ -78,36 +85,40 @@ export function renderLabelsView(): HTMLElement {
 function render(): void {
   clearChildren(host);
 
-  if (state.loading) {
-    host.append(spinnerRow('Scanning\u2026'));
+  if (ctx.loading) {
+    host.append(spinnerRow('Scanning your library\u2026'));
     return;
   }
-  if (state.error) {
-    host.append(emptyState('Could not read that folder', state.error, ['change', 'rescan']));
+  if (ctx.error) {
+    host.append(emptyState('Could not read your library', ctx.error, ['change', 'rescan']));
     return;
   }
-  if (!state.entries) {
+  if (!ctx.libraryDir) {
     host.append(
       emptyState(
         'Print label sheets',
-        'Choose a folder of OMD packages to pick which albums to make labels for.',
+        'Choose your catalog folder to pick albums to make labels for.',
         ['choose'],
       ),
     );
     return;
   }
-  if (state.entries.length === 0) {
+  if (!ctx.entries || ctx.entries.length === 0) {
     host.append(
-      emptyState(
-        'No packages here',
-        'Choose a folder that contains OMD package subfolders (for example your build output).',
-        ['change'],
-      ),
+      sourceRow(),
+      el('div', { class: 'omd-empty' }, [
+        el('span', { class: 'omd-empty-icon' }, [svgIcon('label', 54)]),
+        el('div', { class: 'omd-empty-title', text: 'No albums yet' }),
+        el('p', {
+          class: 'omd-empty-sub',
+          text: 'Import or rip albums into your catalog, then come back to print labels.',
+        }),
+      ]),
     );
     return;
   }
 
-  host.append(sourceRow(), buildPanel(state.entries));
+  host.append(sourceRow(), buildPanel(ctx.entries));
 }
 
 type EmptyAction = 'choose' | 'change' | 'rescan';
@@ -115,9 +126,11 @@ type EmptyAction = 'choose' | 'change' | 'rescan';
 function emptyState(title: string, sub: string, actions: EmptyAction[]): HTMLElement {
   const buttons: HTMLElement[] = [];
   for (const action of actions) {
-    if (action === 'choose') buttons.push(omdButton('Choose folder\u2026', 'label', chooseFolder, { primary: true }));
-    if (action === 'change') buttons.push(omdButton('Change folder\u2026', 'folder', chooseFolder));
-    if (action === 'rescan') buttons.push(omdButton('Rescan', undefined, rescan));
+    if (action === 'choose') {
+      buttons.push(omdButton('Choose library folder\u2026', 'catalog', ctx.onChooseLibrary, { primary: true }));
+    }
+    if (action === 'change') buttons.push(omdButton('Change folder\u2026', 'folder', ctx.onChooseLibrary));
+    if (action === 'rescan') buttons.push(omdButton('Rescan', undefined, ctx.onRescan));
   }
   return el('div', { class: 'omd-empty' }, [
     el('span', { class: 'omd-empty-icon' }, [svgIcon('label', 54)]),
@@ -127,13 +140,13 @@ function emptyState(title: string, sub: string, actions: EmptyAction[]): HTMLEle
   ]);
 }
 
-/** Fixed path + change/rescan bar shown atop the builder. */
+/** Fixed library-path + change/rescan bar shown atop the builder. */
 function sourceRow(): HTMLElement {
   return el('div', { class: 'omd-sourcebar' }, [
-    el('span', { class: 'omd-path omd-muted', text: state.libraryDir ?? '' }),
+    el('span', { class: 'omd-path omd-muted', text: ctx.libraryDir ?? '' }),
     el('div', { class: 'omd-actions' }, [
-      omdButton('Rescan', undefined, rescan),
-      omdButton('Change folder\u2026', 'folder', chooseFolder),
+      omdButton('Rescan', undefined, ctx.onRescan),
+      omdButton('Change folder\u2026', 'folder', ctx.onChooseLibrary),
     ]),
   ]);
 }
@@ -371,30 +384,6 @@ async function buildPreview(): Promise<void> {
     state.pages = undefined;
   }
   state.building = false;
-  render();
-}
-
-async function chooseFolder(): Promise<void> {
-  const dir = await window.omd.chooseLibraryFolder();
-  if (!dir) return;
-  state.libraryDir = dir;
-  await rescan();
-}
-
-async function rescan(): Promise<void> {
-  if (!state.libraryDir) return;
-  state.loading = true;
-  state.error = undefined;
-  state.entries = undefined;
-  state.selected.clear();
-  state.pages = undefined;
-  render();
-  try {
-    state.entries = await window.omd.scanLibrary(state.libraryDir);
-  } catch (err) {
-    state.error = (err as Error).message;
-  }
-  state.loading = false;
   render();
 }
 
