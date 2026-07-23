@@ -622,7 +622,12 @@ ipcMain.handle('omd:openPackageFolder', async (): Promise<StudioDiscInfo | null>
     properties: ['openDirectory'],
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  return buildDiscInfo(result.filePaths[0]!);
+  const chosen = result.filePaths[0]!;
+  const info = await buildDiscInfo(chosen);
+  if (!info) {
+    throw new Error('That folder is not an OMD package (no OMD-MANIFEST.json was found).');
+  }
+  return info;
 });
 
 ipcMain.handle('omd:verifyDisc', async (_event, source: string): Promise<StudioVerifyResult> => {

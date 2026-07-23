@@ -1414,7 +1414,7 @@ async function rescanLibrary(): Promise<void> {
     state.catalogError = (err as Error).message;
   }
   state.catalogLoading = false;
-  if (state.view === 'catalog' || state.view === 'labels') renderMain();
+  if (state.view === 'catalog' || state.view === 'labels' || state.view === 'burn') renderMain();
 }
 
 /** Choose a folder to import, then review each album's metadata + format before committing. */
