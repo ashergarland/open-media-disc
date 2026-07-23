@@ -144,8 +144,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `46b8c9e` feat(studio): add Labels tile to the Home hub so the
-  view is reachable.
+- Last commit: `f81533a` feat(studio): Labels view uses the shared library
+  catalog.
 - Working tree: clean.
 - Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
   view is a static "Appearance" panel (no crash). The token migration of the
@@ -175,6 +175,14 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 Append newest entries at the top. One entry per completed prompt.
 
+- 2026-07-22: Follow-up (commit `f81533a`). Labels no longer asks for its own
+  folder: it now reads the shared library catalog (`state.libraryDir` /
+  `state.catalog`) like the Create a Disc picker. `renderLabelsView(ctx)` takes
+  a `LabelsContext` (libraryDir/entries/loading/error + onChooseLibrary/onRescan
+  callbacks) instead of scanning itself; `viewFor('labels')` passes shared
+  state; `setView` auto-scans on entering Labels and `rescanLibrary` now
+  re-renders for `labels` too. Change-folder/Rescan route through the shared
+  `chooseLibrary`/`rescanLibrary`, so the whole app stays on one library.
 - 2026-07-22: Follow-up (commit `46b8c9e`). The Labels view had no entry point
   in the touch shell: the sidebar nav is `display: none` and the Home hub never
   had a Labels tile, so `labels` was unreachable. Added a Labels tile to
