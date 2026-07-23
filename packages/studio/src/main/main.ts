@@ -388,12 +388,8 @@ function imageMime(filePath: string): string | null {
   return null;
 }
 
-/** Print a batch of SVG pages through a hidden window at true physical size. */
-async function printSheets(
-  svgPages: string[],
-  page: { widthIn: number; heightIn: number },
-): Promise<boolean> {
-  if (svgPages.length === 0) return false;
+/** Build a self-contained HTML page holding each SVG sheet at true physical size. */
+function sheetHtml(svgPages: string[], page: { widthIn: number; heightIn: number }): string {
   const w = `${page.widthIn}in`;
   const h = `${page.heightIn}in`;
   const body = svgPages
@@ -402,30 +398,63 @@ async function printSheets(
         `<div class="page"><img src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"/></div>`,
     )
     .join('');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
     @page { size: ${w} ${h}; margin: 0; }
     html, body { margin: 0; padding: 0; }
     .page { width: ${w}; height: ${h}; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
     img { display: block; width: ${w}; height: ${h}; }
   </style></head><body>${body}</body></html>`;
+}
 
-  // Load from a temp file, not a data: URL: the embedded SVG pages make the URL
-  // exceed Chromium's navigation length limit (ERR_INVALID_URL).
+/**
+ * Render the sheet HTML in a hidden window and hand it to `fn`. Loads from a temp
+ * file, not a data: URL: the embedded SVG pages exceed Chromium's navigation
+ * length limit (ERR_INVALID_URL).
+ */
+async function withSheetWindow<T>(
+  svgPages: string[],
+  page: { widthIn: number; heightIn: number },
+  fn: (win: BrowserWindow) => Promise<T>,
+): Promise<T> {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'omd-print-'));
   const file = path.join(dir, 'sheet.html');
-  await writeFile(file, html, 'utf8');
-
+  await writeFile(file, sheetHtml(svgPages, page), 'utf8');
   const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
   try {
     await win.loadFile(file);
-    return await new Promise<boolean>((resolve) => {
-      win.webContents.print({ silent: false, printBackground: true }, (success) => resolve(success));
-    });
+    return await fn(win);
   } finally {
     if (!win.isDestroyed()) win.close();
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+/** Print a batch of SVG pages through a hidden window at true physical size. */
+async function printSheets(
+  svgPages: string[],
+  page: { widthIn: number; heightIn: number },
+): Promise<boolean> {
+  if (svgPages.length === 0) return false;
+  return withSheetWindow(
+    svgPages,
+    page,
+    (win) =>
+      new Promise<boolean>((resolve) => {
+        win.webContents.print({ silent: false, printBackground: true }, (success) => resolve(success));
+      }),
+  );
+}
+
+/** Render a batch of SVG pages to a print-ready PDF at true physical size. */
+async function sheetsToPdf(
+  svgPages: string[],
+  page: { widthIn: number; heightIn: number },
+): Promise<Buffer | null> {
+  if (svgPages.length === 0) return null;
+  return withSheetWindow(svgPages, page, (win) =>
+    win.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true }),
+  );
 }
 
 ipcMain.handle('omd:labelTemplates', (): StudioLabelTemplate[] =>
@@ -508,25 +537,20 @@ ipcMain.handle(
   'omd:saveLabelSheet',
   async (_event, request: StudioLabelSheetRequest): Promise<string | null> => {
     const result = await buildPackagesLabelSheet(labelOptions(request));
+    const size = result.pages[0]?.page ?? { widthIn: 8.5, heightIn: 11 };
+    const pdf = await sheetsToPdf(
+      result.pages.map((page) => page.svg),
+      { widthIn: size.widthIn, heightIn: size.heightIn },
+    );
+    if (!pdf) return null;
     const save = await dialog.showSaveDialog({
       title: 'Save label sheet',
-      defaultPath: 'omd-labels.svg',
-      filters: [{ name: 'SVG image', extensions: ['svg'] }],
+      defaultPath: 'omd-labels.pdf',
+      filters: [{ name: 'PDF document', extensions: ['pdf'] }],
     });
     if (save.canceled || !save.filePath) return null;
-    if (result.pages.length === 1) {
-      await writeFile(save.filePath, result.pages[0]!.svg, 'utf8');
-      return save.filePath;
-    }
-    const parsed = path.parse(save.filePath);
-    const ext = parsed.ext || '.svg';
-    let first: string | null = null;
-    for (let i = 0; i < result.pages.length; i += 1) {
-      const target = path.join(parsed.dir, `${parsed.name}-${i + 1}${ext}`);
-      await writeFile(target, result.pages[i]!.svg, 'utf8');
-      if (first === null) first = target;
-    }
-    return first;
+    await writeFile(save.filePath, pdf);
+    return save.filePath;
   },
 );
 

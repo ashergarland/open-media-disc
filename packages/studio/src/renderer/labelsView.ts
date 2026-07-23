@@ -118,7 +118,7 @@ function render(): void {
   }
   if (!ctx.entries || ctx.entries.length === 0) {
     host.append(
-      sourceRow(),
+      libraryBar(),
       el('div', { class: 'omd-empty' }, [
         el('span', { class: 'omd-empty-icon' }, [svgIcon('label', 54)]),
         el('div', { class: 'omd-empty-title', text: 'No albums yet' }),
@@ -131,7 +131,7 @@ function render(): void {
     return;
   }
 
-  host.append(sourceRow(), buildPanel(ctx.entries));
+  host.append(toolbar(ctx.entries), buildPanel(ctx.entries));
 }
 
 type EmptyAction = 'choose' | 'change' | 'rescan';
@@ -153,15 +153,44 @@ function emptyState(title: string, sub: string, actions: EmptyAction[]): HTMLEle
   ]);
 }
 
-/** Fixed library-path + session/rescan bar shown atop the builder. */
-function sourceRow(): HTMLElement {
+/** The library path plus a minimal action set (shown when no albums are loaded). */
+function libraryBar(): HTMLElement {
   return el('div', { class: 'omd-sourcebar' }, [
     el('span', { class: 'omd-path omd-muted', text: ctx.libraryDir ?? '' }),
     el('div', { class: 'omd-actions' }, [
-      omdButton('Open session\u2026', undefined, () => void openSession()),
-      omdButton('Save session\u2026', undefined, () => void saveSession()),
+      omdButton('Open session\u2026', undefined, openSession),
       omdButton('Rescan', undefined, ctx.onRescan),
       omdButton('Change folder\u2026', 'folder', ctx.onChooseLibrary),
+    ]),
+  ]);
+}
+
+/** The single top-right toolbar with every Labels action. */
+function toolbar(entries: CatalogEntry[]): HTMLElement {
+  const ready = Boolean(state.pages);
+  return el('div', { class: 'omd-sourcebar' }, [
+    el('span', { class: 'omd-path omd-muted', text: ctx.libraryDir ?? '' }),
+    el('div', { class: 'omd-actions' }, [
+      omdButton('Add image\u2026', 'note', addCustomImage),
+      omdButton('Select all', undefined, () => {
+        for (const entry of entries) {
+          if (entry.coverDataUri && !state.selected.has(entry.source)) {
+            state.selected.set(entry.source, 1);
+          }
+        }
+        scheduleBuild();
+      }),
+      omdButton('Clear', undefined, () => {
+        state.selected.clear();
+        state.customImages = [];
+        scheduleBuild();
+      }),
+      omdButton('Open session\u2026', undefined, openSession),
+      omdButton('Save session\u2026', undefined, saveSession),
+      omdButton('Rescan', undefined, ctx.onRescan),
+      omdButton('Change folder\u2026', 'folder', ctx.onChooseLibrary),
+      omdButton('Print\u2026', 'label', printSheet, { primary: true, disabled: !ready }),
+      omdButton('Save PDF\u2026', undefined, saveSheet, { disabled: !ready }),
     ]),
   ]);
 }
@@ -172,25 +201,7 @@ function buildPanel(entries: CatalogEntry[]): HTMLElement {
 
 function albumsColumn(entries: CatalogEntry[]): HTMLElement {
   return el('div', { class: 'omd-labels-col' }, [
-    el('div', { class: 'omd-labels-head' }, [
-      el('div', { class: 'omd-panel-title', text: 'Albums' }),
-      el('div', { class: 'omd-labels-tools' }, [
-        omdButton('Add image\u2026', 'note', () => void addCustomImage()),
-        omdButton('Select all', undefined, () => {
-          for (const entry of entries) {
-            if (entry.coverDataUri && !state.selected.has(entry.source)) {
-              state.selected.set(entry.source, 1);
-            }
-          }
-          scheduleBuild();
-        }),
-        omdButton('Clear', undefined, () => {
-          state.selected.clear();
-          state.customImages = [];
-          scheduleBuild();
-        }),
-      ]),
-    ]),
+    el('div', { class: 'omd-labels-head' }, [el('div', { class: 'omd-panel-title', text: 'Albums' })]),
     el('div', { class: 'omd-scroll' }, [
       el('div', { class: 'omd-picker' }, [
         ...entries.map(pickRow),
@@ -367,12 +378,6 @@ function sheetColumn(): HTMLElement {
         }),
       );
     }
-    col.append(
-      el('div', { class: 'omd-actions' }, [
-        omdButton('Print\u2026', 'label', printSheet, { primary: true }),
-        omdButton('Save SVG\u2026', undefined, saveSheet),
-      ]),
-    );
     if (state.saveNotice) {
       col.append(el('p', { class: 'omd-muted', text: state.saveNotice }));
     }
@@ -507,7 +512,7 @@ function omdButton(
   label: string,
   icon: IconName | undefined,
   onClick: () => void | Promise<void>,
-  opts: { primary?: boolean } = {},
+  opts: { primary?: boolean; disabled?: boolean } = {},
 ): HTMLElement {
   const children: (Node | string)[] = [];
   if (icon) children.push(svgIcon(icon, 18));
@@ -517,6 +522,7 @@ function omdButton(
     {
       class: `omd-btn${opts.primary ? ' omd-btn--primary' : ''}`,
       type: 'button',
+      disabled: opts.disabled ? true : null,
       onclick: () => void onClick(),
     },
     children,
