@@ -131,8 +131,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 | # | Prompt | Status | Outcome |
 | --- | --- | --- | --- |
-| 01 | `redesign-01-labels-to-tokens` | Next | Labels view rebuilt on the `--omd-*` component kit; its bridge CSS removed. |
-| 02 | `redesign-02-editors-to-tokens` | Not started | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
+| 01 | `redesign-01-labels-to-tokens` | Done 4127323 | Labels view rebuilt on the `--omd-*` component kit; its bridge CSS removed. |
+| 02 | `redesign-02-editors-to-tokens` | Next | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
 | 03 | `redesign-03-token-contract` | Not started | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
 | 04 | `redesign-04-new-themes` | Not started | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Not started | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
@@ -144,12 +144,14 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `afcb7a0` refactor(studio): remove dead package-builder path.
+- Last commit: `4127323` refactor(studio): rebuild Labels view on the token
+  component kit.
 - Working tree: clean.
 - Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
   view is a static "Appearance" panel (no crash). The token migration of the
   main spokes (hub, shell, catalog, album detail, disc, create-a-disc, settings,
-  transport dock) is done; Labels and the editors still rely on the bridge CSS.
+  transport dock) and the Labels view is done; the editors (import review,
+  mixtape, album editor) still rely on the bridge CSS.
 
 ## Gotchas and durable facts
 
@@ -173,5 +175,23 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 Append newest entries at the top. One entry per completed prompt.
 
+- 2026-07-22: Prompt 01 done (commit `4127323`). Rebuilt
+  `packages/studio/src/renderer/labelsView.ts` on the `--omd-*` token component
+  kit: the view is now `.omd-stack.omd-fill` with a fixed `.omd-sourcebar` plus
+  two bounded `.omd-scroll` regions (album picker + sheet preview), so the page
+  never scrolls. Two columns via `.omd-labels`
+  (`grid-template-columns: repeat(auto-fit, minmax(340px, 1fr))` +
+  `grid-auto-rows: minmax(0, 1fr)`), stacking when narrow with no device
+  breakpoints. New token components added to `components.css`: `.omd-sourcebar`,
+  `.omd-labels`/`.omd-labels-col`/`-head`/`-tools`, `.omd-picker`/`.omd-pick*`,
+  `.omd-stepper*` (44px taps), `.omd-fields`/`.omd-field*`, `.omd-summary`,
+  `.omd-error`, `.omd-sheet-pages`/`.omd-sheet-page` (white paper is semantic).
+  Removed from `shell.css`: the whole "Labels view compositions" block (kept
+  shared `.link-btn`), the labels-only empty-state hero (`.select-hero`,
+  `.select-icon`, `.select-title`; kept `.select-lead`, still used by the
+  mixtape view), and the `.burn-source`/`.burn-source-path` source row. Removed
+  from the bridge: `.burn-source-path`, `.select-title`, `.select-icon`.
+  Gotcha: `.select-lead` looked Labels-only but the mixtape view still uses it,
+  so grep before deleting. build + lint green.
 - 2026-07-22: Created the redesign prompt series (`redesign-01` .. `redesign-10`)
   and this status file. No app code changed. Base commit `afcb7a0`.
