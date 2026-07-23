@@ -133,8 +133,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | --- | --- | --- | --- |
 | 01 | `redesign-01-labels-to-tokens` | Done 4127323 | Labels view rebuilt on the `--omd-*` component kit; its bridge CSS removed. |
 | 02 | `redesign-02-editors-to-tokens` | Done df77182 | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
-| 03 | `redesign-03-token-contract` | Next | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
-| 04 | `redesign-04-new-themes` | Not started | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
+| 03 | `redesign-03-token-contract` | Done 3c58280 | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
+| 04 | `redesign-04-new-themes` | Next | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Not started | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
 | 06 | `redesign-06-home-hub` | Not started | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Not started | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
@@ -144,18 +144,20 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `df77182` refactor(studio): migrate import/mixtape/album editors
-  to tokens.
+- Last commit: `3c58280` refactor(studio): complete the --omd-* token contract;
+  self-contained styling.
 - Working tree: clean.
 - Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
-  view is a static "Appearance" panel (no crash). The token migration of the
-  main spokes (hub, shell, catalog, album detail, disc, create-a-disc, settings,
-  transport dock), the Labels view, and the three editors (import review,
-  mixtape, album editor) is done. What still leans on the theme stylesheet:
-  editor/album layout classes (`.disc-main`, `.album-col`, `.album-art`,
-  `.album-meta`, `.mixtape-*`) read `--ink-*` / `--surface-*` theme tokens, and
-  the bridge still restyles shared primitives (see Log). Step 03 removes the
-  theme-stylesheet dependency.
+  view is a static "Appearance" panel (no crash). The app is now styled entirely
+  from the `--omd-*` token contract in `components.css`, which carries strong
+  dark defaults plus compatibility aliases for the legacy theme-token names
+  (`--font`, `--ink*`, `--surface*`, `--pal-*`) that `shell.css` still reads. The
+  transport dock, its player-control buttons, the compact slider, and the busy
+  spinner had their structure ported into `components.css`, so nothing visible
+  depends on `dark-aero.css` for geometry any more. Verified via a static probe
+  (theme link omitted, `components.css` alone renders the shell, buttons, cards,
+  fields, dock, and lists correctly). `dark-aero.css` is still loaded but step 04
+  can now retire it by authoring token maps.
 
 ## Gotchas and durable facts
 
@@ -178,6 +180,43 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+- 2026-07-23: Prompt 03 done (commit `3c58280`). Completed the `--omd-*` token
+  contract in `components.css` and made styling self-contained so
+  `dark-aero.css` can be dropped in step 04.
+  - `:root` now carries a documented, grouped vocabulary (base/surfaces, text +
+    on-accent, accent, status danger/success/warning + danger-text, controls
+    control/control-border/focus/slider-track/fill/thumb, shape/motion
+    radii/shadow/blur/tap/font). New tokens added: `--omd-hairline`,
+    `--omd-on-accent`, `--omd-danger`, `--omd-danger-text`, `--omd-success`,
+    `--omd-warning`, `--omd-control`, `--omd-control-border`, `--omd-focus`,
+    `--omd-slider-track` / `-fill` / `-thumb`, `--omd-blur`. Existing names kept.
+  - Compatibility aliases in `:root` resolve the legacy theme-token names that
+    `shell.css` layout classes still read (`--font`, `--ink`, `--ink-strong`,
+    `--ink-muted`, `--surface-1`, `--surface-border`, `--surface-hairline`,
+    `--pal-cyan`, `--pal-green`) from the `--omd-*` values. `components.css` loads
+    last, so these win over `dark-aero.css` now and survive its removal. (These
+    aliases are removed in step 05 once `shell.css` is fully on `--omd-*`.)
+    Confirmed the aliases cover every `var(--...)` `shell.css` reads (7 names).
+  - Swept every hardcoded status color in the token components + bridge to the
+    new tokens (`#04222b` -> on-accent, `#ef4d38` -> danger, `#ef7d6f` ->
+    danger-text, `#35d17a` -> success, `#f0a020` -> warning). Neutral black/white
+    shading in gradients/shadows left as-is.
+  - Ported the structure of the transport dock (`.now-playing-dock`, `.npd-*`),
+    the player-control buttons (`.pc-button` / `.pc-content` / `.pc-icon`, sizes
+    via a self-owned `--pc-size` so it no longer needs the theme's
+    `--button-size`), the compact themed slider (`.range-control` /
+    `.range-compact` / `.track` / `.track-fill` / `.range-input` / `.thumb`), and
+    the busy `.spinner` (+ `@keyframes omd-spin`) into `components.css`. The
+    bridge keeps the token color overrides (retargeted to the slider tokens);
+    these new rules own the geometry so the dock renders without `dark-aero.css`.
+  - Verified with a throwaway static probe served from the built renderer with
+    the theme link omitted: shell, primary/secondary buttons, card, token fields
+    (incl. invalid state), segmented codec chooser, notice, status pill, spinner,
+    and the full dock (transport, slider, chips) all render from `components.css`
+    alone. Probe deleted after. Build + lint green. dark-aero.css NOT removed
+    (step 04). Bridge still present (buttons/card/notice/status-pill/dock colors)
+    and shrinks further in steps 04/05.
 
 - 2026-07-22: Prompt 02 done (commit `df77182`). Migrated the three editor
   surfaces in `renderer.ts` (import review, mixtape builder, catalog album
