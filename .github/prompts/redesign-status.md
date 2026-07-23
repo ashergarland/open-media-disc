@@ -134,8 +134,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 01 | `redesign-01-labels-to-tokens` | Done 4127323 | Labels view rebuilt on the `--omd-*` component kit; its bridge CSS removed. |
 | 02 | `redesign-02-editors-to-tokens` | Done df77182 | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
 | 03 | `redesign-03-token-contract` | Done 3c58280 | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
-| 04 | `redesign-04-new-themes` | Next | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
-| 05 | `redesign-05-cleanup` | Not started | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
+| 04 | `redesign-04-new-themes` | Done cb71228 | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
+| 05 | `redesign-05-cleanup` | Next | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
 | 06 | `redesign-06-home-hub` | Not started | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Not started | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Not started | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
@@ -144,20 +144,19 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `3c58280` refactor(studio): complete the --omd-* token contract;
-  self-contained styling.
+- Last commit: `cb71228` feat(studio): token-map themes and a live Themes
+  picker; retire old theme CSS.
 - Working tree: clean.
-- Themes: a single dark theme is active (`themes/dark-aero.css`); the Themes
-  view is a static "Appearance" panel (no crash). The app is now styled entirely
-  from the `--omd-*` token contract in `components.css`, which carries strong
-  dark defaults plus compatibility aliases for the legacy theme-token names
-  (`--font`, `--ink*`, `--surface*`, `--pal-*`) that `shell.css` still reads. The
-  transport dock, its player-control buttons, the compact slider, and the busy
-  spinner had their structure ported into `components.css`, so nothing visible
-  depends on `dark-aero.css` for geometry any more. Verified via a static probe
-  (theme link omitted, `components.css` alone renders the shell, buttons, cards,
-  fields, dock, and lists correctly). `dark-aero.css` is still loaded but step 04
-  can now retire it by authoring token maps.
+- Themes: THREE real themes now ship as `--omd-*` token maps in `components.css`
+  (`midnight` = the base `:root` dark default, `daylight` = light, `ember` =
+  amber-accent dark). The Themes view is a live picker (swatch cards, active
+  marked, click applies instantly by setting `data-theme` on the document root);
+  the choice persists in `localStorage` (`omd.themeId`) and is restored on boot.
+  `themes/dark-aero.css`, its `<link>`, and the `themes/` copy step in
+  `build.mjs` are gone; the app renders entirely from `components.css`. Brand
+  imagery is now shared (`assets/brand-disc.png` / `assets/brand-cartridge.png`).
+  The "Legacy token bridge" section still exists (buttons/card/notice/status-pill
+  + dock colors) and is trimmed in step 05.
 
 ## Gotchas and durable facts
 
@@ -180,6 +179,39 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+- 2026-07-23: Prompt 04 done (commit `cb71228`). Shipped a real token-map theme
+  system and retired the last full theme stylesheet.
+  - Three themes, each a token map that overrides the base `--omd-*` primitives
+    (derived tokens and compat aliases follow via their `var()` references):
+    `midnight` (the base `:root`, deep dark cyan default), `daylight`
+    (`:root[data-theme="daylight"]`, clean light), `ember`
+    (`:root[data-theme="ember"]`, warm charcoal + amber accent). All live in
+    `components.css`. No per-theme component CSS; the kit stays shared.
+  - `applyThemeById` now just sets `data-theme` on `document.documentElement`
+    (instant variable swap, no fetch, no flash) and persists to `localStorage`
+    key `omd.themeId`. `loadThemeId()` restores it on boot with a safe default
+    (`midnight`); unknown/empty ids fall back. `state.themeId` seeds from it.
+  - Rebuilt `themesView` as a live picker: a card per theme with a 5-chip swatch
+    preview (colors set via CSSOM `setProperty`, not inline `style=`), the active
+    one marked with a check + accent ring, click applies immediately. New token
+    classes `.omd-theme-grid` / `.omd-theme-card` / `.omd-swatch` / etc.
+  - Removed `themes/dark-aero.css`, its `<link>` in `index.html`, and the
+    `themes/` copy step in `build.mjs`. Brand imagery is now theme-agnostic:
+    `logoFor()` / `cartridgeFor()` return shared `assets/brand-disc.png` /
+    `assets/brand-cartridge.png` (renamed from `assets/dark-aero/`), and that
+    folder is gone. Dropped the now write-only `brandDisc` module var. Set the
+    Electron window `backgroundColor` to the midnight bg (`#0d131e`) so the first
+    paint matches the dark default. Also made the hub background bloom read
+    `--omd-accent` / `--omd-accent-2` so it adapts per theme.
+  - Verified all three themes render correctly from `components.css` alone via a
+    throwaway static probe (one page per `data-theme`, screenshotted): midnight
+    dark/cyan, daylight light with good contrast, ember warm amber. Probe deleted
+    after. Build + lint green.
+  - The "Legacy token bridge" section is NOT empty (still holds `.btn*`,
+    `.link-btn`, `.mini-btn`, `.card`, `.eyebrow`, `.select-lead`, `.notice*`,
+    `.status-pill*`, dock color overrides), so it was kept; step 05 cleanup can
+    trim it and the dead `shell.css` sidebar/`ct-*`/VU rules.
 
 - 2026-07-23: Prompt 03 done (commit `3c58280`). Completed the `--omd-*` token
   contract in `components.css` and made styling self-contained so
