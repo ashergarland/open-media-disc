@@ -15,6 +15,43 @@ Step 07 of the OMD Studio redesign series. Run in order, one per fresh chat.
    thin persistent nav vs pure tiles).
 2. Clean tree, green build.
 
+## Current context (snapshot as of step 06)
+
+This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
+authoritative log; read it for the full history and any newer entries.
+
+- Last commit at hand-off: `a2b8641` (step 06, premium touch Home hub). Working
+  tree clean; `pnpm --filter @open-album-cartridge/studio build` and `pnpm lint`
+  are green. The hub was not yet visually confirmed in Electron by the user, so
+  begin step 07 by eyeballing it at several widths.
+- Styling model is unchanged: the app renders from `shell.css` (layout only) plus
+  `components.css` (the `--omd-*` token contract, the component kit, and a
+  shrinking "Legacy token bridge"). There is no theme stylesheet. Themes are
+  token maps applied via `data-theme` on `document.documentElement`: `midnight`
+  (dark default), `daylight` (light), `ember` (amber dark). Style through
+  `--omd-*` tokens; set dynamic values via CSSOM (CSP).
+- The Home hub is now full-bleed and fit-to-viewport: `homeView()` in
+  `renderer.ts` returns `.hub` (`height:100%; overflow:hidden`) containing a
+  `.hub-bar` (brand + centered `.hub-search` catalog search + `.hub-pill` status)
+  over a `.hub-body` two-row grid: `.hub-primary` (three `hubPrimaryTile()` tiles
+  Play a Disc/Create a Disc/Catalog) and `.hub-secondary` (wide
+  `hubNowPlayingTile()` + two `hubMiniTile()` Themes/Settings). All hub classes
+  live in `components.css` and use `auto-fit`/`clamp()` + `min-height:0`. This is
+  the primary surface to stress-test at Pi widths; the `.hub-secondary` grid is a
+  fixed three-column (`1.7fr 1fr 1fr`) and is the most likely thing to need
+  content-driven reflow at narrow widths.
+- Navigation is `setView(view: ViewId)`; the sidebar (`.app-sidebar`) is still
+  built but `display:none`, so the hub tiles + the top-bar Home button are the
+  only visible nav. Labels is reached from a "Label sheets" button in the Catalog
+  actions row (it is intentionally not a hub tile). Search is wired: it sets
+  `state.catalogQuery` and Catalog filters on it.
+- Other views wrap in `screenFrame()` -> `.omd-screen` (sticky `.omd-topbar` +
+  `.omd-screen-body`) with `.omd-stack`/`.omd-fill`/`.omd-scroll` for bounded
+  scroll regions. The persistent transport dock is `.now-playing-dock` (built by
+  `nowPlaying.ts`) in the `dock` grid area and must stay present on every view.
+- Kiosk/full-screen behavior does not exist yet; `main.ts` creates a normal
+  windowed `BrowserWindow`. That is this step's main main-process addition.
+
 ## Goal
 
 Make every screen hold up on the target hardware: roughly a 7 to 10 inch panel
@@ -56,6 +93,23 @@ width. Add kiosk/full-screen behavior suited to an appliance.
 2. Update [`./redesign-status.md`](./redesign-status.md): tick row 07, set row 08
    to `Next`, refresh Current state, and Log the portrait/nav decisions, the
    kiosk approach, and any view that needed layout fixes.
+
+## Hand off to the next step
+
+Keep the series self-contained and self-propagating. Before you finish, prepare
+the next prompt so whoever runs it in a fresh chat has current context:
+
+1. Open the next prompt, [`./redesign-08-docs-pass.prompt.md`](./redesign-08-docs-pass.prompt.md).
+2. Refresh its "## Current context (snapshot ...)" section to reflect the repo
+   after your work: the last commit, what the hub and app look like now, the
+   files and patterns step 08 will touch, and anything you deferred. If that
+   section is missing, add it right after the "## Before you start" section
+   (use this prompt's "Current context" section as the shape to follow).
+3. Make sure that prompt still contains a "## Hand off to the next step" section
+   like this one, pointing at the step after it
+   (`redesign-09-release.prompt.md`). If it is missing, copy this section into
+   it and update the two file names. This is how every step keeps the next one
+   current, so do not drop it.
 
 ## Guardrails
 

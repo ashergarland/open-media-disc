@@ -141,29 +141,40 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 03 | `redesign-03-token-contract` | Done 3c58280 | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
 | 04 | `redesign-04-new-themes` | Done cb71228 | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Done d5b8365 | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
-| 06 | `redesign-06-home-hub` | Next | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
-| 07 | `redesign-07-pi-tuning` | Not started | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
+| 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
+| 07 | `redesign-07-pi-tuning` | Next | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Not started | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
 | 09 | `redesign-09-release` | Not started | Verify green, bump the software version, propose commit and tag (confirm-first). |
 | 10 | `redesign-10-hardware-test` | Not started | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
 
 ## Current state
 
-- Last commit: `d5b8365` chore(studio): remove dead importThemeFile IPC,
-  themeError, and unused icon.
-- Working tree: clean.
+- Last commit: `a2b8641` feat(studio): premium touch Home hub.
+- Working tree: clean. Build and lint are green; user has not yet visually
+  confirmed the hub in Electron (only the user can exercise the real UI).
+- Home hub (rebuilt in step 06): `homeView()` in `renderer.ts` returns `.hub`,
+  laid out as a fit-to-viewport surface: a `.hub-bar` top row (brand + centered
+  catalog `.hub-search` form + now-playing `.hub-pill` status), then a `.hub-body`
+  two-row grid: `.hub-primary` (three `hubPrimaryTile()` glass tiles for Play a
+  Disc -> `disc`, Create a Disc -> `burn`, Catalog -> `catalog`) and
+  `.hub-secondary` (wide `hubNowPlayingTile()` + two `hubMiniTile()` for Themes
+  and Settings). All hub classes live in `components.css` and read `--omd-*`
+  tokens only. The old `.hub-head`/`.hub-grid`/`.hub-tile--primary` markup and CSS
+  were removed. Search: submitting `.hub-search` sets `state.catalogQuery` and
+  routes to Catalog, which filters by artist/album/discId and shows an
+  `.omd-searchsummary` bar with Clear. A new `search` icon was added to `dom.ts`.
+  Labels is no longer a hub tile (not in the mockup); it is reached from a new
+  "Label sheets" button in the Catalog actions row.
 - Themes: three token-map themes (`midnight` default, `daylight`, `ember`) with a
   live picker; no theme stylesheet. The app renders from `shell.css` (layout) +
-  `components.css` (tokens + components). Dead-code sweep (step 05) removed the
-  orphaned CSS and tooling; build, 141 tests, and lint are green.
+  `components.css` (tokens + components).
 - Deliberately KEPT (not dead): the hidden sidebar/nav subsystem (`.app-sidebar`
-  is `display:none` but still built; navigation is via the hub + top-bar Home,
-  so removing it is a structural change left for the hub rework in step 06); the
-  Web Audio analyser + `getLevels()` in `audioController.ts` (plumbing for a real
-  dock visualizer the premium mockup wants; the current `.npd-eq` is decorative);
-  the "Legacy token bridge" in `components.css` (still used by `btn()`, `.card`,
-  `.notice`, `.status-pill`, and the dock, because migrated views use the
-  showcase `.btn`/`.card` helpers rather than pure `.omd-*`).
+  is `display:none` but still built; navigation is via the hub + top-bar Home);
+  the Web Audio analyser + `getLevels()` in `audioController.ts` (plumbing for a
+  real dock visualizer the premium mockup wants; the current `.npd-eq` is
+  decorative); the "Legacy token bridge" in `components.css` (still used by
+  `btn()`, `.card`, `.notice`, `.status-pill`, and the dock, because migrated
+  views use the showcase `.btn`/`.card` helpers rather than pure `.omd-*`).
 
 ## Gotchas and durable facts
 
@@ -186,6 +197,30 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+- 2026-07-24: Prompt 06 done (commit `a2b8641`). Rebuilt the Home hub toward the
+  premium touch mockup, entirely on `--omd-*` tokens so it renders in every theme.
+  - `homeView()` replaced: a `.hub-bar` (brand + centered catalog search + now-
+    playing status pills) over a `.hub-body` two-row grid. Row 1 `.hub-primary`
+    has three large `hubPrimaryTile()` glass tiles (Play a Disc, Create a Disc,
+    Catalog) with a watermark glyph, icon badge, and an accent action pill. Row 2
+    `.hub-secondary` has a wide `hubNowPlayingTile()` plus `hubMiniTile()` for
+    Themes and Settings. Old `hubTile()` + `.hub-head`/`.hub-grid`/
+    `.hub-tile--primary` markup and CSS were removed.
+  - Fit-to-viewport: `.hub` is `height:100%; overflow:hidden`; the body grid rows
+    (`1.4fr / 1fr`) and tiles use `min-height:0`, `auto-fit`, and `clamp()` so the
+    hub reflows by width and never scrolls. Hover/active/focus-visible states are
+    token-based. The persistent dock is untouched and stays present on Home.
+  - Search is wired, not decorative: submitting `.hub-search` sets
+    `state.catalogQuery` and routes to Catalog; `catalogView()` filters entries by
+    `artist album discId` (case-insensitive) and shows an `.omd-searchsummary` bar
+    with a Clear button. The Catalog primary tile clears the query first. Added a
+    `search` icon to `dom.ts` and `catalogQuery?: string` to `AppState`.
+  - Labels is not in the mockup, so it is no longer a hub tile. To avoid orphaning
+    it (the sidebar is hidden), added a \"Label sheets\" button to the Catalog
+    actions row. Deferred: a richer in-hub Now Playing (scrubber/spectrum) was not
+    duplicated from the dock; the tile shows album/artist/codec and opens the
+    player. User visual verification in Electron is still pending.
 
 - 2026-07-23: Prompt 05 done (commits `c5dd85d` CSS/tooling, `d5b8365`
   IPC/types/code). Dead-code sweep after the migrations and theme retirement.
