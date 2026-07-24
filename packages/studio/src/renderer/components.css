@@ -1506,9 +1506,6 @@ body {
 }
 
 /* Dock spectrum bars + chips. */
-.now-playing-dock .npd-spectrum .spectrum-fill {
-  background: var(--omd-accent) !important;
-}
 .npd-chip {
   background: var(--omd-surface-2) !important;
   border: 1px solid var(--omd-border) !important;
