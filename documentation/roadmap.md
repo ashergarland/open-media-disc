@@ -11,7 +11,7 @@ format from being real today.
 ## Where we are
 
 **OMD Core v0.1: done.** Create, validate, inspect, and preview OMD packages
-with the `omd` CLI and `@open-album-cartridge/core` SDK. No hardware required.
+with the `omd` CLI and `@open-media-disc/core` SDK. No hardware required.
 For a full breakdown of what is built versus what is left, see
 [Project Status](./project-status.md).
 
@@ -114,8 +114,8 @@ core modules as the CLI, with no duplicated logic. See the
 
 ### In scope
 
-- A new `@open-album-cartridge/studio` Electron app in this monorepo, reusing
-  `@open-album-cartridge/core` directly in the main process.
+- A new `@open-media-disc/studio` Electron app in this monorepo, reusing
+  `@open-media-disc/core` directly in the main process.
 - **Label generation:** a shared, cross-platform label module and an `omd label`
   command that render a printable album-art label sheet (mini CD jewel-case size
   by default) with crop marks. Studio prints it.

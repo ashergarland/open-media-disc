@@ -21,7 +21,7 @@ This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
 authoritative log; read it for the full history and any newer entries.
 
 - Last commit at hand-off: `a2b8641` (step 06, premium touch Home hub). Working
-  tree clean; `pnpm --filter @open-album-cartridge/studio build` and `pnpm lint`
+  tree clean; `pnpm --filter @open-media-disc/studio build` and `pnpm lint`
   are green. The hub was not yet visually confirmed in Electron by the user, so
   begin step 07 by eyeballing it at several widths.
 - Styling model is unchanged: the app renders from `shell.css` (layout only) plus

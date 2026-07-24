@@ -54,7 +54,7 @@ behavior change.
 
 ## Verify
 
-- `pnpm --filter @open-album-cartridge/studio build`, `pnpm test`, and
+- `pnpm --filter @open-media-disc/studio build`, `pnpm test`, and
   `pnpm lint` all clean.
 - Relaunch; ask the user to confirm the app still looks and works the same (this
   is a no-visible-change cleanup).

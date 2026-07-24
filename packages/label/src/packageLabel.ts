@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { inspectPackage } from '@open-album-cartridge/core';
+import { inspectPackage } from '@open-media-disc/core';
 import {
   MINI_CD_LABEL,
   renderLabelSheet,

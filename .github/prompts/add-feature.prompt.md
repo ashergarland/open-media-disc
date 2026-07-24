@@ -5,7 +5,7 @@ description: Add a CLI command or a core SDK API to OMD consistently, with match
 
 # Add a feature (CLI command or core API)
 
-Use this to add a `omd` CLI command or a `@open-album-cartridge/core` API without
+Use this to add a `omd` CLI command or a `@open-media-disc/core` API without
 drifting from the existing patterns. If the feature touches the format, do the
 format part with the `spec-change` prompt first.
 

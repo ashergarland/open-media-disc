@@ -23,13 +23,13 @@ The repository delivers a working pnpm and TypeScript monorepo in four layers:
   `OMD_DISC_LAYOUT.md`, `OMD_VALIDATION_RULES.md`, and `OMD_MANIFEST_SCHEMA.json`.
   The spec is the source of truth the code and docs follow. Format id is
   `OMD-FLAC-DATA`, version `0.1.0`.
-- **The core SDK** `@open-album-cartridge/core` ([`packages/core`](../packages/core))
+- **The core SDK** `@open-media-disc/core` ([`packages/core`](../packages/core))
   covering the full package lifecycle:
   - `createPackage`, `validatePackage`, `inspectPackage`.
   - Manifest create, parse, and validate (Zod plus JSON Schema), SHA-256
     checksums, a dependency-free FLAC metadata reader, filename normalization,
     and 8cm DVD-RW disc-size estimation (about a 1.4 GB budget).
-- **The `omd` CLI** `@open-album-cartridge/cli` ([`packages/cli`](../packages/cli))
+- **The `omd` CLI** `@open-media-disc/cli` ([`packages/cli`](../packages/cli))
   with commands `create`, `validate`, `inspect`, `checksum`, `image`, `burn`, and
   `play` (real playback via mpv/ffplay), plus `--help` and `--version` and a
   0/1/2 exit-code convention.

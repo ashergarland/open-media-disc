@@ -1,5 +1,5 @@
 {
-  "name": "@open-album-cartridge/studio",
+  "name": "@open-media-disc/studio",
   "version": "0.1.0",
   "private": true,
   "description": "OMD Studio: a desktop app for packaging, labeling, burning, and playing Open Media Discs.",
@@ -13,9 +13,9 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@open-album-cartridge/core": "workspace:*",
-    "@open-album-cartridge/label": "workspace:*",
-    "@open-album-cartridge/ui": "workspace:*",
+    "@open-media-disc/core": "workspace:*",
+    "@open-media-disc/label": "workspace:*",
+    "@open-media-disc/ui": "workspace:*",
     "ffmpeg-static": "^5.3.0"
   },
   "devDependencies": {

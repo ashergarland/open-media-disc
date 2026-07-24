@@ -18,7 +18,7 @@ order, one per fresh chat, sharing state through a status file.
    redesign brief [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
    sections 4 (touch-first rules) and 7 (component kit).
 3. Confirm the working tree is clean (`git status`). Build once to be sure the
-   baseline is green: `pnpm --filter @open-album-cartridge/studio build`.
+   baseline is green: `pnpm --filter @open-media-disc/studio build`.
 
 ## Goal
 
@@ -57,7 +57,7 @@ preview, and Save / Print. Only the markup and CSS change.
 
 ## Verify
 
-- `pnpm --filter @open-album-cartridge/studio build` is clean (watch for
+- `pnpm --filter @open-media-disc/studio build` is clean (watch for
   `noUnusedLocals` errors from removed helpers/classes).
 - `pnpm lint` is clean.
 - Relaunch the app (see the status file) and ask the user to confirm the Labels

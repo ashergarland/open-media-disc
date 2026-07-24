@@ -24,7 +24,7 @@ import {
   play as uiPlay,
   type PlayerState,
   type PlayerTrack,
-} from '@open-album-cartridge/ui';
+} from '@open-media-disc/ui';
 
 type Listener = () => void;
 

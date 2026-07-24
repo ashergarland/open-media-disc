@@ -60,7 +60,7 @@ internal choices). Cover at least:
 1. **Repository home.** Should `OpenMediaDisc/` move under
    `ThePhysicalEdition/` so the umbrella company can share internal sources and
    cross-reference projects? If yes, confirm the target path, whether the code
-   repo (`open-album-cartridge/`) keeps its name, and how git history is
+   repo (`open-media-disc/`) keeps its name, and how git history is
    preserved. Do not move anything until this is confirmed.
 2. **Internal sources organization.** The internal `ThePhysicalEdition/sources/`
    area is currently disorganized. Should this prompt propose and apply a folder

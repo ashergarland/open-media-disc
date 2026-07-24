@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { formatDuration, inspectPackage, playlistPaths } from '@open-album-cartridge/core';
+import { formatDuration, inspectPackage, playlistPaths } from '@open-media-disc/core';
 import { stringOption, type ParsedArgs } from '../args.js';
 
 /** Players tried, in order, when none is forced via --player / OMD_PLAYER. */

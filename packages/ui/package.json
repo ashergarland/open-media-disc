@@ -1,5 +1,5 @@
 {
-  "name": "@open-album-cartridge/ui",
+  "name": "@open-media-disc/ui",
   "version": "0.1.0",
   "description": "Open Media Disc (OMD) shared UI kit: the Aqua token theme engine and a framework-agnostic player model, reused by OMD Studio and the Pi player.",
   "license": "MIT",

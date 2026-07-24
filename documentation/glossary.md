@@ -22,8 +22,8 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 | **Strict mode** | Validation setting that promotes a capacity overflow from a warning to an error. |
 | **STREAMINFO** | The FLAC metadata block OMD reads to derive track duration. |
 | **Vorbis comment** | The FLAC tag block OMD reads for artist/album/title/track number. |
-| **OMD Core** | The SDK (`@open-album-cartridge/core`) implementing the format contract. |
-| **OMD CLI** | The `omd` command-line tool (`@open-album-cartridge/cli`). |
+| **OMD Core** | The SDK (`@open-media-disc/core`) implementing the format contract. |
+| **OMD CLI** | The `omd` command-line tool (`@open-media-disc/cli`). |
 | **OMD Studio** | Future desktop application that will wrap OMD Core for packaging, labeling, and burning. |
 | **OMD Pi Player** | Future Raspberry Pi playback device that consumes OMD packages. |
 | **Writer Dock** | Future dedicated device that erases, burns, and verifies OMD discs. |

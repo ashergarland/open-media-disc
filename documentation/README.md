@@ -40,7 +40,7 @@ documentation/
   getting-started.md   First package walkthrough (create → validate → inspect)
   package-format.md    Anatomy of an OMD package (human-friendly)
   cli-reference.md     Every `omd` command and option
-  sdk-reference.md     @open-album-cartridge/core API reference
+  sdk-reference.md     @open-media-disc/core API reference
   validation.md        Error/warning codes and how to fix them
   roadmap.md           Milestones from software to cartridge hardware
   omd-studio.md        OMD Studio (alpha) design: player theming + ripping
@@ -67,8 +67,8 @@ issue so we can fix the docs.
 
 | Package | What it is |
 | --- | --- |
-| [`@open-album-cartridge/core`](../packages/core) | Platform-independent SDK: create, validate, inspect packages. |
-| [`@open-album-cartridge/cli`](../packages/cli) | The `omd` command-line tool. |
+| [`@open-media-disc/core`](../packages/core) | Platform-independent SDK: create, validate, inspect packages. |
+| [`@open-media-disc/cli`](../packages/cli) | The `omd` command-line tool. |
 
 ## Current status
 

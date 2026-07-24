@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createManifest, stringifyManifest } from '@open-album-cartridge/core';
+import { createManifest, stringifyManifest } from '@open-media-disc/core';
 import { buildPackageLabelSheet } from '../src/index.js';
 
 /** SHA-256 of the empty string; a valid 64-char hex placeholder for fixtures. */

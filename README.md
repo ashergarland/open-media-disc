@@ -69,7 +69,7 @@ Full details in the [CLI Reference](./documentation/cli-reference.md).
 ## Use it as a library
 
 ```ts
-import { createPackage, validatePackage } from "@open-album-cartridge/core";
+import { createPackage, validatePackage } from "@open-media-disc/core";
 
 await createPackage({
   sourceDir: "./my-album",
@@ -95,7 +95,7 @@ See the [SDK Reference](./documentation/sdk-reference.md) for the full API.
 | [Getting Started](./documentation/getting-started.md) | Your first package, step by step |
 | [Package Format](./documentation/package-format.md) | Package anatomy |
 | [CLI Reference](./documentation/cli-reference.md) | Every `omd` command |
-| [SDK Reference](./documentation/sdk-reference.md) | The `@open-album-cartridge/core` API |
+| [SDK Reference](./documentation/sdk-reference.md) | The `@open-media-disc/core` API |
 | [Validation Guide](./documentation/validation.md) | Error and warning codes |
 | [Roadmap](./documentation/roadmap.md) | Where OMD is heading |
 | [FAQ](./documentation/faq.md) | Common questions |
@@ -107,25 +107,25 @@ the spec disagree, the spec wins.
 ## Project layout
 
 ```text
-open-album-cartridge/
+open-media-disc/
   spec/            Normative format contract (Markdown + JSON Schema)
   documentation/   User and developer guide (start at documentation/README.md)
-  packages/core/   @open-album-cartridge/core: the SDK
-  packages/label/  @open-album-cartridge/label: printable label sheets
-  packages/ui/     @open-album-cartridge/ui: shared theme engine and player model
-  packages/cli/    @open-album-cartridge/cli: the omd CLI
-  packages/studio/ @open-album-cartridge/studio: the desktop app (Electron)
+  packages/core/   @open-media-disc/core: the SDK
+  packages/label/  @open-media-disc/label: printable label sheets
+  packages/ui/     @open-media-disc/ui: shared theme engine and player model
+  packages/cli/    @open-media-disc/cli: the omd CLI
+  packages/studio/ @open-media-disc/studio: the desktop app (Electron)
   examples/        Sample album and generated packages
   scripts/         Tooling (pnpm gen:examples)
 ```
 
 | Package | Description |
 | --- | --- |
-| [`@open-album-cartridge/core`](./packages/core) | Platform-independent SDK: create, validate, inspect. |
-| [`@open-album-cartridge/label`](./packages/label) | Printable album-art label sheets (SVG). |
-| [`@open-album-cartridge/ui`](./packages/ui) | Shared theme engine and player model (Studio and Pi player). |
-| [`@open-album-cartridge/cli`](./packages/cli) | The `omd` command-line tool. |
-| [`@open-album-cartridge/studio`](./packages/studio) | The OMD Studio desktop app (Electron, alpha). |
+| [`@open-media-disc/core`](./packages/core) | Platform-independent SDK: create, validate, inspect. |
+| [`@open-media-disc/label`](./packages/label) | Printable album-art label sheets (SVG). |
+| [`@open-media-disc/ui`](./packages/ui) | Shared theme engine and player model (Studio and Pi player). |
+| [`@open-media-disc/cli`](./packages/cli) | The `omd` command-line tool. |
+| [`@open-media-disc/studio`](./packages/studio) | The OMD Studio desktop app (Electron, alpha). |
 
 ## Where this is going
 

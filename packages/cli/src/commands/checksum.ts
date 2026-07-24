@@ -5,7 +5,7 @@ import {
   calculateChecksums,
   formatChecksumsFile,
   parseChecksumsFile,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import { readFile } from 'node:fs/promises';
 import { boolOption, type ParsedArgs } from '../args.js';
 

@@ -24,12 +24,12 @@ import {
   updatePackageMetadata,
   validatePackage,
   type MediaInfo,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import {
   BUILTIN_LABEL_TEMPLATES,
   buildPackagesLabelSheet,
   getLabelTemplate,
-} from '@open-album-cartridge/label';
+} from '@open-media-disc/label';
 import ffmpegStatic from 'ffmpeg-static';
 
 /**

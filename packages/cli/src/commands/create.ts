@@ -4,7 +4,7 @@ import {
   OutputExistsError,
   type CreatePackageOptions,
   type CreatePackageResult,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import { boolOption, intOption, stringOption, type ParsedArgs } from '../args.js';
 import { confirmOverwrite } from '../prompt.js';
 import { CLI_NAME, CLI_VERSION } from '../version.js';

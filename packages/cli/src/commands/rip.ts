@@ -4,7 +4,7 @@ import {
   type RipMode,
   type RipOptions,
   type RipResult,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import { boolOption, stringOption, type ParsedArgs } from '../args.js';
 import { confirmOverwrite } from '../prompt.js';
 

@@ -27,15 +27,15 @@ npm install -g pnpm
 ## Get the code
 
 ```bash
-git clone <your-fork-or-repo-url> open-album-cartridge
-cd open-album-cartridge
+git clone <your-fork-or-repo-url> open-media-disc
+cd open-media-disc
 ```
 
 ## Install, build, and verify
 
 ```bash
 pnpm install    # install all workspace dependencies
-pnpm build      # compile @open-album-cartridge/core and /cli
+pnpm build      # compile @open-media-disc/core and /cli
 pnpm test       # run the Vitest suite (should be all green)
 ```
 
@@ -58,6 +58,25 @@ pnpm omd create ./examples/source-album --out ./build/OMD-000001
 pnpm omd validate ./build/OMD-000001
 pnpm omd inspect ./build/OMD-000001
 ```
+
+## Run OMD Studio (desktop app)
+
+OMD Studio is the Electron desktop and Raspberry Pi touch app. Electron is
+installed by `pnpm install` (no separate download), and `pnpm build` compiles it
+along with the rest of the workspace.
+
+```bash
+pnpm build       # builds every package, including Studio's dist/
+pnpm studio      # launches the Electron app
+```
+
+Notes:
+
+- Run `pnpm build` (or `pnpm --filter @open-media-disc/studio build`) before
+  `pnpm studio`; `studio` just launches Electron against the built `dist/`.
+- Importing mixed-codec music uses a bundled `ffmpeg-static` binary (an npm
+  dependency), so no separate ffmpeg install is needed for Studio.
+- Burning to a disc still requires Windows and an optical writer.
 
 ## Regenerate example fixtures (optional)
 

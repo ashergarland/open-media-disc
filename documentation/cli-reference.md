@@ -1,6 +1,6 @@
 # CLI Reference
 
-The `omd` command-line tool wraps [`@open-album-cartridge/core`](./sdk-reference.md).
+The `omd` command-line tool wraps [`@open-media-disc/core`](./sdk-reference.md).
 It creates, validates, inspects, images, burns, and labels OMD packages. Burning
 requires Windows (IMAPI2) with a writer attached.
 

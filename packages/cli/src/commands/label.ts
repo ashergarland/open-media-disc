@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { buildPackageLabelSheet, type LabelFit } from '@open-album-cartridge/label';
+import { buildPackageLabelSheet, type LabelFit } from '@open-media-disc/label';
 import { boolOption, floatOption, intOption, stringOption, type ParsedArgs } from '../args.js';
 
 const USAGE =

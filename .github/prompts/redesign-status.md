@@ -34,9 +34,9 @@ Do not skip step 4. If this file is not updated, the next chat starts blind.
 
 ## Project at a glance
 
-- Repo: `c:\Users\asher\Projects\ashergarland\OpenMediaDisc\open-album-cartridge`
-  (pnpm monorepo, all ESM, TypeScript). Branch `main`. No remote; nothing is
-  pushed. Never push without asking.
+- Repo: the repo root (folder `open-media-disc` on a fresh clone; published as
+  the private GitHub repo `ashergarland/open-media-disc`). pnpm monorepo, all
+  ESM, TypeScript. Branch `main` tracks `origin/main`. Never push without asking.
 - The app under redesign is **OMD Studio**, an Electron desktop + Raspberry Pi
   touch app in `packages/studio`.
 - Other packages (`core`, `cli`, `label`, `ui`) are the shared SDK and are not
@@ -80,8 +80,8 @@ typecheck). `build.mjs` `copyStatic` copies `index.html`, `shell.css`,
 ## Commands
 
 ```powershell
-# from the repo root: c:\Users\asher\Projects\ashergarland\OpenMediaDisc\open-album-cartridge
-pnpm --filter @open-album-cartridge/studio build   # tsc typecheck + esbuild bundle
+# from the repo root
+pnpm --filter @open-media-disc/studio build   # tsc typecheck + esbuild bundle
 pnpm test                                           # core/ui vitest (studio has no tests)
 pnpm lint                                           # eslint
 ```
@@ -90,7 +90,7 @@ Relaunch the real app for the user to test (async terminal): kill the running
 Electron terminal, then
 
 ```powershell
-pnpm --filter @open-album-cartridge/studio start
+pnpm --filter @open-media-disc/studio start
 ```
 
 The harmless `ffmpeg_common.cc ... Unsupported pixel format: -1` log lines are

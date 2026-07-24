@@ -1,11 +1,11 @@
-# @open-album-cartridge/studio
+# @open-media-disc/studio
 
 **OMD Studio**, the desktop app for [Open Media Disc](../../README.md). It wraps
 the OMD core in a guided flow: select an album, package and validate it, generate
 a printable label, burn and verify it to disc, and play a mounted disc in an
 integrated player. The GUI reuses the same core modules as the `omd` CLI.
 
-Built with Electron. The main process reuses `@open-album-cartridge/core`
+Built with Electron. The main process reuses `@open-media-disc/core`
 directly; the renderer calls a small, explicit `window.omd` API exposed by a
 preload bridge (context isolation on, no Node in the renderer).
 
@@ -16,8 +16,8 @@ preload bridge (context isolation on, no Node in the renderer).
 ## Develop
 
 ```bash
-pnpm --filter @open-album-cartridge/studio build   # type-check + bundle to dist/
-pnpm --filter @open-album-cartridge/studio start   # launch the built app
+pnpm --filter @open-media-disc/studio build   # type-check + bundle to dist/
+pnpm --filter @open-media-disc/studio start   # launch the built app
 ```
 
 `build` runs `tsc --noEmit` for type-checking, then bundles with esbuild (main and

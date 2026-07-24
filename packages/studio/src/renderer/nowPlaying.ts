@@ -6,7 +6,7 @@
  * transition. It never decodes audio itself.
  */
 
-import { currentTrack, type PlayerState } from '@open-album-cartridge/ui';
+import { currentTrack, type PlayerState } from '@open-media-disc/ui';
 import { el, svgIcon, type IconName } from './dom';
 
 /** Callbacks the bar invokes as the user drives the transport. */

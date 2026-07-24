@@ -37,7 +37,7 @@ are future options.
 ## Can I use the library without the CLI?
 
 Yes. Everything the CLI does is available in
-[`@open-album-cartridge/core`](./sdk-reference.md).
+[`@open-media-disc/core`](./sdk-reference.md).
 
 ## What does "VALID" actually guarantee?
 

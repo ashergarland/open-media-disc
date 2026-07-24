@@ -5,7 +5,7 @@ import {
   type BurnDrive,
   type BurnProgress,
   type MediaInfo,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import { boolOption, stringOption, type ParsedArgs } from '../args.js';
 
 const USAGE =

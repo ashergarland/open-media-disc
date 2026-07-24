@@ -2,7 +2,7 @@ import {
   inspectPackage,
   validatePackage,
   type ValidatePackageOptions,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import { boolOption, type ParsedArgs } from '../args.js';
 
 /** `omd validate <packageDir> [--strict]` */

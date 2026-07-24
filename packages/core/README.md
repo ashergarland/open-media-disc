@@ -1,4 +1,4 @@
-# @open-album-cartridge/core
+# @open-media-disc/core
 
 The platform-independent TypeScript SDK behind [Open Media Disc](../../README.md).
 It creates, validates, inspects, and images OMD FLAC data packages: album folder
@@ -11,7 +11,7 @@ folder, and it powers the [`omd` CLI](../cli).
 ## Install
 
 ```bash
-pnpm add @open-album-cartridge/core
+pnpm add @open-media-disc/core
 ```
 
 ## Quick start
@@ -21,7 +21,7 @@ import {
   createPackage,
   validatePackage,
   inspectPackage,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 
 // Build a normalized OMD package from an album folder of FLAC files.
 const { manifest, validation } = await createPackage({

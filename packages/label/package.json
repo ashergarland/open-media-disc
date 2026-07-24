@@ -1,5 +1,5 @@
 {
-  "name": "@open-album-cartridge/label",
+  "name": "@open-media-disc/label",
   "version": "0.2.0",
   "description": "Open Media Disc (OMD) label generator: printable album-art label sheets from OMD packages.",
   "license": "MIT",
@@ -21,7 +21,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@open-album-cartridge/core": "workspace:*"
+    "@open-media-disc/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

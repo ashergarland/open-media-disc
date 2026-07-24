@@ -1,4 +1,4 @@
-# @open-album-cartridge/ui
+# @open-media-disc/ui
 
 Shared UI kit for Open Media Disc: the token-based **theme engine** and a
 framework-agnostic **player model**. Both are pure TypeScript with no DOM or
@@ -15,7 +15,7 @@ Four themes ship built in: **Frutiger Aero** (the default cool aqua glass),
 cyan on a dark canvas).
 
 ```ts
-import { FRUTIGER_AERO_THEME, resolveTheme, applyTheme } from '@open-album-cartridge/ui';
+import { FRUTIGER_AERO_THEME, resolveTheme, applyTheme } from '@open-media-disc/ui';
 
 const resolved = resolveTheme(FRUTIGER_AERO_THEME);
 applyTheme(document.documentElement, resolved); // sets --omd-* variables
@@ -37,7 +37,7 @@ import {
   playerTracksFromTracks,
   next,
   togglePlay,
-} from '@open-album-cartridge/ui';
+} from '@open-media-disc/ui';
 
 const tracks = playerTracksFromTracks(manifest.tracks, (f) => `file:///disc/${f}`);
 let state = createPlayerState(tracks);

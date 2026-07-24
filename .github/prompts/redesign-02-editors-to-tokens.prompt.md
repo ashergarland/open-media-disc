@@ -12,7 +12,7 @@ Step 02 of the OMD Studio redesign series. Run in order, one per fresh chat.
 1. Read [`./redesign-status.md`](./redesign-status.md) fully and confirm this is
    the "Next" step. Read [`../copilot-instructions.md`](../copilot-instructions.md).
 2. Confirm a clean tree and a green build
-   (`pnpm --filter @open-album-cartridge/studio build`).
+   (`pnpm --filter @open-media-disc/studio build`).
 
 ## Goal
 

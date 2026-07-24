@@ -1,12 +1,12 @@
 # SDK Reference
 
-`@open-album-cartridge/core` is the platform-independent TypeScript SDK for
+`@open-media-disc/core` is the platform-independent TypeScript SDK for
 creating, validating, inspecting, and imaging OMD packages. Building a UDF disc
 image uses the operating system's imaging tools (Windows IMAPI2 in v0.2); nothing
 extra needs installing.
 
 ```bash
-pnpm add @open-album-cartridge/core
+pnpm add @open-media-disc/core
 ```
 
 ```ts
@@ -14,7 +14,7 @@ import {
   createPackage,
   validatePackage,
   inspectPackage,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 ```
 
 > Types shown here mirror the source in

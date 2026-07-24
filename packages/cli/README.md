@@ -1,9 +1,9 @@
-# @open-album-cartridge/cli
+# @open-media-disc/cli
 
 `omd`, the command-line tool for [Open Media Disc](../../README.md). It turns an
 album folder of FLAC files into a verified OMD package, then validates, inspects,
 images, burns, labels, and previews it. It wraps
-[`@open-album-cartridge/core`](../core). Burning requires Windows (IMAPI2) with a
+[`@open-media-disc/core`](../core). Burning requires Windows (IMAPI2) with a
 writer attached.
 
 ## Commands

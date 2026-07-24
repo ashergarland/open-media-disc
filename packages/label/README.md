@@ -1,4 +1,4 @@
-# @open-album-cartridge/label
+# @open-media-disc/label
 
 The label generator behind [Open Media Disc](../../README.md). It turns an OMD
 package into a printable **album-art label sheet** as SVG, sized in real inches so
@@ -8,13 +8,13 @@ powers both the `omd label` CLI and OMD Studio.
 ## Install
 
 ```bash
-pnpm add @open-album-cartridge/label
+pnpm add @open-media-disc/label
 ```
 
 ## Quick start
 
 ```ts
-import { buildPackageLabelSheet } from '@open-album-cartridge/label';
+import { buildPackageLabelSheet } from '@open-media-disc/label';
 import { writeFile } from 'node:fs/promises';
 
 // Build a mini CD jewel-case label from a package's cover art.
@@ -61,7 +61,7 @@ discs in a 2 x 3 grid on A4, printed with a small bleed so the art reaches the
 die-cut edge. Adding new stock is just another data entry with its measurements.
 
 ```ts
-import { buildPackagesLabelSheet, getLabelTemplate } from '@open-album-cartridge/label';
+import { buildPackagesLabelSheet, getLabelTemplate } from '@open-media-disc/label';
 
 const result = await buildPackagesLabelSheet({
   packages: [{ packageDir: './build/OMD-000001', copies: 6 }],

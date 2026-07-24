@@ -4,7 +4,7 @@ import {
   formatBytes,
   formatDuration,
   inspectPackage,
-} from '@open-album-cartridge/core';
+} from '@open-media-disc/core';
 import type { ParsedArgs } from '../args.js';
 
 /** `omd inspect <packageDir>` */

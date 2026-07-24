@@ -1,4 +1,4 @@
-import { buildDiscImage, formatBytes } from '@open-album-cartridge/core';
+import { buildDiscImage, formatBytes } from '@open-media-disc/core';
 import { stringOption, type ParsedArgs } from '../args.js';
 
 const USAGE = 'Usage: omd image <packageDir> --out <imagePath> [--label <name>]';

@@ -1,5 +1,5 @@
 {
-  "name": "@open-album-cartridge/core",
+  "name": "@open-media-disc/core",
   "version": "0.2.0",
   "description": "Open Media Disc (OMD) Core — create, validate, and inspect OMD FLAC data packages.",
   "license": "MIT",

@@ -44,10 +44,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@open-album-cartridge/core':
+      '@open-media-disc/core':
         specifier: workspace:*
         version: link:../core
-      '@open-album-cartridge/label':
+      '@open-media-disc/label':
         specifier: workspace:*
         version: link:../label
     devDependencies:
@@ -79,7 +79,7 @@ importers:
 
   packages/label:
     dependencies:
-      '@open-album-cartridge/core':
+      '@open-media-disc/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -95,13 +95,13 @@ importers:
 
   packages/studio:
     dependencies:
-      '@open-album-cartridge/core':
+      '@open-media-disc/core':
         specifier: workspace:*
         version: link:../core
-      '@open-album-cartridge/label':
+      '@open-media-disc/label':
         specifier: workspace:*
         version: link:../label
-      '@open-album-cartridge/ui':
+      '@open-media-disc/ui':
         specifier: workspace:*
         version: link:../ui
       ffmpeg-static:

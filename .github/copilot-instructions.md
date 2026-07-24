@@ -1,6 +1,6 @@
 # Copilot / AI Instructions: Open Media Disc (OMD)
 
-You are working in the **Open Media Disc (OMD)** repository (`open-album-cartridge`).
+You are working in the **Open Media Disc (OMD)** repository (`open-media-disc`).
 OMD is an open-source physical music format. This milestone is **OMD Core v0.1**:
 turn an album folder of FLAC files into a verified OMD package, then validate,
 inspect, and (stub) play it. **No optical burning, no hardware, no GUI.**
@@ -56,12 +56,12 @@ source, spec, or CLI files.
 ## Project layout
 
 ```text
-open-album-cartridge/
+open-media-disc/
   spec/            Normative format contract (Markdown + JSON Schema)
   documentation/   Public user/developer docs (landing = documentation/README.md)
   .github/context/ Agent-facing background (product-context.md)
-  packages/core/   @open-album-cartridge/core: SDK
-  packages/cli/    @open-album-cartridge/cli: the `omd` CLI
+  packages/core/   @open-media-disc/core: SDK
+  packages/cli/    @open-media-disc/cli: the `omd` CLI
   examples/        Synthetic FLAC fixtures + sample packages
   scripts/         make-examples.mts (pnpm gen:examples)
 ```

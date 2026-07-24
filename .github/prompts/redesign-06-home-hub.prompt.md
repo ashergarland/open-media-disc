@@ -23,7 +23,7 @@ This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
 authoritative log; read it for the full history and any newer entries.
 
 - Last commit at hand-off: `00b4a98` (step 05 cleanup docs; code in `d5b8365`).
-  Working tree clean; `pnpm --filter @open-album-cartridge/studio build`,
+  Working tree clean; `pnpm --filter @open-media-disc/studio build`,
   `pnpm test` (141), and `pnpm lint` all green.
 - Styling: the app renders from `shell.css` (layout only) plus `components.css`
   (the `--omd-*` token contract, the component kit, and a shrinking "Legacy token

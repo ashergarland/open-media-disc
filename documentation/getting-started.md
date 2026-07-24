@@ -171,10 +171,10 @@ are future work.
 ## Using the library instead of the CLI
 
 Everything the CLI does is available programmatically via
-[`@open-album-cartridge/core`](./sdk-reference.md):
+[`@open-media-disc/core`](./sdk-reference.md):
 
 ```ts
-import { createPackage, validatePackage, inspectPackage } from '@open-album-cartridge/core';
+import { createPackage, validatePackage, inspectPackage } from '@open-media-disc/core';
 
 await createPackage({
   sourceDir: './Albums/Blank Banshee 0',

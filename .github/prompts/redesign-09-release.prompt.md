@@ -23,7 +23,7 @@ software-version bump only; the format version does not change.
 
 ## Tasks
 
-1. Verify green: `pnpm --filter @open-album-cartridge/studio build`,
+1. Verify green: `pnpm --filter @open-media-disc/studio build`,
    `pnpm test`, and `pnpm lint` all clean. Fix or report any failure before
    proceeding; do not tag over a red build.
 2. Confirm with the user that the redesign is at a demoable point (ideally after
@@ -31,7 +31,7 @@ software-version bump only; the format version does not change.
    that is fine for a software checkpoint, but say so.
 3. Decide the version bump with the user. Policy: patch by default, minor only
    when told, never major without instruction. The Studio package is
-   `@open-album-cartridge/studio` (currently `0.1.0`). A redesign of this size is
+   `@open-media-disc/studio` (currently `0.1.0`). A redesign of this size is
    a reasonable minor bump if the user agrees; otherwise patch.
    - `omdVersion` (the format version in `packages/core/src/constants.ts`) stays
      unchanged. Only software versions move.
