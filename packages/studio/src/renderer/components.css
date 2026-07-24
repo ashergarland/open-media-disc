@@ -774,12 +774,16 @@ body {
 /* The Home hub: a full-bleed, fit-to-viewport surface (brand + search, then
    the core-job tiles, then secondary access). Everything reads --omd-* tokens
    so it renders correctly in every theme. */
+.hub,
+.hub * {
+  box-sizing: border-box;
+}
 .hub {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 2.4vh, 26px);
-  padding: clamp(16px, 2.4vw, 34px);
+  gap: clamp(10px, 1.8vmin, 24px);
+  padding: clamp(12px, 2.4vmin, 32px);
   overflow: hidden;
   color: var(--omd-text);
   font-family: var(--omd-font);
@@ -894,15 +898,17 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-rows: 1.4fr 1fr;
-  gap: clamp(12px, 2vh, 22px);
+  grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(10px, 1.8vmin, 20px);
 }
 
 .hub-primary {
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(clamp(210px, 24vw, 340px), 1fr));
-  gap: clamp(12px, 1.6vw, 22px);
+  grid-template-columns: repeat(auto-fit, minmax(clamp(180px, 22vw, 330px), 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: clamp(10px, 1.6vmin, 20px);
+  overflow: hidden;
 }
 
 /* Shared glass surface for every hub tile. */
@@ -957,8 +963,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
-  padding: clamp(16px, 1.8vw, 30px);
+  gap: clamp(8px, 1.4vmin, 14px);
+  padding: clamp(14px, 2.4vmin, 28px);
 }
 .hub-tile::before {
   content: '';
@@ -981,25 +987,25 @@ body {
   border: 1px solid color-mix(in srgb, var(--omd-accent) 30%, transparent);
 }
 .hub-tile-icon {
-  width: clamp(46px, 4vw, 60px);
-  height: clamp(46px, 4vw, 60px);
+  width: clamp(38px, 6vmin, 60px);
+  height: clamp(38px, 6vmin, 60px);
 }
 .hub-tile-text {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: clamp(3px, 0.7vmin, 6px);
 }
 .hub-tile-title {
-  font: 800 clamp(20px, 2.2vw, 30px) / 1.05 var(--omd-font);
+  font: 800 clamp(17px, 3vmin, 30px) / 1.05 var(--omd-font);
   letter-spacing: -0.01em;
 }
 .hub-tile-sub {
   max-width: 24ch;
   color: var(--omd-text-dim);
-  font-size: clamp(13px, 1.3vw, 16px);
-  line-height: 1.4;
+  font-size: clamp(12px, 1.9vmin, 16px);
+  line-height: 1.35;
 }
 .hub-tile-action {
   position: relative;
@@ -1008,13 +1014,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
-  padding: 0 16px;
+  height: clamp(32px, 5.2vmin, 42px);
+  padding: 0 clamp(12px, 2vmin, 16px);
   border-radius: 999px;
   background: color-mix(in srgb, var(--omd-accent) 92%, transparent);
   color: var(--omd-on-accent);
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(12px, 1.9vmin, 14px);
 }
 
 /* Secondary row: a wide Now Playing tile plus two compact tiles. */
@@ -1022,19 +1028,21 @@ body {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(12px, 1.6vw, 22px);
+  grid-auto-rows: minmax(0, 1fr);
+  gap: clamp(10px, 1.6vmin, 20px);
+  overflow: hidden;
 }
 
 .hub-np {
   display: flex;
   align-items: center;
-  gap: clamp(12px, 1.4vw, 20px);
-  padding: clamp(14px, 1.6vw, 24px);
+  gap: clamp(10px, 1.6vmin, 20px);
+  padding: clamp(12px, 2vmin, 24px);
 }
 .hub-np-art {
   flex: 0 0 auto;
-  width: clamp(68px, 8vw, 116px);
-  height: clamp(68px, 8vw, 116px);
+  width: clamp(52px, 10vmin, 112px);
+  height: clamp(52px, 10vmin, 112px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1062,14 +1070,14 @@ body {
   color: var(--omd-accent);
 }
 .hub-np-title {
-  font: 800 clamp(18px, 1.8vw, 26px) / 1.1 var(--omd-font);
+  font: 800 clamp(16px, 2.4vmin, 26px) / 1.1 var(--omd-font);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .hub-np-artist {
   color: var(--omd-text-dim);
-  font-size: clamp(13px, 1.3vw, 16px);
+  font-size: clamp(12px, 1.9vmin, 16px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1087,12 +1095,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  padding: clamp(14px, 1.6vw, 22px);
+  gap: clamp(6px, 1.2vmin, 10px);
+  padding: clamp(12px, 2vmin, 22px);
 }
 .hub-mini-icon {
-  width: clamp(42px, 3.4vw, 52px);
-  height: clamp(42px, 3.4vw, 52px);
+  width: clamp(36px, 5.4vmin, 52px);
+  height: clamp(36px, 5.4vmin, 52px);
 }
 .hub-mini-body {
   position: relative;
@@ -1100,14 +1108,14 @@ body {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: clamp(2px, 0.6vmin, 4px);
 }
 .hub-mini-title {
-  font: 700 clamp(16px, 1.6vw, 22px) / 1.1 var(--omd-font);
+  font: 700 clamp(15px, 2.2vmin, 22px) / 1.1 var(--omd-font);
 }
 .hub-mini-sub {
   color: var(--omd-text-dim);
-  font-size: clamp(12px, 1.2vw, 14px);
+  font-size: clamp(11px, 1.7vmin, 14px);
 }
 
 /* Catalog search summary bar (shown when the hub search set a query). */
