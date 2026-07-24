@@ -17,6 +17,39 @@ Step 06 of the OMD Studio redesign series. Run in order, one per fresh chat.
    direction, not a pixel spec.
 3. Clean tree, green build.
 
+## Current context (snapshot as of step 05)
+
+This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
+authoritative log; read it for the full history and any newer entries.
+
+- Last commit at hand-off: `00b4a98` (step 05 cleanup docs; code in `d5b8365`).
+  Working tree clean; `pnpm --filter @open-album-cartridge/studio build`,
+  `pnpm test` (141), and `pnpm lint` all green.
+- Styling: the app renders from `shell.css` (layout only) plus `components.css`
+  (the `--omd-*` token contract, the component kit, and a shrinking "Legacy token
+  bridge"). There is no theme stylesheet. Themes are token maps applied by
+  setting `data-theme` on `document.documentElement`: `midnight` (dark default),
+  `daylight` (light), `ember` (amber dark). All hub work must read `--omd-*`
+  tokens so every theme looks right; set dynamic values via CSSOM (CSP).
+- The hub today: `homeView()` in `renderer.ts` returns `.hub` (a `.hub-head`
+  title/sub plus a `.hub-grid` of `hubTile({icon,title,sub,primary?,onClick})`).
+  Tiles route via `setView`: Play a Disc -> `disc`, Create a Disc -> `burn`,
+  Catalog -> `catalog`, Labels -> `labels`, plus Now Playing / Themes / Settings.
+  Hub classes live in `components.css` (`.hub`, `.hub-head`, `.hub-title`,
+  `.hub-sub`, `.hub-grid`, `.hub-tile`, `.hub-tile--primary`, `.hub-tile-icon`,
+  `.hub-tile-body`). Navigation is `setView(view: ViewId)`; reuse it, do not fork.
+- Full-bleed home: `buildShell()` builds a sidebar that is `display:none`
+  (`.app-sidebar`); `setView`/`buildShell` toggle `.app-shell--home` so Home is
+  edge-to-edge. The persistent transport dock is `.now-playing-dock` (built by
+  `nowPlaying.ts`) and must stay present and correct on Home.
+- Fit-to-viewport helpers already exist: `.omd-screen` (sticky top bar + body)
+  and `.omd-stack` / `.omd-fill` / `.omd-scroll` for bounded scroll regions; the
+  hub uses its own full-bleed `.hub` layout.
+- Not yet built: a Search affordance (the mockup shows one). Intentionally kept
+  as future plumbing (do not remove): the hidden sidebar nav subsystem, and the
+  Web Audio analyser + `getLevels()` in `audioController.ts` (for a real dock
+  visualizer; the current `.npd-eq` bars are decorative).
+
 ## Goal
 
 Elevate the Home hub (`homeView` in
@@ -56,6 +89,23 @@ right in every theme.
 2. Update [`./redesign-status.md`](./redesign-status.md): tick row 06, set row 07
    to `Next`, refresh Current state, and Log what the hub now includes and
    anything deferred (for example Search).
+
+## Hand off to the next step
+
+Keep the series self-contained and self-propagating. Before you finish, prepare
+the next prompt so whoever runs it in a fresh chat has current context:
+
+1. Open the next prompt, [`./redesign-07-pi-tuning.prompt.md`](./redesign-07-pi-tuning.prompt.md).
+2. Refresh its "## Current context (snapshot ...)" section to reflect the repo
+   after your work: the last commit, what the hub and app look like now, the
+   files and patterns step 07 will touch, and anything you deferred. If that
+   section is missing, add it right after the "## Before you start" section
+   (use this prompt's "Current context" section as the shape to follow).
+3. Make sure that prompt still contains a "## Hand off to the next step" section
+   like this one, pointing at the step after it
+   (`redesign-08-docs-pass.prompt.md`). If it is missing, copy this section into
+   it and update the two file names. This is how every step keeps the next one
+   current, so do not drop it.
 
 ## Guardrails
 

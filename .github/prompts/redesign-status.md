@@ -26,6 +26,11 @@ Do not skip step 4. If this file is not updated, the next chat starts blind.
 - If you discovered a durable fact (a build quirk, a CSS trick, a file
   location), add it to "Gotchas and durable facts" or to repository memory
   (`/memories/repo/open-media-disc.md`) so it is not lost.
+- Hand off to the next prompt: each `redesign-NN` prompt carries a "Current
+  context (snapshot)" section and a "Hand off to the next step" section. Before
+  finishing, refresh the NEXT prompt's snapshot with the post-work state and make
+  sure it still has a hand-off section pointing at the step after it. This keeps
+  every prompt self-contained for a fresh chat even between status-file updates.
 
 ## Project at a glance
 
