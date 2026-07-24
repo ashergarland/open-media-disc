@@ -39,6 +39,12 @@ pnpm build      # compile @open-media-disc/core and /cli
 pnpm test       # run the Vitest suite (should be all green)
 ```
 
+Or do all of it in one command:
+
+```bash
+pnpm onboard    # install, build, test, and lint in one pass
+```
+
 You should see the test suite pass. If `pnpm test` passes, your environment is
 ready.
 

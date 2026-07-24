@@ -11,6 +11,7 @@ docs-in-sync, no em dash, no emojis in Markdown headers, and careful versioning.
 
 | Prompt | Use it to |
 | --- | --- |
+| [get-started](./get-started.prompt.md) | Onboard on a fresh machine or fresh chat: one-command install, build, test, and lint, then report project state and the next step. |
 | [next-steps](./next-steps.prompt.md) | Run the top-level planning session: decide direction, set goals and roadmap, pick the next stage, and drive it end to end. Start here. |
 | [stage-kickoff](./stage-kickoff.prompt.md) | Plan and design one deliverable stage: scope, non-goals, exit criteria, and a task list. |
 | [spec-change](./spec-change.prompt.md) | Change the format safely, spec-first, with schema, fixtures, and docs kept in sync. |

@@ -19,6 +19,9 @@ If you are asked "how do I get started?", or you need to find where something
 lives, use this map. These files are the source of truth; prefer them over
 guessing.
 
+- **One-command onboarding:** run the [`/get-started`](./prompts/get-started.prompt.md)
+  runbook prompt in a fresh chat, or run `pnpm onboard` (install + build + test +
+  lint) from the repo root.
 - **Set up and run the dev environment:**
   [`documentation/installation.md`](../documentation/installation.md) covers
   prerequisites (Node 18+, pnpm 8+), `pnpm install` / `build` / `test`, running
