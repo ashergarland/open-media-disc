@@ -412,5 +412,4 @@ export interface OmdStudioApi {
   revealInFolder(target: string): Promise<void>;
   /** Permanently delete an OMD package folder from disk. */
   deletePackage(source: string): Promise<void>;
-  importThemeFile(): Promise<string | null>;
 }

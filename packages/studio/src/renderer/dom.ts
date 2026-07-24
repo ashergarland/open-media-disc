@@ -49,7 +49,6 @@ function shape(tag: string, attrs: Record<string, string>): SVGElement {
 
 export type IconName =
   | 'create'
-  | 'player'
   | 'catalog'
   | 'themes'
   | 'settings'
@@ -98,7 +97,6 @@ function iconDef(name: IconName): IconDef {
           shape('path', { d: 'M32 8 A24 24 0 0 1 56 32', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.4', 'stroke-linecap': 'round' }),
         ],
       };
-    case 'player':
     case 'play':
       return {
         viewBox: '0 0 24 24',

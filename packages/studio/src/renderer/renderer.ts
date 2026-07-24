@@ -152,7 +152,6 @@ interface AppState {
     /** Where the flow was launched from (returns/loads there when done). */
     origin?: 'catalog' | 'burn';
   };
-  themeError?: string;
 }
 
 const THEME_STORAGE_KEY = 'omd.themeId';

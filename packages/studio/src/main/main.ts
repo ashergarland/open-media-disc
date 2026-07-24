@@ -936,20 +936,6 @@ ipcMain.handle('omd:deletePackage', async (_event, source: string): Promise<void
   await rm(source, { recursive: true, force: true });
 });
 
-ipcMain.handle('omd:importThemeFile', async (): Promise<string | null> => {
-  const result = await dialog.showOpenDialog({
-    title: 'Import a theme',
-    properties: ['openFile'],
-    filters: [{ name: 'Theme JSON', extensions: ['json'] }],
-  });
-  if (result.canceled || result.filePaths.length === 0) return null;
-  try {
-    return await readFile(result.filePaths[0]!, 'utf8');
-  } catch {
-    return null;
-  }
-});
-
 void app.whenReady().then(() => {
   protocol.handle('omd-audio', async (request) => {
     const requested = new URL(request.url).searchParams.get('p');

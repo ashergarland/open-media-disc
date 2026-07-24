@@ -72,7 +72,6 @@ const api: OmdStudioApi = {
   },
   revealInFolder: (target) => ipcRenderer.invoke('omd:revealInFolder', target),
   deletePackage: (source) => ipcRenderer.invoke('omd:deletePackage', source),
-  importThemeFile: () => ipcRenderer.invoke('omd:importThemeFile'),
 };
 
 contextBridge.exposeInMainWorld('omd', api);
