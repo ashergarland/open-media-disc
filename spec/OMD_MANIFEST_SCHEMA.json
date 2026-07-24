@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://open-album-cartridge.org/schema/OMD_MANIFEST_SCHEMA.json",
+  "$id": "https://open-media-disc.org/schema/OMD_MANIFEST_SCHEMA.json",
   "title": "OMD Manifest",
   "description": "Manifest schema for an Open Media Disc (OMD) audio data package, format version 0.1.0.",
   "type": "object",
