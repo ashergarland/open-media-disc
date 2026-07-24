@@ -1252,10 +1252,8 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     `${disc.trackCount} tracks`,
     formatClock(disc.totalDurationSeconds),
     disc.audioCodec,
+    ...qualityFacts(disc),
   ];
-  if (disc.audioSampleRate) facts.push(`${formatKHz(disc.audioSampleRate)} kHz`);
-  if (disc.audioBitDepth) facts.push(`${disc.audioBitDepth}-bit`);
-  if (disc.audioBitrate) facts.push(`${Math.round(disc.audioBitrate / 1000)} kbps`);
   if (disc.releaseYear) facts.push(String(disc.releaseYear));
   if (disc.discFormat) facts.push(disc.discFormat);
 
@@ -1351,8 +1349,8 @@ function formatKHz(hz: number): string {
  */
 function qualityFacts(disc: StudioDiscInfo): string[] {
   const out: string[] = [];
+  if (disc.audioSampleRate) out.push(`${formatKHz(disc.audioSampleRate)} kHz`);
   if (disc.audioLossless) {
-    if (disc.audioSampleRate) out.push(`${formatKHz(disc.audioSampleRate)} kHz`);
     if (disc.audioBitDepth) out.push(`${disc.audioBitDepth}-bit`);
   } else if (disc.audioBitrate) {
     out.push(`${Math.round(disc.audioBitrate / 1000)} kbps`);
