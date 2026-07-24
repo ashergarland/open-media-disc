@@ -104,6 +104,8 @@ interface AppState {
   catalog?: CatalogEntry[];
   catalogLoading: boolean;
   catalogError?: string;
+  /** Active catalog search query (set from the Home hub search), or undefined for all. */
+  catalogQuery?: string;
   importStatus?: { busy: boolean; result?: StudioImportResult };
   /** Per-album import review: edit the metadata and pick a format before committing. */
   importReview?: {
@@ -2470,11 +2472,28 @@ function catalogView(): HTMLElement {
       svgIcon('rip', 18),
       'New mixtape',
     ]),
+    el('button', { class: 'omd-btn', type: 'button', onclick: () => setView('labels') }, [
+      svgIcon('label', 18),
+      'Label sheets',
+    ]),
   ]);
   const body: (Node | string)[] = [actions];
   if (state.libraryDir) body.push(el('p', { class: 'omd-muted omd-path', text: state.libraryDir }));
   if (state.importStatus) body.push(importStatusEl(state.importStatus));
   if (state.albumError) body.push(el('p', { class: 'omd-muted', text: state.albumError }));
+
+  const query = state.catalogQuery?.trim().toLowerCase();
+  if (query) {
+    body.push(
+      el('div', { class: 'omd-searchsummary' }, [
+        el('span', { class: 'omd-muted', text: `Search: \u201c${state.catalogQuery}\u201d` }),
+        omdBtn('Clear search', undefined, () => {
+          state.catalogQuery = undefined;
+          renderMain();
+        }),
+      ]),
+    );
+  }
 
   let results: HTMLElement;
   if (state.catalogLoading) {
@@ -2482,9 +2501,20 @@ function catalogView(): HTMLElement {
   } else if (state.catalogError) {
     results = el('div', { class: 'omd-scroll' }, [el('p', { class: 'omd-muted', text: state.catalogError })]);
   } else if (state.catalog && state.catalog.length > 0) {
-    const grid = el('div', { class: 'omd-grid' });
-    for (const entry of state.catalog) grid.append(catalogCard(entry));
-    results = el('div', { class: 'omd-scroll' }, [grid]);
+    const matches = query
+      ? state.catalog.filter((entry) =>
+          `${entry.artist} ${entry.album} ${entry.discId}`.toLowerCase().includes(query),
+        )
+      : state.catalog;
+    if (matches.length > 0) {
+      const grid = el('div', { class: 'omd-grid' });
+      for (const entry of matches) grid.append(catalogCard(entry));
+      results = el('div', { class: 'omd-scroll' }, [grid]);
+    } else {
+      results = el('div', { class: 'omd-scroll' }, [
+        el('p', { class: 'omd-muted', text: `No albums match \u201c${state.catalogQuery}\u201d.` }),
+      ]);
+    }
   } else {
     results = el('div', { class: 'omd-scroll' }, [
       el('p', {
@@ -2500,86 +2530,172 @@ function catalogView(): HTMLElement {
   return el('div', { class: 'omd-stack omd-fill' }, body);
 }
 
-/** A large touch tile on the Home hub. */
-function hubTile(opts: {
+/** A large primary tile on the Home hub (one of the core jobs). */
+function hubPrimaryTile(opts: {
   icon: IconName;
   title: string;
   sub: string;
-  primary?: boolean;
+  action: string;
   onClick: () => void;
 }): HTMLElement {
+  return el('button', { class: 'hub-tile', type: 'button', onclick: opts.onClick }, [
+    el('span', { class: 'hub-tile-art', 'aria-hidden': 'true' }, [svgIcon(opts.icon, 132)]),
+    el('span', { class: 'hub-tile-icon' }, [svgIcon(opts.icon, 30)]),
+    el('span', { class: 'hub-tile-text' }, [
+      el('span', { class: 'hub-tile-title', text: opts.title }),
+      el('span', { class: 'hub-tile-sub', text: opts.sub }),
+    ]),
+    el('span', { class: 'hub-tile-action' }, [
+      el('span', { text: opts.action }),
+      svgIcon('chevron-right', 16),
+    ]),
+  ]);
+}
+
+/** A compact secondary tile on the Home hub (Themes, Settings). */
+function hubMiniTile(opts: { icon: IconName; title: string; sub: string; onClick: () => void }): HTMLElement {
+  return el('button', { class: 'hub-mini', type: 'button', onclick: opts.onClick }, [
+    el('span', { class: 'hub-tile-art', 'aria-hidden': 'true' }, [svgIcon(opts.icon, 108)]),
+    el('span', { class: 'hub-mini-icon' }, [svgIcon(opts.icon, 26)]),
+    el('span', { class: 'hub-mini-body' }, [
+      el('span', { class: 'hub-mini-title', text: opts.title }),
+      el('span', { class: 'hub-mini-sub', text: opts.sub }),
+    ]),
+  ]);
+}
+
+/** The wide Now Playing tile: art plus the loaded album, routing to its player. */
+function hubNowPlayingTile(): HTMLElement {
+  const np = state.nowPlaying;
+  const art = np?.disc.coverDataUri
+    ? el('img', { src: np.disc.coverDataUri, alt: '' })
+    : svgIcon('note', 40);
+  const meta: (Node | string)[] = [];
+  if (np) {
+    meta.push(el('span', { text: `${np.disc.audioCodec} \u00b7 ${np.disc.audioLossless ? 'Lossless' : 'Lossy'}` }));
+    meta.push(el('span', { text: `${np.disc.trackCount} tracks` }));
+  }
   return el(
     'button',
-    { class: `hub-tile${opts.primary ? ' hub-tile--primary' : ''}`, type: 'button', onclick: opts.onClick },
+    {
+      class: 'hub-np',
+      type: 'button',
+      onclick: () => {
+        const playing = state.nowPlaying;
+        if (playing?.source === 'album') void openAlbum(playing.disc.source);
+        else setView('disc');
+      },
+    },
     [
-      el('span', { class: 'hub-tile-icon' }, [svgIcon(opts.icon, 40)]),
-      el('span', { class: 'hub-tile-body' }, [
-        el('span', { class: 'hub-tile-title', text: opts.title }),
-        el('span', { class: 'hub-tile-sub', text: opts.sub }),
+      el('span', { class: 'hub-np-art' }, [art]),
+      el('span', { class: 'hub-np-body' }, [
+        el('span', { class: 'hub-np-eyebrow', text: 'Now Playing' }),
+        el('span', { class: 'hub-np-title', text: np ? np.disc.album : 'Nothing playing yet' }),
+        el('span', { class: 'hub-np-artist', text: np ? np.disc.artist : 'Insert a disc or pick from your catalog' }),
+        meta.length ? el('span', { class: 'hub-np-meta' }, meta) : '',
       ]),
     ],
   );
 }
 
-/** The Home hub: large touch tiles for the primary jobs. */
-function homeView(): HTMLElement {
+/** The Home hub top bar: brand, catalog search, and now-playing status pills. */
+function hubBar(): HTMLElement {
+  const input = el('input', {
+    class: 'hub-search-input',
+    type: 'search',
+    placeholder: 'Search albums, artists, tracks\u2026',
+    'aria-label': 'Search your catalog',
+    value: state.catalogQuery ?? '',
+  }) as HTMLInputElement;
+  const search = el(
+    'form',
+    {
+      class: 'hub-search',
+      role: 'search',
+      onsubmit: (event: Event) => {
+        event.preventDefault();
+        const query = input.value.trim();
+        state.catalogQuery = query.length > 0 ? query : undefined;
+        setView('catalog');
+      },
+    },
+    [
+      el('span', { class: 'hub-search-icon', 'aria-hidden': 'true' }, [svgIcon('search', 20)]),
+      input,
+    ],
+  );
+
+  const status = el('div', { class: 'hub-bar-status' });
   const np = state.nowPlaying;
-  const nowPlayingSub = np ? `${np.disc.artist} - ${np.disc.album}` : 'Nothing playing yet';
-  return el('div', { class: 'hub' }, [
-    el('header', { class: 'hub-head' }, [
-      el('div', { class: 'hub-title', text: 'OMD Studio' }),
-      el('div', { class: 'hub-sub', text: 'Your music, pressed to real discs.' }),
+  if (np) {
+    status.append(
+      el('span', { class: 'hub-pill' }, [
+        svgIcon('wave', 16),
+        el('span', { text: `${np.disc.audioCodec} \u00b7 ${np.disc.audioLossless ? 'Lossless' : 'Lossy'}` }),
+      ]),
+    );
+    if (discVerified() === true) {
+      status.append(
+        el('span', { class: 'hub-pill hub-pill--verified' }, [
+          svgIcon('check', 16),
+          el('span', { text: 'Verified' }),
+        ]),
+      );
+    }
+  }
+
+  const brand = el('div', { class: 'hub-brand' }, [
+    el('img', { class: 'hub-brand-disc', src: logoFor(), alt: '' }),
+    el('div', { class: 'hub-brand-word' }, [
+      el('div', { class: 'hub-brand-omd', text: 'OMD' }),
+      el('div', { class: 'hub-brand-studio', text: 'STUDIO' }),
     ]),
-    el('div', { class: 'hub-grid' }, [
-      hubTile({
-        icon: 'disc',
-        title: 'Play a Disc',
-        sub: 'Insert and play an OMD disc',
-        primary: true,
-        onClick: () => setView('disc'),
-      }),
-      hubTile({
-        icon: 'create',
-        title: 'Create a Disc',
-        sub: 'Import, build, and burn',
-        primary: true,
-        onClick: () => setView('burn'),
-      }),
-      hubTile({
-        icon: 'catalog',
-        title: 'Catalog',
-        sub: 'Browse your library',
-        primary: true,
-        onClick: () => setView('catalog'),
-      }),
-      hubTile({
-        icon: 'label',
-        title: 'Labels',
-        sub: 'Print album-art label sheets',
-        onClick: () => setView('labels'),
-      }),
-      hubTile({
-        icon: 'play',
-        title: 'Now Playing',
-        sub: nowPlayingSub,
-        onClick: () => {
-          const playing = state.nowPlaying;
-          if (playing?.source === 'album') void openAlbum(playing.disc.source);
-          else setView('disc');
-        },
-      }),
-      hubTile({
-        icon: 'themes',
-        title: 'Themes',
-        sub: 'Change the look',
-        onClick: () => setView('themes'),
-      }),
-      hubTile({
-        icon: 'settings',
-        title: 'Settings',
-        sub: 'Drives and info',
-        onClick: () => setView('settings'),
-      }),
+  ]);
+
+  return el('header', { class: 'hub-bar' }, [brand, search, status]);
+}
+
+/** The Home hub: brand + search bar, the core-job tiles, and secondary access. */
+function homeView(): HTMLElement {
+  return el('div', { class: 'hub' }, [
+    hubBar(),
+    el('div', { class: 'hub-body' }, [
+      el('div', { class: 'hub-primary' }, [
+        hubPrimaryTile({
+          icon: 'disc',
+          title: 'Play a Disc',
+          sub: 'Detect and play an inserted OMD disc.',
+          action: 'Open player',
+          onClick: () => setView('disc'),
+        }),
+        hubPrimaryTile({
+          icon: 'create',
+          title: 'Create a Disc',
+          sub: 'Import, build, and burn an album.',
+          action: 'New project',
+          onClick: () => setView('burn'),
+        }),
+        hubPrimaryTile({
+          icon: 'catalog',
+          title: 'Catalog',
+          sub: 'Browse and manage your library.',
+          action: 'View library',
+          onClick: () => {
+            state.catalogQuery = undefined;
+            setView('catalog');
+          },
+        }),
+      ]),
+      el('div', { class: 'hub-secondary' }, [
+        hubNowPlayingTile(),
+        hubMiniTile({ icon: 'themes', title: 'Themes', sub: 'Customize the look.', onClick: () => setView('themes') }),
+        hubMiniTile({
+          icon: 'settings',
+          title: 'Settings',
+          sub: 'Drives and device info.',
+          onClick: () => setView('settings'),
+        }),
+      ]),
     ]),
   ]);
 }

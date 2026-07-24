@@ -70,6 +70,7 @@ export type IconName =
   | 'disc'
   | 'trash'
   | 'home'
+  | 'search'
   | 'label';
 
 interface IconDef {
@@ -192,6 +193,14 @@ function iconDef(name: IconName): IconDef {
         shapes: [
           shape('path', { d: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 3 12.2V5a2 2 0 0 1 2-2h7.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8Z', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linejoin': 'round' }),
           shape('circle', { cx: '7.8', cy: '7.8', r: '1.5', fill: 'currentColor' }),
+        ],
+      };
+    case 'search': // Magnifier
+      return {
+        viewBox: '0 0 24 24',
+        shapes: [
+          shape('circle', { cx: '10.5', cy: '10.5', r: '6.5', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.9' }),
+          shape('line', { x1: '15.5', y1: '15.5', x2: '20.5', y2: '20.5', stroke: 'currentColor', 'stroke-width': '1.9', 'stroke-linecap': 'round' }),
         ],
       };
     case 'drive': // Optical Drive
