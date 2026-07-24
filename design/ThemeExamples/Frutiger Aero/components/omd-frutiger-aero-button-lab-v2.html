@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OMD Frutiger Aero Button Lab v2</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --font-ui: "Nunito Sans", "Segoe UI", sans-serif;
+
+      --cyan-top: #72dcfb;
+      --cyan-mid: #32c4ee;
+      --cyan-bottom: #0ba5d8;
+      --cyan-deep: #087fb7;
+
+      --ink: #0d5d80;
+      --panel: rgba(237, 252, 255, 0.56);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-ui);
+      color: var(--ink);
+
+      background:
+        radial-gradient(circle at 14% 14%, rgba(255,255,255,.92), transparent 23%),
+        radial-gradient(circle at 82% 18%, rgba(255,255,255,.35), transparent 20%),
+        linear-gradient(180deg, #eefeff 0%, #c8f4ff 46%, #9fe5f8 100%);
+    }
+
+    .lab {
+      width: min(980px, 100%);
+      padding: 28px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,.85);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(218,248,255,.34));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.98),
+        inset 0 -2px 4px rgba(16,118,160,.12),
+        0 24px 60px rgba(18,113,154,.20);
+      backdrop-filter: blur(18px) saturate(135%);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -.035em;
+      color: #105f82;
+      text-shadow: 0 1px 0 #fff;
+    }
+
+    .intro {
+      margin: 8px 0 24px;
+      max-width: 700px;
+      line-height: 1.5;
+      color: rgba(13,93,128,.68);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .sample {
+      min-height: 144px;
+      padding: 22px;
+      display: grid;
+      place-items: center;
+      gap: 14px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.75);
+      background:
+        radial-gradient(circle at 28% 16%, rgba(255,255,255,.72), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.34), rgba(199,239,250,.22));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.92),
+        inset 0 -1px 3px rgba(20,111,151,.10);
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(13,93,128,.53);
+    }
+
+    /*
+      Revised OMD button treatment:
+      - simple light-to-dark vertical fill
+      - thick translucent rim with volume
+      - directional rim lighting
+      - concentrated bottom-right glint
+    */
+
+    .aero-button {
+      --radius: 22px;
+
+      position: relative;
+      isolation: isolate;
+      overflow: visible;
+
+      min-width: 240px;
+      height: 62px;
+      padding: 0 30px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+
+      appearance: none;
+      border: 3px solid transparent;
+      border-radius: var(--radius);
+
+      font: 700 19px/1 var(--font-ui);
+      color: #fff;
+      text-shadow:
+        0 1px 1px rgba(0, 77, 120, .50),
+        0 0 5px rgba(255,255,255,.16);
+
+      cursor: pointer;
+      user-select: none;
+
+      /*
+        First layer = restrained vertical fill.
+        Second layer = translucent glass rim.
+      */
+      background:
+        linear-gradient(
+          180deg,
+          var(--cyan-top) 0%,
+          #4fd0f4 25%,
+          var(--cyan-mid) 55%,
+          var(--cyan-bottom) 100%
+        ) padding-box,
+
+        linear-gradient(
+          180deg,
+          rgba(235, 253, 255, .96) 0%,
+          rgba(109, 221, 249, .92) 18%,
+          rgba(32, 170, 220, .90) 63%,
+          rgba(4, 119, 179, .96) 100%
+        ) border-box;
+
+      box-shadow:
+        /* soft body lift */
+        0 10px 18px rgba(0, 112, 164, .23),
+        0 3px 5px rgba(0, 91, 144, .20),
+
+        /* restrained external cyan halo */
+        0 0 13px rgba(60, 210, 244, .22),
+
+        /* volume inside the translucent rim */
+        inset 0 2px 0 rgba(255,255,255,.63),
+        inset 2px 0 0 rgba(255,255,255,.24),
+        inset -2px 0 0 rgba(0,105,160,.20),
+        inset 0 -4px 5px rgba(0,91,146,.28);
+
+      transition:
+        transform 150ms ease,
+        filter 150ms ease,
+        box-shadow 150ms ease;
+    }
+
+    /*
+      Inner wet-plastic highlight.
+      This is narrow and subtle, not a broad gradient across the face.
+    */
+    .aero-button::before {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      z-index: 0;
+      border-radius: calc(var(--radius) - 4px);
+      pointer-events: none;
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.40) 0%,
+          rgba(255,255,255,.13) 16%,
+          rgba(255,255,255,0) 38%
+        );
+
+      border:
+        1px solid rgba(255,255,255,.28);
+
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.42),
+        inset 0 -1px 0 rgba(0,84,136,.16);
+    }
+
+    /*
+      Directional light restricted to the outer rim.
+
+      Upper-left = broad cool highlight.
+      Bottom-right = concentrated white/cyan glint.
+      The mask removes the center so this behaves like illuminated glass edging.
+    */
+    .aero-button::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      z-index: 2;
+      padding: 4px;
+      border-radius: calc(var(--radius) + 3px);
+      pointer-events: none;
+
+      background:
+        radial-gradient(
+          circle at 8% 4%,
+          rgba(255,255,255,.98) 0%,
+          rgba(205,249,255,.82) 7%,
+          rgba(87,219,249,.33) 16%,
+          transparent 29%
+        ),
+        radial-gradient(
+          circle at 97% 102%,
+          rgba(255,255,255,1) 0%,
+          rgba(236,253,255,.98) 4%,
+          rgba(126,232,255,.72) 9%,
+          rgba(41,190,234,.28) 17%,
+          transparent 28%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.58) 0%,
+          rgba(104,226,252,.22) 35%,
+          rgba(0,118,181,.25) 72%,
+          rgba(212,250,255,.55) 100%
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask-composite: exclude;
+
+      filter:
+        drop-shadow(0 0 4px rgba(89,225,255,.36));
+    }
+
+    .aero-button > * {
+      position: relative;
+      z-index: 3;
+    }
+
+    .icon {
+      width: 27px;
+      height: 27px;
+      flex: none;
+      color: #fff;
+      filter:
+        drop-shadow(0 1px 1px rgba(0,74,112,.28))
+        drop-shadow(0 0 2px rgba(255,255,255,.18));
+    }
+
+    .aero-button:hover,
+    .aero-button.is-hover {
+      transform: translateY(-1px);
+      filter: brightness(1.045) saturate(1.04);
+      box-shadow:
+        0 13px 22px rgba(0, 112, 164, .26),
+        0 4px 7px rgba(0, 91, 144, .20),
+        0 0 18px rgba(60, 210, 244, .31),
+        inset 0 2px 0 rgba(255,255,255,.72),
+        inset 2px 0 0 rgba(255,255,255,.30),
+        inset -2px 0 0 rgba(0,105,160,.19),
+        inset 0 -4px 5px rgba(0,91,146,.25);
+    }
+
+    .aero-button:active,
+    .aero-button.is-pressed {
+      transform: translateY(1px);
+      filter: brightness(.96) saturate(1.02);
+      background:
+        linear-gradient(
+          180deg,
+          #56d0f3 0%,
+          #36bee8 34%,
+          #18addd 66%,
+          #0799cf 100%
+        ) padding-box,
+
+        linear-gradient(
+          180deg,
+          rgba(202,247,255,.92) 0%,
+          rgba(84,208,240,.88) 24%,
+          rgba(19,150,204,.92) 66%,
+          rgba(1,103,165,.97) 100%
+        ) border-box;
+
+      box-shadow:
+        0 5px 9px rgba(0, 100, 152, .18),
+        0 0 10px rgba(60, 210, 244, .18),
+        inset 0 3px 7px rgba(0,75,121,.25),
+        inset 0 -1px 0 rgba(255,255,255,.16);
+    }
+
+    .aero-button:focus-visible,
+    .aero-button.is-focus {
+      outline: none;
+      box-shadow:
+        0 0 0 3px rgba(255,255,255,.85),
+        0 0 0 7px rgba(58,203,239,.40),
+        0 10px 18px rgba(0,112,164,.23),
+        0 0 18px rgba(60,210,244,.28),
+        inset 0 2px 0 rgba(255,255,255,.63),
+        inset 0 -4px 5px rgba(0,91,146,.28);
+    }
+
+    .aero-button.secondary {
+      color: #126584;
+      text-shadow: 0 1px 0 rgba(255,255,255,.92);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(249,254,255,.96) 0%,
+          rgba(225,248,253,.92) 42%,
+          rgba(188,230,243,.92) 100%
+        ) padding-box,
+
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.98) 0%,
+          rgba(169,237,252,.88) 26%,
+          rgba(57,160,201,.80) 70%,
+          rgba(232,252,255,.94) 100%
+        ) border-box;
+
+      box-shadow:
+        0 9px 16px rgba(0,102,151,.15),
+        0 0 11px rgba(67,210,241,.15),
+        inset 0 2px 0 rgba(255,255,255,.82),
+        inset 0 -4px 5px rgba(21,112,153,.14);
+    }
+
+    .aero-button.compact {
+      min-width: 0;
+      height: 46px;
+      padding-inline: 20px;
+      border-width: 2px;
+      border-radius: 17px;
+      font-size: 15px;
+    }
+
+    .aero-button.icon-only {
+      min-width: 62px;
+      width: 62px;
+      padding: 0;
+    }
+
+    @media (max-width: 820px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 16px;
+      }
+
+      .lab {
+        padding: 20px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .aero-button {
+        min-width: min(100%, 260px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .aero-button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <h1>OMD Frutiger Aero Button Lab v2</h1>
+    <p class="intro">
+      Revised to match the reference more closely: restrained vertical fill, thicker translucent
+      glass edging, directional border glow, and a concentrated bottom-right specular glint.
+    </p>
+
+    <div class="grid">
+      <div class="sample">
+        <button class="aero-button" type="button">
+          <svg class="icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="15" cy="15" r="10.5" stroke="currentColor" stroke-width="2.3"/>
+            <circle cx="15" cy="15" r="2.4" stroke="currentColor" stroke-width="2"/>
+            <path d="M15 4.5v5M25.5 15h-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="23.5" cy="23.5" r="6.5" fill="currentColor"/>
+            <path d="M23.5 19.8v7.4M19.8 23.5h7.4" stroke="#19A9DA" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <span>Rip to Library</span>
+        </button>
+        <span class="label">Live / Normal</span>
+      </div>
+
+      <div class="sample">
+        <button class="aero-button is-hover" type="button">
+          <svg class="icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="15" cy="15" r="10.5" stroke="currentColor" stroke-width="2.3"/>
+            <circle cx="15" cy="15" r="2.4" stroke="currentColor" stroke-width="2"/>
+            <circle cx="23.5" cy="23.5" r="6.5" fill="currentColor"/>
+            <path d="M23.5 19.8v7.4M19.8 23.5h7.4" stroke="#19A9DA" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <span>Rip to Library</span>
+        </button>
+        <span class="label">Hover</span>
+      </div>
+
+      <div class="sample">
+        <button class="aero-button is-pressed" type="button">
+          <svg class="icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <circle cx="15" cy="15" r="10.5" stroke="currentColor" stroke-width="2.3"/>
+            <circle cx="15" cy="15" r="2.4" stroke="currentColor" stroke-width="2"/>
+            <circle cx="23.5" cy="23.5" r="6.5" fill="currentColor"/>
+            <path d="M23.5 19.8v7.4M19.8 23.5h7.4" stroke="#169BC8" stroke-width="2.2" stroke-linecap="round"/>
+          </svg>
+          <span>Rip to Library</span>
+        </button>
+        <span class="label">Pressed</span>
+      </div>
+
+      <div class="sample">
+        <button class="aero-button secondary" type="button">
+          <span>Open Album</span>
+        </button>
+        <span class="label">Secondary</span>
+      </div>
+
+      <div class="sample">
+        <button class="aero-button compact" type="button">
+          <span>Burn to Disc</span>
+        </button>
+        <span class="label">Compact Primary</span>
+      </div>
+
+      <div class="sample">
+        <button class="aero-button icon-only" type="button" aria-label="Play">
+          <svg class="icon" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+            <path d="M11 7.5v17l14-8.5-14-8.5Z"/>
+          </svg>
+        </button>
+        <span class="label">Icon Button</span>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

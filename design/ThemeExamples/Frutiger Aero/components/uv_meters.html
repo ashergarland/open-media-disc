@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Liquid Aero Stereo VU Meters</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --meter-width: 430px;
+      --meter-height: 230px;
+
+      --meter-radius: 23px;
+      --rim-width: 7px;
+
+      --rim-dark: rgba(13, 101, 157, 0.92);
+      --rim-medium: rgba(89, 188, 226, 0.86);
+      --rim-light: rgba(221, 250, 255, 0.99);
+
+      --outer-glow: rgba(73, 192, 235, 0.28);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 42px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse 80% 75% at 50% 25%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(237, 251, 255, 0.78) 48%,
+          transparent 80%
+        ),
+        linear-gradient(
+          180deg,
+          #effbff 0%,
+          #d6f1fa 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .stereo-vu {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 38px;
+    }
+
+    /*
+      Shared SVG definitions are kept outside the visible layout.
+    */
+    .svg-definitions {
+      position: absolute;
+
+      width: 0;
+      height: 0;
+
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* =========================================================
+       METER COMPONENT
+       ========================================================= */
+
+    .vu-meter {
+      position: relative;
+      isolation: isolate;
+
+      width: var(--meter-width);
+      height: var(--meter-height);
+
+      overflow: hidden;
+
+      border: 0;
+      border-radius: var(--meter-radius);
+
+      background: transparent;
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.92),
+        0 4px 6px rgba(20, 94, 143, 0.2),
+        0 12px 19px rgba(23, 111, 161, 0.17),
+        0 20px 32px rgba(37, 147, 192, 0.1),
+        0 0 17px var(--outer-glow);
+    }
+
+    /* =========================================================
+       FEATHERED LIQUID / METALLIC RIM
+       ========================================================= */
+
+    .liquid-rim {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: 0;
+
+      padding: var(--rim-width);
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 48% 27% at 15% -3%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.96) 5%,
+          rgba(228, 250, 255, 0.8) 16%,
+          rgba(154, 222, 246, 0.48) 35%,
+          rgba(56, 158, 207, 0.17) 61%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 43% 26% at 84% -2%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(245, 254, 255, 0.86) 7%,
+          rgba(211, 245, 255, 0.63) 21%,
+          rgba(118, 205, 237, 0.35) 43%,
+          rgba(29, 137, 191, 0.12) 66%,
+          transparent 87%
+        ),
+
+        radial-gradient(
+          ellipse 43% 26% at 17% 103%,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(237, 252, 255, 0.78) 8%,
+          rgba(175, 230, 249, 0.5) 23%,
+          rgba(76, 178, 217, 0.25) 46%,
+          transparent 83%
+        ),
+
+        radial-gradient(
+          ellipse 55% 28% at 82% 104%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.94) 6%,
+          rgba(216, 248, 255, 0.7) 18%,
+          rgba(130, 213, 241, 0.39) 39%,
+          rgba(36, 146, 197, 0.14) 63%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 18% 84% at 0% 50%,
+          rgba(241, 254, 255, 0.78) 0%,
+          rgba(143, 221, 245, 0.42) 34%,
+          rgba(18, 128, 183, 0.16) 64%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 18% 84% at 100% 50%,
+          rgba(238, 253, 255, 0.74) 0%,
+          rgba(138, 216, 243, 0.38) 34%,
+          rgba(15, 121, 178, 0.15) 64%,
+          transparent 86%
+        ),
+
+        linear-gradient(
+          180deg,
+          var(--rim-light) 0%,
+          var(--rim-medium) 25%,
+          var(--rim-dark) 63%,
+          var(--rim-medium) 84%,
+          var(--rim-light) 100%
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter:
+        blur(0.4px)
+        saturate(1.04);
+    }
+
+    .liquid-rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+
+      inset: 1px;
+
+      border-radius: inherit;
+
+      box-shadow:
+        0 0 5px rgba(255, 255, 255, 0.78),
+        0 0 14px var(--outer-glow);
+
+      opacity: 0.8;
+    }
+
+    .liquid-rim::after {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 42% 7% at 22% 1%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(255, 255, 255, 0.72) 11%,
+          rgba(216, 246, 255, 0.31) 37%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 34% 7% at 78% 1%,
+          rgba(255, 255, 255, 0.88) 0%,
+          rgba(236, 252, 255, 0.56) 18%,
+          rgba(163, 225, 247, 0.2) 46%,
+          transparent 83%
+        ),
+
+        radial-gradient(
+          ellipse 41% 8% at 19% 99%,
+          rgba(255, 255, 255, 0.85) 0%,
+          rgba(225, 248, 255, 0.5) 20%,
+          rgba(129, 208, 236, 0.17) 49%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 51% 9% at 79% 99%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.7) 11%,
+          rgba(199, 240, 254, 0.29) 39%,
+          transparent 84%
+        );
+
+      filter: blur(1.7px);
+      opacity: 0.94;
+    }
+
+    /* =========================================================
+       RECESSED METER SURFACE
+       ========================================================= */
+
+    .meter-surface {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: var(--rim-width);
+
+      overflow: hidden;
+
+      border: 1px solid rgba(255, 255, 255, 0.56);
+
+      border-radius:
+        calc(var(--meter-radius) - var(--rim-width));
+
+      background:
+        radial-gradient(
+          ellipse 145% 185% at -19% 128%,
+          rgba(0, 183, 224, 0.84) 0%,
+          rgba(10, 194, 229, 0.7) 18%,
+          rgba(51, 207, 235, 0.48) 37%,
+          rgba(112, 224, 243, 0.25) 56%,
+          rgba(186, 241, 250, 0.09) 75%,
+          transparent 95%
+        ),
+
+        radial-gradient(
+          ellipse 150% 165% at 35% 120%,
+          rgba(67, 203, 233, 0.2) 0%,
+          rgba(137, 226, 244, 0.12) 43%,
+          rgba(215, 248, 252, 0.04) 71%,
+          transparent 94%
+        ),
+
+        radial-gradient(
+          ellipse 165% 150% at 49% -47%,
+          rgba(255, 255, 255, 0.99) 0%,
+          rgba(251, 255, 255, 0.92) 24%,
+          rgba(240, 252, 255, 0.7) 48%,
+          rgba(220, 246, 252, 0.36) 70%,
+          rgba(201, 237, 247, 0.11) 88%,
+          transparent 100%
+        ),
+
+        linear-gradient(
+          135deg,
+          #d8f6fc 0%,
+          #cff1f9 37%,
+          #d9f4fa 68%,
+          #eafaff 100%
+        );
+
+      box-shadow:
+        0 0 0 1px rgba(20, 104, 157, 0.24),
+
+        inset 0 5px 8px rgba(22, 105, 156, 0.13),
+        inset 0 1px 2px rgba(255, 255, 255, 0.86),
+        inset 0 -3px 5px rgba(255, 255, 255, 0.48);
+    }
+
+    .meter-surface::before {
+      content: "";
+      position: absolute;
+
+      top: -82px;
+      right: 2px;
+
+      width: 175px;
+      height: 390px;
+
+      transform: rotate(31deg);
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.02) 13%,
+          rgba(255, 255, 255, 0.11) 32%,
+          rgba(255, 255, 255, 0.29) 48%,
+          rgba(255, 255, 255, 0.14) 63%,
+          rgba(255, 255, 255, 0.03) 80%,
+          transparent 100%
+        );
+
+      filter: blur(8px);
+      opacity: 0.54;
+    }
+
+    .meter-surface::after {
+      content: "";
+      position: absolute;
+
+      left: -110px;
+      bottom: -153px;
+
+      width: 385px;
+      height: 300px;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          ellipse at 47% 29%,
+          rgba(17, 208, 238, 0.62) 0%,
+          rgba(5, 188, 225, 0.5) 23%,
+          rgba(0, 158, 205, 0.35) 45%,
+          rgba(0, 126, 188, 0.15) 66%,
+          rgba(0, 110, 176, 0.04) 82%,
+          transparent 95%
+        );
+
+      filter: blur(14px);
+      transform: rotate(3deg);
+    }
+
+    /* =========================================================
+       SVG SCALE
+       ========================================================= */
+
+    .vu-dial {
+      position: absolute;
+      z-index: 3;
+
+      inset: var(--rim-width);
+
+      width: calc(100% - (var(--rim-width) * 2));
+      height: calc(100% - (var(--rim-width) * 2));
+
+      overflow: visible;
+    }
+
+    /*
+      The labels now use a recessed treatment:
+
+      - no exterior drop shadow
+      - a dark upper-left impression
+      - a soft white lower-right edge
+      - lower-contrast fill
+    */
+    .scale-number {
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+      font-size: 22px;
+      font-weight: 700;
+
+      text-anchor: middle;
+      dominant-baseline: middle;
+
+      filter: url("#inset-scale-text");
+    }
+
+    .scale-tick {
+      stroke-linecap: round;
+
+      filter:
+        drop-shadow(
+          0 1px 0 rgba(255, 255, 255, 0.4)
+        );
+    }
+
+    /* =========================================================
+       THINNER LIQUID-AERO NEEDLE
+       ========================================================= */
+
+    .needle-group {
+      transform-origin: 210px 214px;
+      transform-box: view-box;
+
+      transition:
+        transform 180ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+
+    .needle-shadow {
+      fill: rgba(13, 72, 106, 0.2);
+
+      transform: translate(2px, 3px);
+
+      filter: blur(1.2px);
+    }
+
+    /*
+      The needle is substantially narrower than before.
+
+      It remains fully opaque, but uses smooth cyan and white
+      reflections to appear like a wet acrylic or polished glass
+      spindle rather than cartoon metal.
+    */
+    .needle-body {
+      fill: url("#needle-glass");
+
+      stroke: rgba(20, 125, 174, 0.72);
+      stroke-width: 0.85px;
+      stroke-linejoin: round;
+
+      filter:
+        drop-shadow(
+          0 0 1px rgba(255, 255, 255, 0.95)
+        )
+        drop-shadow(
+          0 0 3px rgba(48, 188, 226, 0.36)
+        );
+    }
+
+    .needle-highlight {
+      fill: none;
+
+      stroke: rgba(255, 255, 255, 0.96);
+      stroke-width: 0.65px;
+      stroke-linecap: round;
+
+      filter:
+        drop-shadow(
+          0 0 1px rgba(255, 255, 255, 0.8)
+        );
+    }
+
+    .needle-aqua-edge {
+      fill: none;
+
+      stroke: rgba(18, 143, 193, 0.66);
+      stroke-width: 0.55px;
+      stroke-linecap: round;
+    }
+
+    /* =========================================================
+       PARTIALLY HIDDEN SPINDLE BASE
+       ========================================================= */
+
+    /*
+      Most of the circular base is now below the clipped edge of
+      the component. Only the glossy upper crown is visible.
+    */
+    .pivot {
+      position: absolute;
+      z-index: 5;
+
+      left: 50%;
+      bottom: -70px;
+
+      width: 94px;
+      height: 94px;
+
+      transform: translateX(-50%);
+
+      border: 2px solid rgba(48, 157, 204, 0.54);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle at 30% 22%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.86) 12%,
+          rgba(255, 255, 255, 0.18) 32%,
+          transparent 45%
+        ),
+
+        radial-gradient(
+          circle at 53% 67%,
+          rgba(255, 255, 255, 0.82) 0%,
+          rgba(216, 247, 253, 0.4) 37%,
+          transparent 67%
+        ),
+
+        radial-gradient(
+          circle at 73% 62%,
+          rgba(65, 205, 239, 0.3) 0%,
+          rgba(79, 208, 240, 0.07) 44%,
+          transparent 66%
+        ),
+
+        linear-gradient(
+          145deg,
+          rgba(241, 253, 255, 0.98) 0%,
+          rgba(199, 237, 248, 0.88) 45%,
+          rgba(128, 204, 229, 0.68) 100%
+        );
+
+      box-shadow:
+        inset 0 4px 6px rgba(255, 255, 255, 0.95),
+        inset 4px 2px 7px rgba(255, 255, 255, 0.55),
+        inset -6px -7px 10px rgba(18, 125, 181, 0.2),
+
+        0 0 0 2px rgba(222, 249, 255, 0.5),
+        0 -2px 5px rgba(255, 255, 255, 0.42),
+        0 0 10px rgba(52, 192, 235, 0.32);
+    }
+
+    .pivot::before {
+      content: "";
+      position: absolute;
+
+      inset: 11px;
+
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(232, 250, 255, 0.15),
+          rgba(255, 255, 255, 0.11) 52%,
+          rgba(49, 165, 210, 0.12) 100%
+        );
+
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.86),
+        inset 0 -3px 4px rgba(19, 125, 179, 0.12);
+    }
+
+    /*
+      Small fastener remains near the visible upper crown.
+    */
+    .pivot::after {
+      content: "";
+      position: absolute;
+
+      left: 50%;
+      top: 10px;
+
+      width: 8px;
+      height: 8px;
+
+      transform: translateX(-50%);
+
+      border: 1px solid rgba(22, 141, 188, 0.42);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle at 34% 28%,
+          #ffffff 0%,
+          #bdeef7 36%,
+          #45bfdc 70%,
+          #1382b6 100%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.8),
+        0 0 4px rgba(18, 158, 207, 0.4);
+    }
+
+    /* =========================================================
+       INSET CHANNEL BADGE
+       ========================================================= */
+
+    .channel-badge {
+      position: absolute;
+      z-index: 6;
+
+      left: 28px;
+      bottom: 27px;
+
+      width: 43px;
+      height: 49px;
+
+      display: grid;
+      place-items: center;
+
+      border: 1px solid rgba(16, 107, 160, 0.48);
+      border-radius: 15px;
+
+      color: rgba(239, 253, 255, 0.96);
+
+      background:
+        radial-gradient(
+          ellipse at 48% 16%,
+          rgba(255, 255, 255, 0.24),
+          transparent 46%
+        ),
+        linear-gradient(
+          180deg,
+          #168fc6 0%,
+          #087cb7 49%,
+          #066ca7 100%
+        );
+
+      box-shadow:
+        inset 4px 5px 8px rgba(0, 57, 106, 0.5),
+        inset -2px -2px 4px rgba(104, 218, 247, 0.24),
+        inset 0 0 0 2px rgba(3, 91, 147, 0.22),
+
+        0 1px 0 rgba(255, 255, 255, 0.72),
+        0 -1px 2px rgba(0, 70, 124, 0.34);
+
+      font-size: 29px;
+      font-weight: 600;
+      line-height: 1;
+
+      text-shadow:
+        0 2px 2px rgba(0, 58, 106, 0.72),
+        0 0 3px rgba(255, 255, 255, 0.34);
+    }
+
+    .channel-badge::before {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+
+      inset: -4px;
+
+      border: 1px solid rgba(47, 143, 189, 0.28);
+      border-radius: 18px;
+
+      box-shadow:
+        inset 0 1px 2px rgba(18, 99, 151, 0.27),
+        0 1px 1px rgba(255, 255, 255, 0.66);
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 980px) {
+      .stereo-vu {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 520px) {
+      :root {
+        --meter-width: 355px;
+        --meter-height: 190px;
+
+        --meter-radius: 20px;
+        --rim-width: 6px;
+      }
+
+      body {
+        padding: 24px 10px;
+      }
+
+      .scale-number {
+        font-size: 20px;
+      }
+
+      .channel-badge {
+        left: 22px;
+        bottom: 21px;
+
+        width: 36px;
+        height: 42px;
+
+        font-size: 25px;
+      }
+
+      .pivot {
+        width: 80px;
+        height: 80px;
+
+        bottom: -61px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .needle-group {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Shared SVG filters and gradients -->
+  <svg
+    class="svg-definitions"
+    width="0"
+    height="0"
+    aria-hidden="true"
+  >
+    <defs>
+      <!-- Wet, glossy needle material -->
+      <linearGradient
+        id="needle-glass"
+        x1="0"
+        y1="0"
+        x2="1"
+        y2="0"
+      >
+        <stop
+          offset="0%"
+          stop-color="#0876ae"
+        />
+
+        <stop
+          offset="15%"
+          stop-color="#5bc7e7"
+        />
+
+        <stop
+          offset="38%"
+          stop-color="#d9f8ff"
+        />
+
+        <stop
+          offset="50%"
+          stop-color="#ffffff"
+        />
+
+        <stop
+          offset="64%"
+          stop-color="#c9f3fc"
+        />
+
+        <stop
+          offset="84%"
+          stop-color="#45b9dc"
+        />
+
+        <stop
+          offset="100%"
+          stop-color="#076ca4"
+        />
+      </linearGradient>
+
+      <!--
+        Recessed label filter.
+
+        Dark upper-left edge and pale lower-right edge make the
+        numbers appear pressed into the meter face.
+      -->
+      <filter
+        id="inset-scale-text"
+        x="-25%"
+        y="-25%"
+        width="150%"
+        height="150%"
+        color-interpolation-filters="sRGB"
+      >
+        <feGaussianBlur
+          in="SourceAlpha"
+          stdDeviation="0.55"
+          result="blurredAlpha"
+        />
+
+        <feOffset
+          in="blurredAlpha"
+          dx="-0.9"
+          dy="-1"
+          result="upperShadow"
+        />
+
+        <feFlood
+          flood-color="#064c7f"
+          flood-opacity="0.48"
+          result="upperColor"
+        />
+
+        <feComposite
+          in="upperColor"
+          in2="upperShadow"
+          operator="in"
+          result="upperInset"
+        />
+
+        <feOffset
+          in="blurredAlpha"
+          dx="1"
+          dy="1.2"
+          result="lowerHighlight"
+        />
+
+        <feFlood
+          flood-color="#ffffff"
+          flood-opacity="0.8"
+          result="lowerColor"
+        />
+
+        <feComposite
+          in="lowerColor"
+          in2="lowerHighlight"
+          operator="in"
+          result="lowerInset"
+        />
+
+        <feMerge>
+          <feMergeNode in="upperInset" />
+          <feMergeNode in="lowerInset" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+  <main class="stereo-vu">
+    <!-- LEFT CHANNEL -->
+    <section
+      class="vu-meter"
+      data-meter="left"
+      aria-label="Left channel VU meter"
+    >
+      <span
+        class="liquid-rim"
+        aria-hidden="true"
+      ></span>
+
+      <span
+        class="meter-surface"
+        aria-hidden="true"
+      ></span>
+
+      <svg
+        class="vu-dial"
+        viewBox="0 0 420 230"
+        aria-hidden="true"
+      >
+        <g class="scale-layer"></g>
+
+        <g class="needle-group">
+          <path
+            class="needle-shadow"
+            d="
+              M 208.35 216
+              L 209.46 77
+              Q 210 68 210.54 77
+              L 211.65 216
+              Z
+            "
+          />
+
+          <path
+            class="needle-body"
+            d="
+              M 208.35 216
+              L 209.46 77
+              Q 210 68 210.54 77
+              L 211.65 216
+              Z
+            "
+          />
+
+          <path
+            class="needle-highlight"
+            d="M 209.82 209 L 209.82 78"
+          />
+
+          <path
+            class="needle-aqua-edge"
+            d="M 211.18 210 L 210.45 78"
+          />
+        </g>
+      </svg>
+
+      <span
+        class="pivot"
+        aria-hidden="true"
+      ></span>
+
+      <span
+        class="channel-badge"
+        aria-hidden="true"
+      >
+        L
+      </span>
+    </section>
+
+    <!-- RIGHT CHANNEL -->
+    <section
+      class="vu-meter"
+      data-meter="right"
+      aria-label="Right channel VU meter"
+    >
+      <span
+        class="liquid-rim"
+        aria-hidden="true"
+      ></span>
+
+      <span
+        class="meter-surface"
+        aria-hidden="true"
+      ></span>
+
+      <svg
+        class="vu-dial"
+        viewBox="0 0 420 230"
+        aria-hidden="true"
+      >
+        <g class="scale-layer"></g>
+
+        <g class="needle-group">
+          <path
+            class="needle-shadow"
+            d="
+              M 208.35 216
+              L 209.46 77
+              Q 210 68 210.54 77
+              L 211.65 216
+              Z
+            "
+          />
+
+          <path
+            class="needle-body"
+            d="
+              M 208.35 216
+              L 209.46 77
+              Q 210 68 210.54 77
+              L 211.65 216
+              Z
+            "
+          />
+
+          <path
+            class="needle-highlight"
+            d="M 209.82 209 L 209.82 78"
+          />
+
+          <path
+            class="needle-aqua-edge"
+            d="M 211.18 210 L 210.45 78"
+          />
+        </g>
+      </svg>
+
+      <span
+        class="pivot"
+        aria-hidden="true"
+      ></span>
+
+      <span
+        class="channel-badge"
+        aria-hidden="true"
+      >
+        R
+      </span>
+    </section>
+  </main>
+
+  <script>
+    /*
+      ==========================================================
+      USER CONFIGURATION
+      ==========================================================
+
+      Labels occupy equal angular sections of the circular scale.
+
+      You may change the values without manually repositioning
+      anything.
+    */
+    const VU_CONFIG = {
+      labels: [-20, -10, -6, -3, 0, 3],
+
+      /*
+        Four subdivisions produce:
+        one major tick plus three minor ticks per label segment.
+      */
+      subdivisionsPerSegment: 4,
+
+      /*
+        Equal left and right angles around vertical center.
+      */
+      startAngle: -57,
+      endAngle: 57,
+
+      pivot: {
+        x: 210,
+        y: 214
+      },
+
+      radii: {
+        label: 181,
+
+        tickOuter: 153,
+        majorTickInner: 126,
+        minorTickInner: 136
+      },
+
+      /*
+        Tick color is determined by the interpolated numeric value.
+      */
+      colorZones: [
+        {
+          maximum: -6,
+          color: "#2788c6"
+        },
+        {
+          maximum: 0,
+          color: "#35c98b"
+        },
+        {
+          maximum: 2,
+          color: "#d5d844"
+        },
+        {
+          maximum: Infinity,
+          color: "#eb3541"
+        }
+      ],
+
+      numberColor: "#176795",
+      positiveNumberColor: "#d73342",
+
+      /*
+        Static levels. The meters do not move randomly.
+      */
+      levels: {
+        left: -2.1,
+        right: -4.3
+      }
+    };
+
+    const SVG_NAMESPACE =
+      "http://www.w3.org/2000/svg";
+
+    function createSvgElement(
+      name,
+      attributes = {}
+    ) {
+      const element =
+        document.createElementNS(
+          SVG_NAMESPACE,
+          name
+        );
+
+      for (
+        const [key, value]
+        of Object.entries(attributes)
+      ) {
+        element.setAttribute(key, value);
+      }
+
+      return element;
+    }
+
+    function formatScaleNumber(value) {
+      return value > 0
+        ? `+${value}`
+        : `${value}`;
+    }
+
+    /*
+      Zero degrees points directly upward.
+    */
+    function pointOnArc(
+      angleDegrees,
+      radius
+    ) {
+      const angleRadians =
+        angleDegrees * Math.PI / 180;
+
+      return {
+        x:
+          VU_CONFIG.pivot.x +
+          Math.sin(angleRadians) * radius,
+
+        y:
+          VU_CONFIG.pivot.y -
+          Math.cos(angleRadians) * radius
+      };
+    }
+
+    function colorForValue(value) {
+      for (
+        const zone
+        of VU_CONFIG.colorZones
+      ) {
+        if (value <= zone.maximum) {
+          return zone.color;
+        }
+      }
+
+      return VU_CONFIG
+        .colorZones
+        .at(-1)
+        .color;
+    }
+
+    function angleForLabelIndex(index) {
+      const labelCount =
+        VU_CONFIG.labels.length;
+
+      const progress =
+        index / (labelCount - 1);
+
+      return (
+        VU_CONFIG.startAngle +
+        progress *
+        (
+          VU_CONFIG.endAngle -
+          VU_CONFIG.startAngle
+        )
+      );
+    }
+
+    /*
+      Numeric values interpolate within each configured label
+      section while each label section remains visually equal.
+    */
+    function angleForValue(value) {
+      const labels =
+        VU_CONFIG.labels;
+
+      if (value <= labels[0]) {
+        return VU_CONFIG.startAngle;
+      }
+
+      if (value >= labels.at(-1)) {
+        return VU_CONFIG.endAngle;
+      }
+
+      for (
+        let index = 0;
+        index < labels.length - 1;
+        index += 1
+      ) {
+        const lowerValue =
+          labels[index];
+
+        const upperValue =
+          labels[index + 1];
+
+        if (
+          value >= lowerValue &&
+          value <= upperValue
+        ) {
+          const numericProgress =
+            (
+              value -
+              lowerValue
+            ) /
+            (
+              upperValue -
+              lowerValue
+            );
+
+          const lowerAngle =
+            angleForLabelIndex(index);
+
+          const upperAngle =
+            angleForLabelIndex(index + 1);
+
+          return (
+            lowerAngle +
+            numericProgress *
+            (
+              upperAngle -
+              lowerAngle
+            )
+          );
+        }
+      }
+
+      return VU_CONFIG.startAngle;
+    }
+
+    function addTick(
+      scaleLayer,
+      angle,
+      value,
+      isMajor
+    ) {
+      const outerPoint =
+        pointOnArc(
+          angle,
+          VU_CONFIG.radii.tickOuter
+        );
+
+      const innerPoint =
+        pointOnArc(
+          angle,
+          isMajor
+            ? VU_CONFIG.radii.majorTickInner
+            : VU_CONFIG.radii.minorTickInner
+        );
+
+      const tick =
+        createSvgElement(
+          "line",
+          {
+            x1: innerPoint.x.toFixed(2),
+            y1: innerPoint.y.toFixed(2),
+
+            x2: outerPoint.x.toFixed(2),
+            y2: outerPoint.y.toFixed(2),
+
+            stroke:
+              colorForValue(value),
+
+            "stroke-width":
+              isMajor
+                ? "4.2"
+                : "2.8",
+
+            class: "scale-tick"
+          }
+        );
+
+      scaleLayer.appendChild(tick);
+    }
+
+    function addLabel(
+      scaleLayer,
+      value,
+      index
+    ) {
+      const angle =
+        angleForLabelIndex(index);
+
+      const point =
+        pointOnArc(
+          angle,
+          VU_CONFIG.radii.label
+        );
+
+      const label =
+        createSvgElement(
+          "text",
+          {
+            x: point.x.toFixed(2),
+            y: point.y.toFixed(2),
+
+            fill:
+              value > 0
+                ? VU_CONFIG
+                    .positiveNumberColor
+                : VU_CONFIG
+                    .numberColor,
+
+            class: "scale-number"
+          }
+        );
+
+      label.textContent =
+        formatScaleNumber(value);
+
+      scaleLayer.appendChild(label);
+    }
+
+    function renderScale(meter) {
+      const scaleLayer =
+        meter.querySelector(
+          ".scale-layer"
+        );
+
+      scaleLayer.replaceChildren();
+
+      const labels =
+        VU_CONFIG.labels;
+
+      for (
+        let segmentIndex = 0;
+        segmentIndex < labels.length - 1;
+        segmentIndex += 1
+      ) {
+        const lowerValue =
+          labels[segmentIndex];
+
+        const upperValue =
+          labels[segmentIndex + 1];
+
+        const lowerAngle =
+          angleForLabelIndex(
+            segmentIndex
+          );
+
+        const upperAngle =
+          angleForLabelIndex(
+            segmentIndex + 1
+          );
+
+        for (
+          let subdivision = 0;
+          subdivision <
+            VU_CONFIG
+              .subdivisionsPerSegment;
+          subdivision += 1
+        ) {
+          const progress =
+            subdivision /
+            VU_CONFIG
+              .subdivisionsPerSegment;
+
+          const angle =
+            lowerAngle +
+            progress *
+            (
+              upperAngle -
+              lowerAngle
+            );
+
+          const value =
+            lowerValue +
+            progress *
+            (
+              upperValue -
+              lowerValue
+            );
+
+          addTick(
+            scaleLayer,
+            angle,
+            value,
+            subdivision === 0
+          );
+        }
+      }
+
+      addTick(
+        scaleLayer,
+        VU_CONFIG.endAngle,
+        labels.at(-1),
+        true
+      );
+
+      labels.forEach(
+        (value, index) => {
+          addLabel(
+            scaleLayer,
+            value,
+            index
+          );
+        }
+      );
+    }
+
+    function setVuLevel(
+      channel,
+      value
+    ) {
+      const meter =
+        document.querySelector(
+          `[data-meter="${channel}"]`
+        );
+
+      if (!meter) {
+        throw new Error(
+          `Unknown VU channel: ${channel}`
+        );
+      }
+
+      const numericValue =
+        Number(value);
+
+      if (
+        !Number.isFinite(
+          numericValue
+        )
+      ) {
+        throw new TypeError(
+          "VU level must be a finite number."
+        );
+      }
+
+      const angle =
+        angleForValue(
+          numericValue
+        );
+
+      const needle =
+        meter.querySelector(
+          ".needle-group"
+        );
+
+      needle.style.transform =
+        `rotate(${angle}deg)`;
+
+      meter.setAttribute(
+        "aria-label",
+        `${channel} channel VU meter at ${numericValue} dB`
+      );
+    }
+
+    document
+      .querySelectorAll(
+        ".vu-meter"
+      )
+      .forEach(renderScale);
+
+    setVuLevel(
+      "left",
+      VU_CONFIG.levels.left
+    );
+
+    setVuLevel(
+      "right",
+      VU_CONFIG.levels.right
+    );
+
+    /*
+      Public control API:
+
+      setVuLevel("left", -6);
+      setVuLevel("right", 0);
+    */
+    window.setVuLevel =
+      setVuLevel;
+  </script>
+</body>
+</html>

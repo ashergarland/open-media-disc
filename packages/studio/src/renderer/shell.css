@@ -3,7 +3,7 @@
  *
  * All color, component, and typography styling comes from the active theme
  * stylesheet (themes/<id>.css), synced verbatim from the visual-theme
- * showcases in sources/ThemeExamples. This file only positions the fixed
+ * showcases in design/ThemeExamples. This file only positions the fixed
  * app regions (sidebar, main, Now Playing dock) and normalizes the body.
  * Loaded AFTER the theme links so its body layout rules win.
  */

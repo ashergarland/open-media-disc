@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Dimensional Aqua Glass Badges</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --background-top: #edfaff;
+      --background-bottom: #cceefa;
+
+      --verified-width: 300px;
+      --flac-width: 326px;
+      --badge-height: 92px;
+      --badge-radius: 46px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+
+      display: grid;
+      place-items: center;
+
+      padding: 40px;
+
+      background:
+        radial-gradient(
+          ellipse 70% 75% at 50% 26%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(235, 250, 255, 0.7) 45%,
+          transparent 72%
+        ),
+        linear-gradient(
+          180deg,
+          var(--background-top) 0%,
+          var(--background-bottom) 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .badge-demo {
+      width: min(760px, 100%);
+    }
+
+    .badge-heading {
+      margin: 0 0 22px 2px;
+
+      color: #164f7f;
+
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.3px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 0 3px rgba(42, 126, 178, 0.2);
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 34px;
+    }
+
+    .glass-badge {
+      --accent-light: #7deaff;
+      --accent-middle: #3fcdf5;
+      --accent-dark: #1498d6;
+      --accent-rim: rgba(59, 186, 232, 0.8);
+      --accent-glow: rgba(46, 185, 232, 0.42);
+      --accent-shadow: rgba(26, 117, 177, 0.32);
+      --text-color: #176da9;
+
+      position: relative;
+      isolation: isolate;
+
+      height: var(--badge-height);
+      padding: 0 31px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      overflow: hidden;
+
+      border: 2px solid var(--accent-rim);
+      border-radius: var(--badge-radius);
+
+      color: var(--text-color);
+
+      background:
+        /* Lower-right lens flare */
+        radial-gradient(
+          ellipse 82px 20px at 94% 100%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(214, 245, 255, 0.76) 16%,
+          rgba(101, 200, 240, 0.19) 42%,
+          transparent 72%
+        ),
+
+        /* Large upper glass illumination */
+        radial-gradient(
+          ellipse 90% 115% at 50% -38%,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(244, 253, 255, 0.56) 32%,
+          rgba(226, 247, 254, 0.18) 54%,
+          transparent 72%
+        ),
+
+        /* Light passing through the left side */
+        radial-gradient(
+          ellipse 52% 110% at -4% 46%,
+          rgba(255, 255, 255, 0.4) 0%,
+          rgba(255, 255, 255, 0.12) 43%,
+          transparent 72%
+        ),
+
+        /* Main translucent body */
+        linear-gradient(
+          180deg,
+          rgba(247, 253, 255, 0.92) 0%,
+          rgba(224, 245, 253, 0.82) 19%,
+          rgba(193, 232, 246, 0.72) 50%,
+          rgba(163, 215, 237, 0.72) 76%,
+          rgba(133, 199, 226, 0.78) 100%
+        );
+
+      box-shadow:
+        /* Bright top glass lip */
+        inset 0 2px 1px rgba(255, 255, 255, 1),
+        inset 0 6px 7px rgba(255, 255, 255, 0.46),
+
+        /* Side-wall volume */
+        inset 6px 0 8px rgba(0, 107, 177, 0.18),
+        inset -6px 0 8px rgba(0, 94, 165, 0.18),
+
+        /* Dense lower bevel */
+        inset 0 -4px 4px rgba(0, 91, 159, 0.25),
+        inset 0 -9px 12px rgba(0, 119, 181, 0.15),
+
+        /* Exterior rim */
+        0 0 0 2px rgba(211, 246, 255, 0.5),
+
+        /* Exterior volume and glow */
+        0 2px 3px rgba(27, 108, 162, 0.2),
+        0 8px 14px rgba(27, 108, 162, 0.22),
+        0 15px 24px rgba(45, 154, 203, 0.14),
+        0 0 12px var(--accent-glow);
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.88),
+        0 0 3px rgba(255, 255, 255, 0.52),
+        0 2px 2px rgba(12, 80, 132, 0.2);
+
+      transition:
+        transform 130ms ease,
+        filter 130ms ease,
+        box-shadow 130ms ease;
+    }
+
+    /*
+      Thick translucent inner plastic rim.
+    */
+    .glass-badge::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: 3px;
+
+      border: 1px solid rgba(255, 255, 255, 0.82);
+      border-radius: calc(var(--badge-radius) - 4px);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.52) 0%,
+          rgba(255, 255, 255, 0.18) 12%,
+          transparent 31%
+        );
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.92),
+        inset 0 -2px 3px var(--accent-shadow);
+    }
+
+    /*
+      Directional lower-right border glint.
+    */
+    .glass-badge::after {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+
+      right: 18px;
+      bottom: 0;
+
+      width: 104px;
+      height: 8px;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(183, 231, 250, 0.26) 20%,
+          rgba(255, 255, 255, 0.98) 67%,
+          transparent 100%
+        );
+
+      filter: blur(1.8px);
+      transform: rotate(-1deg);
+
+      box-shadow:
+        0 0 7px rgba(255, 255, 255, 0.96),
+        0 0 12px var(--accent-glow);
+    }
+
+    .badge-content {
+      position: relative;
+      z-index: 2;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 17px;
+    }
+
+    .badge-label {
+      white-space: nowrap;
+
+      font-size: 25px;
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: -0.6px;
+    }
+
+    .badge-icon {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    /*
+      VERIFIED BADGE
+    */
+    .verified-badge {
+      width: var(--verified-width);
+
+      --accent-light: #9bffd0;
+      --accent-middle: #4ce695;
+      --accent-dark: #08b860;
+
+      --accent-rim: rgba(25, 211, 112, 0.82);
+      --accent-glow: rgba(35, 224, 119, 0.45);
+      --accent-shadow: rgba(0, 144, 69, 0.28);
+      --text-color: #0e4e69;
+
+      background:
+        /* Green lower glow */
+        radial-gradient(
+          ellipse 80% 72% at 30% 115%,
+          rgba(26, 232, 109, 0.5) 0%,
+          rgba(45, 224, 119, 0.2) 34%,
+          transparent 67%
+        ),
+
+        /* Lower-right white flare */
+        radial-gradient(
+          ellipse 82px 20px at 94% 100%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(214, 255, 232, 0.78) 16%,
+          rgba(50, 222, 126, 0.16) 43%,
+          transparent 72%
+        ),
+
+        /* Upper white illumination */
+        radial-gradient(
+          ellipse 92% 115% at 50% -38%,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(243, 255, 249, 0.58) 34%,
+          rgba(217, 255, 234, 0.18) 56%,
+          transparent 73%
+        ),
+
+        /* Main dimensional green surface */
+        linear-gradient(
+          180deg,
+          rgba(243, 255, 250, 0.94) 0%,
+          rgba(209, 250, 228, 0.87) 19%,
+          rgba(165, 239, 199, 0.8) 51%,
+          rgba(121, 224, 168, 0.8) 78%,
+          rgba(73, 203, 135, 0.86) 100%
+        );
+
+      box-shadow:
+        inset 0 2px 1px rgba(255, 255, 255, 1),
+        inset 0 6px 7px rgba(255, 255, 255, 0.5),
+
+        inset 6px 0 8px rgba(0, 153, 72, 0.15),
+        inset -6px 0 8px rgba(0, 134, 65, 0.16),
+
+        inset 0 -4px 4px rgba(0, 140, 69, 0.27),
+        inset 0 -10px 12px rgba(0, 173, 81, 0.17),
+
+        0 0 0 2px rgba(202, 255, 225, 0.54),
+
+        0 2px 3px rgba(0, 119, 59, 0.2),
+        0 8px 14px rgba(0, 137, 67, 0.23),
+        0 15px 24px rgba(33, 181, 95, 0.14),
+        0 0 13px rgba(30, 226, 115, 0.48);
+    }
+
+    .verified-icon {
+      width: 46px;
+      height: 46px;
+
+      filter:
+        drop-shadow(0 0 2px rgba(255, 255, 255, 0.88))
+        drop-shadow(0 2px 2px rgba(0, 124, 59, 0.25));
+    }
+
+    /*
+      FLAC BADGE
+    */
+    .flac-badge {
+      width: var(--flac-width);
+
+      --accent-rim: rgba(89, 180, 229, 0.78);
+      --accent-glow: rgba(71, 187, 238, 0.45);
+      --accent-shadow: rgba(13, 117, 183, 0.28);
+      --text-color: #1977bd;
+
+      background:
+        /* Cool-blue lower illumination */
+        radial-gradient(
+          ellipse 80% 75% at 32% 116%,
+          rgba(92, 205, 246, 0.36) 0%,
+          rgba(83, 191, 233, 0.14) 35%,
+          transparent 69%
+        ),
+
+        /* Lower-right white flare */
+        radial-gradient(
+          ellipse 82px 20px at 94% 100%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(215, 246, 255, 0.82) 16%,
+          rgba(89, 197, 237, 0.18) 42%,
+          transparent 72%
+        ),
+
+        /* Upper glass highlight */
+        radial-gradient(
+          ellipse 92% 115% at 50% -38%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(240, 251, 255, 0.6) 34%,
+          rgba(213, 241, 253, 0.18) 57%,
+          transparent 73%
+        ),
+
+        /* Main dimensional icy-blue body */
+        linear-gradient(
+          180deg,
+          rgba(248, 253, 255, 0.96) 0%,
+          rgba(224, 246, 255, 0.88) 19%,
+          rgba(186, 230, 248, 0.8) 51%,
+          rgba(147, 211, 239, 0.78) 77%,
+          rgba(112, 191, 227, 0.84) 100%
+        );
+    }
+
+    .flac-icon {
+      width: 47px;
+      height: 47px;
+
+      filter:
+        drop-shadow(0 0 2px rgba(255, 255, 255, 0.88))
+        drop-shadow(0 2px 2px rgba(14, 105, 170, 0.24));
+    }
+
+    /*
+      Hover adds glass brightness without flattening the badges.
+    */
+    .glass-badge:hover {
+      transform: translateY(-1px);
+
+      filter:
+        brightness(1.035)
+        saturate(1.04);
+
+      box-shadow:
+        inset 0 2px 1px rgba(255, 255, 255, 1),
+        inset 0 7px 8px rgba(255, 255, 255, 0.55),
+
+        inset 6px 0 8px rgba(0, 107, 177, 0.16),
+        inset -6px 0 8px rgba(0, 94, 165, 0.16),
+
+        inset 0 -4px 4px rgba(0, 91, 159, 0.23),
+        inset 0 -10px 12px rgba(0, 119, 181, 0.14),
+
+        0 0 0 2px rgba(225, 250, 255, 0.72),
+
+        0 2px 3px rgba(27, 108, 162, 0.18),
+        0 9px 16px rgba(27, 108, 162, 0.25),
+        0 17px 27px rgba(45, 154, 203, 0.16),
+        0 0 17px var(--accent-glow);
+    }
+
+    .verified-badge:hover {
+      box-shadow:
+        inset 0 2px 1px rgba(255, 255, 255, 1),
+        inset 0 7px 8px rgba(255, 255, 255, 0.56),
+
+        inset 6px 0 8px rgba(0, 153, 72, 0.14),
+        inset -6px 0 8px rgba(0, 134, 65, 0.14),
+
+        inset 0 -4px 4px rgba(0, 140, 69, 0.25),
+        inset 0 -10px 12px rgba(0, 173, 81, 0.15),
+
+        0 0 0 2px rgba(217, 255, 233, 0.72),
+
+        0 2px 3px rgba(0, 119, 59, 0.18),
+        0 9px 16px rgba(0, 137, 67, 0.25),
+        0 17px 27px rgba(33, 181, 95, 0.16),
+        0 0 18px rgba(30, 226, 115, 0.58);
+    }
+
+    .glass-badge:active {
+      transform: translateY(1px);
+
+      filter: brightness(0.98);
+
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.78),
+        inset 0 5px 8px rgba(22, 118, 177, 0.16),
+
+        inset 5px 0 8px rgba(0, 96, 164, 0.22),
+        inset -5px 0 8px rgba(0, 88, 153, 0.2),
+
+        inset 0 -3px 4px rgba(0, 83, 148, 0.3),
+
+        0 0 0 2px rgba(201, 242, 255, 0.5),
+        0 4px 7px rgba(21, 102, 158, 0.18),
+        0 0 9px var(--accent-glow);
+    }
+
+    @media (max-width: 720px) {
+      :root {
+        --verified-width: 264px;
+        --flac-width: 290px;
+        --badge-height: 80px;
+        --badge-radius: 40px;
+      }
+
+      body {
+        padding: 28px 20px;
+      }
+
+      .badge-row {
+        gap: 22px;
+      }
+
+      .glass-badge {
+        padding: 0 24px;
+      }
+
+      .badge-label {
+        font-size: 21px;
+      }
+
+      .verified-icon,
+      .flac-icon {
+        width: 40px;
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="badge-demo">
+    <h1 class="badge-heading">BADGES</h1>
+
+    <div class="badge-row">
+
+      <div class="glass-badge verified-badge">
+        <span class="badge-content">
+          <svg
+            class="badge-icon verified-icon"
+            viewBox="0 0 64 64"
+            aria-hidden="true"
+          >
+            <defs>
+              <radialGradient
+                id="verifiedIconSurface"
+                cx="35%"
+                cy="25%"
+                r="80%"
+              >
+                <stop
+                  offset="0%"
+                  stop-color="#ffffff"
+                  stop-opacity="0.72"
+                />
+                <stop
+                  offset="50%"
+                  stop-color="#e8fff1"
+                  stop-opacity="0.28"
+                />
+                <stop
+                  offset="100%"
+                  stop-color="#b9f8d0"
+                  stop-opacity="0.12"
+                />
+              </radialGradient>
+            </defs>
+
+            <circle
+              cx="32"
+              cy="32"
+              r="25"
+              fill="url(#verifiedIconSurface)"
+              stroke="#11d35a"
+              stroke-width="4"
+            />
+
+            <circle
+              cx="32"
+              cy="32"
+              r="20.5"
+              fill="none"
+              stroke="white"
+              stroke-opacity="0.48"
+              stroke-width="1"
+            />
+
+            <path
+              d="M20.5 32.2
+                 L28.5 40.2
+                 L44 23.8"
+              fill="none"
+              stroke="#0cca51"
+              stroke-width="5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+          <span class="badge-label">Verified</span>
+        </span>
+      </div>
+
+      <div class="glass-badge flac-badge">
+        <span class="badge-content">
+          <svg
+            class="badge-icon flac-icon"
+            viewBox="0 0 64 64"
+            aria-hidden="true"
+          >
+            <g
+              fill="none"
+              stroke="#1989dc"
+              stroke-linecap="round"
+            >
+              <line
+                x1="8"
+                y1="32"
+                x2="8"
+                y2="32"
+                stroke-width="4"
+              />
+
+              <line
+                x1="15"
+                y1="25"
+                x2="15"
+                y2="39"
+                stroke-width="4"
+              />
+
+              <line
+                x1="23"
+                y1="14"
+                x2="23"
+                y2="50"
+                stroke-width="4"
+              />
+
+              <line
+                x1="31"
+                y1="21"
+                x2="31"
+                y2="43"
+                stroke-width="4"
+              />
+
+              <line
+                x1="39"
+                y1="11"
+                x2="39"
+                y2="53"
+                stroke-width="4"
+              />
+
+              <line
+                x1="47"
+                y1="24"
+                x2="47"
+                y2="40"
+                stroke-width="4"
+              />
+
+              <line
+                x1="55"
+                y1="32"
+                x2="55"
+                y2="32"
+                stroke-width="4"
+              />
+            </g>
+
+            <g
+              fill="none"
+              stroke="white"
+              stroke-opacity="0.52"
+              stroke-linecap="round"
+              stroke-width="1.2"
+            >
+              <line x1="21.5" y1="15" x2="21.5" y2="48" />
+              <line x1="37.5" y1="12" x2="37.5" y2="50" />
+            </g>
+          </svg>
+
+          <span class="badge-label">FLAC lossless</span>
+        </span>
+      </div>
+
+    </div>
+  </main>
+</body>
+</html>

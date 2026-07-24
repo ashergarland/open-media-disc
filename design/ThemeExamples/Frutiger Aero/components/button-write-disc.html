@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Aqua Write Disc Button</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse at 50% 42%,
+          #ffffff 0%,
+          #effcff 52%,
+          #dff5fc 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .demo {
+      width: min(520px, calc(100vw - 32px));
+      padding: 70px 24px;
+    }
+
+    .write-disc-button {
+      --button-height: 106px;
+      --button-radius: 25px;
+
+      position: relative;
+      isolation: isolate;
+
+      width: 100%;
+      height: var(--button-height);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 0 38px;
+
+      overflow: visible;
+      cursor: pointer;
+
+      border: 2px solid rgba(0, 141, 207, 0.92);
+      border-radius: var(--button-radius);
+
+      color: #ffffff;
+
+      background:
+        /* Soft glass illumination across the upper face */
+        radial-gradient(
+          ellipse 90% 100% at 50% -22%,
+          rgba(255, 255, 255, 0.76) 0%,
+          rgba(225, 249, 255, 0.32) 39%,
+          transparent 67%
+        ),
+
+        /* Slightly brighter left-facing surface */
+        linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.08),
+          transparent 28%,
+          rgba(0, 111, 183, 0.04)
+        ),
+
+        /* Aqua body */
+        linear-gradient(
+          180deg,
+          #6ce1fc 0%,
+          #43d1f6 25%,
+          #20c0ec 57%,
+          #08a9dc 100%
+        );
+
+      box-shadow:
+        inset 0 3px 2px rgba(255, 255, 255, 0.96),
+        inset 0 7px 8px rgba(255, 255, 255, 0.25),
+
+        inset 5px 0 7px rgba(0, 101, 177, 0.23),
+        inset -5px 0 7px rgba(0, 101, 177, 0.23),
+
+        inset 0 -5px 4px rgba(0, 93, 173, 0.38),
+        inset 0 -10px 12px rgba(0, 126, 194, 0.19),
+
+        0 0 0 2px rgba(77, 211, 250, 0.43),
+        0 2px 3px rgba(0, 99, 164, 0.3),
+        0 8px 13px rgba(0, 119, 179, 0.23),
+        0 0 10px rgba(38, 198, 244, 0.42);
+
+      transition:
+        transform 110ms ease,
+        filter 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        background 150ms ease;
+    }
+
+    /*
+      Translucent raised inner rim.
+    */
+    .write-disc-button::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: 4px;
+
+      border: 1px solid rgba(213, 249, 255, 0.78);
+      border-radius: calc(var(--button-radius) - 5px);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.4) 0%,
+          rgba(255, 255, 255, 0.12) 13%,
+          transparent 31%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.94),
+        inset 0 -2px 3px rgba(0, 112, 192, 0.28);
+    }
+
+    /*
+      Exterior hover aura.
+
+      This remains controlled rather than forming a uniform,
+      oversized halo around the entire button.
+    */
+    .write-disc-button::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+
+      inset: -12px;
+
+      border-radius: calc(var(--button-radius) + 10px);
+
+      opacity: 0;
+
+      background:
+        radial-gradient(
+          ellipse 50% 48% at 28% 18%,
+          rgba(255, 255, 255, 0.82),
+          rgba(117, 222, 255, 0.35) 36%,
+          transparent 72%
+        ),
+        radial-gradient(
+          ellipse 42% 32% at 53% 98%,
+          rgba(255, 255, 255, 0.58),
+          rgba(71, 198, 246, 0.24) 40%,
+          transparent 76%
+        );
+
+      filter: blur(7px);
+
+      transition: opacity 150ms ease;
+    }
+
+    .button-content {
+      position: relative;
+      z-index: 4;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+
+      pointer-events: none;
+    }
+
+    /*
+      Directional hover lens lighting.
+    */
+    .lens-glare {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+
+      inset: 0;
+
+      overflow: hidden;
+      border-radius: inherit;
+
+      opacity: 0;
+
+      transition: opacity 150ms ease;
+    }
+
+    /*
+      Narrow diagonal reflection entering from the upper-left.
+
+      It follows the direction visible in the reference rather
+      than creating a symmetric center glow.
+    */
+    .lens-glare::before {
+      content: "";
+      position: absolute;
+
+      left: -22px;
+      top: -34px;
+
+      width: 230px;
+      height: 72px;
+
+      transform: rotate(-8deg);
+      transform-origin: center;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.08) 17%,
+          rgba(255, 255, 255, 0.78) 43%,
+          rgba(255, 255, 255, 0.98) 50%,
+          rgba(220, 248, 255, 0.44) 58%,
+          transparent 82%
+        );
+
+      filter: blur(4px);
+    }
+
+    /*
+      Sharp upper-left lens glint plus lower-center flare.
+    */
+    .lens-glare::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+
+      background:
+        /* Upper-left concentrated flare */
+        radial-gradient(
+          ellipse 44px 20px at 8% 8%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.9) 13%,
+          rgba(178, 237, 255, 0.42) 38%,
+          transparent 72%
+        ),
+
+        /* Horizontal lower flare */
+        radial-gradient(
+          ellipse 50px 5px at 52% 99%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(224, 249, 255, 0.84) 20%,
+          rgba(111, 216, 255, 0.35) 43%,
+          transparent 76%
+        ),
+
+        /* Vertical lower flare */
+        radial-gradient(
+          ellipse 5px 32px at 52% 99%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(224, 249, 255, 0.58) 24%,
+          transparent 72%
+        ),
+
+        /* Small flare core */
+        radial-gradient(
+          circle 5px at 52% 96%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(194, 239, 255, 0.86) 42%,
+          transparent 100%
+        );
+    }
+
+    .disc-icon {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 auto;
+
+      overflow: visible;
+
+      filter:
+        drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))
+        drop-shadow(0 2px 2px rgba(0, 98, 168, 0.4));
+
+      transition:
+        transform 160ms ease,
+        filter 160ms ease;
+    }
+
+    .button-label {
+      white-space: nowrap;
+
+      font-size: 36px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.8px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.58),
+        0 0 4px rgba(255, 255, 255, 0.44),
+        0 2px 3px rgba(0, 88, 161, 0.45);
+    }
+
+    /*
+      Hover state.
+    */
+    .write-disc-button:hover {
+      border-color: rgba(177, 241, 255, 0.98);
+
+      filter:
+        brightness(1.055)
+        saturate(1.025);
+
+      background:
+        /* Directional upper-left illumination */
+        radial-gradient(
+          ellipse 78% 112% at 28% -26%,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(232, 252, 255, 0.42) 35%,
+          transparent 67%
+        ),
+
+        /* Subtle light sweep across the face */
+        linear-gradient(
+          105deg,
+          rgba(255, 255, 255, 0.24) 0%,
+          rgba(255, 255, 255, 0.06) 28%,
+          transparent 49%
+        ),
+
+        linear-gradient(
+          180deg,
+          #7be8ff 0%,
+          #50dafb 25%,
+          #2ac8f2 57%,
+          #16afe0 100%
+        );
+
+      box-shadow:
+        inset 0 3px 2px rgba(255, 255, 255, 1),
+        inset 0 8px 10px rgba(255, 255, 255, 0.34),
+
+        inset 5px 0 7px rgba(0, 105, 179, 0.16),
+        inset -5px 0 7px rgba(0, 105, 179, 0.18),
+
+        inset 0 -5px 4px rgba(0, 94, 171, 0.28),
+        inset 0 -10px 12px rgba(0, 132, 199, 0.15),
+
+        0 0 0 3px rgba(226, 251, 255, 0.86),
+
+        /* Stronger glow toward the upper-left */
+        -7px -5px 13px rgba(255, 255, 255, 0.84),
+        -10px -4px 24px rgba(110, 222, 255, 0.48),
+
+        /* Restrained lower aqua glow */
+        0 8px 15px rgba(0, 132, 198, 0.26),
+        0 12px 25px rgba(40, 190, 242, 0.24);
+    }
+
+    .write-disc-button:hover::after {
+      opacity: 1;
+    }
+
+    .write-disc-button:hover .lens-glare {
+      opacity: 1;
+    }
+
+    .write-disc-button:hover .disc-icon {
+      filter:
+        drop-shadow(0 0 3px rgba(255, 255, 255, 1))
+        drop-shadow(0 2px 2px rgba(0, 98, 168, 0.3));
+    }
+
+    /*
+      Pressed state.
+    */
+    .write-disc-button:active {
+      transform: translateY(2px);
+
+      filter:
+        brightness(0.92)
+        saturate(1.08);
+
+      border-color: rgba(0, 111, 184, 0.95);
+
+      background:
+        radial-gradient(
+          ellipse 84% 78% at 50% -12%,
+          rgba(255, 255, 255, 0.46) 0%,
+          rgba(210, 244, 253, 0.16) 40%,
+          transparent 68%
+        ),
+        linear-gradient(
+          180deg,
+          #49c9ef 0%,
+          #25bae6 30%,
+          #08a4d8 62%,
+          #008dc6 100%
+        );
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.68),
+        inset 0 7px 11px rgba(0, 85, 157, 0.18),
+
+        inset 5px 0 8px rgba(0, 73, 144, 0.3),
+        inset -5px 0 8px rgba(0, 73, 144, 0.3),
+
+        inset 0 -3px 4px rgba(0, 70, 142, 0.42),
+
+        0 0 0 2px rgba(38, 182, 230, 0.38),
+        0 2px 4px rgba(0, 72, 133, 0.29),
+        0 5px 8px rgba(0, 90, 151, 0.17);
+    }
+
+    .write-disc-button:active::after,
+    .write-disc-button:active .lens-glare {
+      opacity: 0;
+    }
+
+    .write-disc-button:active .button-content {
+      transform: translateY(1px);
+    }
+
+    .write-disc-button:active .disc-icon {
+      transform: scale(0.97);
+    }
+
+    .write-disc-button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.98);
+      outline-offset: 6px;
+
+      box-shadow:
+        inset 0 3px 2px rgba(255, 255, 255, 1),
+        inset 0 -5px 4px rgba(0, 93, 173, 0.35),
+        0 0 0 4px rgba(0, 158, 222, 0.55),
+        0 0 18px rgba(57, 207, 250, 0.68);
+    }
+
+    @media (max-width: 520px) {
+      .write-disc-button {
+        --button-height: 88px;
+        --button-radius: 21px;
+
+        padding: 0 24px;
+      }
+
+      .button-content {
+        gap: 15px;
+      }
+
+      .disc-icon {
+        width: 48px;
+        height: 48px;
+      }
+
+      .button-label {
+        font-size: clamp(27px, 8vw, 33px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .write-disc-button,
+      .disc-icon,
+      .lens-glare {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="demo">
+    <button class="write-disc-button" type="button">
+      <span class="lens-glare" aria-hidden="true"></span>
+
+      <span class="button-content">
+        <svg
+          class="disc-icon"
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+        >
+          <defs>
+            <!-- Translucent CD surface -->
+            <radialGradient
+              id="cdSurface"
+              cx="35%"
+              cy="27%"
+              r="78%"
+            >
+              <stop
+                offset="0%"
+                stop-color="#ffffff"
+                stop-opacity="0.35"
+              />
+
+              <stop
+                offset="42%"
+                stop-color="#ffffff"
+                stop-opacity="0.06"
+              />
+
+              <stop
+                offset="100%"
+                stop-color="#d9f8ff"
+                stop-opacity="0.14"
+              />
+            </radialGradient>
+
+            <!-- Faint iridescent CD reflection -->
+            <linearGradient
+              id="cdRainbow"
+              x1="0%"
+              y1="100%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop
+                offset="0%"
+                stop-color="#86e7ff"
+                stop-opacity="0"
+              />
+
+              <stop
+                offset="30%"
+                stop-color="#c4a7ff"
+                stop-opacity="0.65"
+              />
+
+              <stop
+                offset="52%"
+                stop-color="#ffffff"
+                stop-opacity="0.8"
+              />
+
+              <stop
+                offset="72%"
+                stop-color="#91ffd4"
+                stop-opacity="0.55"
+              />
+
+              <stop
+                offset="100%"
+                stop-color="#86e7ff"
+                stop-opacity="0"
+              />
+            </linearGradient>
+
+            <filter
+              id="softGlow"
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
+            >
+              <feGaussianBlur
+                stdDeviation="0.7"
+                result="blur"
+              />
+
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- CD body -->
+          <circle
+            cx="32"
+            cy="32"
+            r="24"
+            fill="url(#cdSurface)"
+            stroke="white"
+            stroke-width="2.8"
+          />
+
+          <!-- Optical data rings -->
+          <circle
+            cx="32"
+            cy="32"
+            r="20"
+            fill="none"
+            stroke="white"
+            stroke-opacity="0.3"
+            stroke-width="1"
+          />
+
+          <circle
+            cx="32"
+            cy="32"
+            r="16.5"
+            fill="none"
+            stroke="white"
+            stroke-opacity="0.22"
+            stroke-width="0.9"
+          />
+
+          <circle
+            cx="32"
+            cy="32"
+            r="12.5"
+            fill="none"
+            stroke="white"
+            stroke-opacity="0.18"
+            stroke-width="0.8"
+          />
+
+          <!-- Center clear hub -->
+          <circle
+            cx="32"
+            cy="32"
+            r="7.3"
+            fill="rgba(255,255,255,0.08)"
+            stroke="white"
+            stroke-width="2.5"
+          />
+
+          <circle
+            cx="32"
+            cy="32"
+            r="2.5"
+            fill="white"
+            fill-opacity="0.72"
+          />
+
+          <!-- Iridescent reflection sweep -->
+          <path
+            d="
+              M14 40
+              C22 47, 39 48, 50 37
+            "
+            fill="none"
+            stroke="url(#cdRainbow)"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            filter="url(#softGlow)"
+          />
+
+          <!-- Bright CD highlight arc -->
+          <path
+            d="
+              M17 23
+              C22 13, 37 9, 47 18
+            "
+            fill="none"
+            stroke="white"
+            stroke-opacity="0.85"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+
+          <!-- Small surface glints -->
+          <circle
+            cx="20"
+            cy="20"
+            r="1.5"
+            fill="white"
+          />
+
+          <circle
+            cx="47"
+            cy="27"
+            r="1"
+            fill="white"
+            fill-opacity="0.75"
+          />
+
+          <!-- Tiny writing indicator -->
+          <path
+            d="
+              M45 42
+              L50 47
+              M44 48
+              L50 42
+            "
+            fill="none"
+            stroke="white"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-opacity="0.9"
+          />
+        </svg>
+
+        <span class="button-label">Write Disc</span>
+      </span>
+    </button>
+  </main>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Liquid Aero Player Controls</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --blue-dark: #0b5f9d;
+      --blue-medium: #1688cb;
+      --blue-light: #dff8ff;
+
+      --control-size: 60px;
+      --control-radius: 50%;
+      --rim-width: 4px;
+
+      --active-size: 86px;
+      --active-rim-width: 5px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse 80% 75% at 50% 22%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(235, 250, 255, 0.76) 48%,
+          transparent 78%
+        ),
+        linear-gradient(
+          180deg,
+          #edfaff 0%,
+          #cceefa 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* =========================================================
+       SHARED BUTTON
+       ========================================================= */
+
+    .player-button {
+      --button-size: var(--control-size);
+      --button-rim-width: var(--rim-width);
+
+      --surface-top: rgba(245, 252, 255, 0.98);
+      --surface-bottom: rgba(214, 238, 247, 0.98);
+
+      --rim-dark: rgba(21, 111, 165, 0.78);
+      --rim-medium: rgba(115, 201, 232, 0.82);
+      --rim-light: rgba(230, 251, 255, 0.99);
+
+      --icon-color: #155f99;
+      --outer-glow: rgba(70, 183, 227, 0.18);
+
+      position: relative;
+      isolation: isolate;
+
+      width: var(--button-size);
+      height: var(--button-size);
+
+      display: inline-grid;
+      place-items: center;
+
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--icon-color);
+
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.92),
+        0 3px 4px rgba(24, 102, 151, 0.18),
+        0 9px 15px rgba(29, 117, 168, 0.12),
+        0 0 10px var(--outer-glow);
+
+      transition:
+        transform 120ms ease,
+        filter 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    /* =========================================================
+       LIQUID RIM
+       ========================================================= */
+
+    .button-rim {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+
+      padding: var(--button-rim-width);
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 48% 30% at 18% -2%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.95) 7%,
+          rgba(221, 248, 255, 0.77) 18%,
+          rgba(140, 216, 242, 0.45) 38%,
+          rgba(42, 151, 204, 0.16) 63%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 40% 28% at 83% -1%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(238, 253, 255, 0.82) 9%,
+          rgba(207, 243, 255, 0.6) 20%,
+          rgba(116, 201, 236, 0.33) 42%,
+          rgba(31, 138, 193, 0.12) 64%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 46% 30% at 18% 102%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(232, 250, 255, 0.72) 10%,
+          rgba(171, 228, 248, 0.46) 24%,
+          rgba(79, 180, 218, 0.23) 46%,
+          transparent 83%
+        ),
+
+        radial-gradient(
+          ellipse 52% 31% at 81% 102%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(251, 255, 255, 0.92) 7%,
+          rgba(214, 247, 255, 0.67) 18%,
+          rgba(126, 210, 240, 0.38) 38%,
+          rgba(35, 146, 197, 0.13) 62%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 18% 82% at 0% 50%,
+          rgba(239, 254, 255, 0.74) 0%,
+          rgba(136, 217, 243, 0.39) 33%,
+          rgba(17, 125, 182, 0.15) 63%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 18% 82% at 100% 50%,
+          rgba(238, 253, 255, 0.72) 0%,
+          rgba(132, 214, 241, 0.37) 33%,
+          rgba(15, 121, 178, 0.15) 63%,
+          transparent 85%
+        ),
+
+        linear-gradient(
+          180deg,
+          var(--rim-light) 0%,
+          var(--rim-medium) 27%,
+          var(--rim-dark) 65%,
+          var(--rim-medium) 84%,
+          var(--rim-light) 100%
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter:
+        blur(0.36px)
+        saturate(1.04);
+    }
+
+    .button-rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 1px;
+
+      border-radius: inherit;
+
+      box-shadow:
+        0 0 4px rgba(255, 255, 255, 0.76),
+        0 0 12px var(--outer-glow);
+
+      opacity: 0.72;
+    }
+
+    .button-rim::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 44% 9% at 24% 2%,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(255, 255, 255, 0.68) 11%,
+          rgba(214, 246, 255, 0.28) 38%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 48% 10% at 76% 98%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(255, 255, 255, 0.66) 12%,
+          rgba(202, 240, 255, 0.27) 39%,
+          transparent 83%
+        );
+
+      filter: blur(1.4px);
+      opacity: 0.92;
+    }
+
+    /* =========================================================
+       CENTER SURFACE
+       ========================================================= */
+
+    .button-surface {
+      position: absolute;
+      inset: var(--button-rim-width);
+      z-index: 1;
+      pointer-events: none;
+
+      overflow: hidden;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.54);
+
+      background:
+        radial-gradient(
+          circle at 50% -16%,
+          rgba(255, 255, 255, 0.76) 0%,
+          rgba(255, 255, 255, 0.22) 38%,
+          transparent 72%
+        ),
+        linear-gradient(
+          180deg,
+          var(--surface-top) 0%,
+          var(--surface-bottom) 100%
+        );
+
+      box-shadow:
+        0 0 0 1px rgba(18, 95, 147, 0.17),
+        inset 0 4px 6px rgba(26, 106, 154, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.84),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.48);
+    }
+
+    .button-surface::before {
+      content: "";
+      position: absolute;
+
+      top: -28px;
+      right: 5px;
+
+      width: 42px;
+      height: 100px;
+
+      transform: rotate(28deg);
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.03) 14%,
+          rgba(255, 255, 255, 0.13) 35%,
+          rgba(255, 255, 255, 0.28) 48%,
+          rgba(255, 255, 255, 0.12) 63%,
+          rgba(255, 255, 255, 0.03) 80%,
+          transparent 100%
+        );
+
+      filter: blur(6px);
+      opacity: 0.48;
+    }
+
+    .button-content {
+      position: relative;
+      z-index: 4;
+
+      display: grid;
+      place-items: center;
+
+      width: 100%;
+      height: 100%;
+
+      pointer-events: none;
+    }
+
+    .button-icon {
+      width: 24px;
+      height: 24px;
+
+      color: var(--icon-color);
+
+      filter:
+        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.74));
+
+      transition:
+        transform 120ms ease,
+        filter 160ms ease;
+    }
+
+    /* =========================================================
+       ACTIVE / PRIMARY BUTTON
+       ========================================================= */
+
+    .player-button.primary {
+      --button-size: var(--active-size);
+      --button-rim-width: var(--active-rim-width);
+
+      --surface-top: rgba(239, 250, 255, 0.98);
+      --surface-bottom: rgba(206, 233, 244, 0.98);
+
+      --rim-dark: rgba(31, 129, 191, 0.74);
+      --rim-medium: rgba(170, 223, 247, 0.85);
+      --rim-light: rgba(245, 253, 255, 0.99);
+
+      --icon-color: #1570db;
+      --outer-glow: rgba(90, 197, 236, 0.42);
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.96),
+        0 4px 6px rgba(25, 104, 154, 0.19),
+        0 12px 20px rgba(31, 119, 170, 0.16),
+        0 0 18px var(--outer-glow);
+    }
+
+    .player-button.primary .button-surface {
+      background:
+        radial-gradient(
+          circle at 50% -16%,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(255, 255, 255, 0.24) 38%,
+          transparent 72%
+        ),
+        radial-gradient(
+          circle at 30% 30%,
+          rgba(255, 255, 255, 0.24),
+          transparent 52%
+        ),
+        linear-gradient(
+          180deg,
+          var(--surface-top) 0%,
+          var(--surface-bottom) 100%
+        );
+
+      box-shadow:
+        0 0 0 1px rgba(34, 118, 171, 0.19),
+        inset 0 4px 6px rgba(22, 110, 157, 0.09),
+        inset 0 1px 2px rgba(255, 255, 255, 0.88),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .player-button.primary .button-icon {
+      width: 28px;
+      height: 28px;
+
+      filter:
+        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.82))
+        drop-shadow(0 0 3px rgba(90, 176, 255, 0.16));
+    }
+
+    /*
+      Small lower-right sparkle/glare like the reference.
+    */
+    .button-glare {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+
+      right: -4px;
+      bottom: -2px;
+
+      width: 50px;
+      height: 28px;
+
+      opacity: 0;
+    }
+
+    .player-button.primary .button-glare {
+      opacity: 1;
+
+      background:
+        radial-gradient(
+          ellipse 34px 5px at 57% 72%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(228, 249, 255, 0.82) 23%,
+          rgba(118, 212, 248, 0.32) 49%,
+          transparent 80%
+        ),
+        radial-gradient(
+          ellipse 4px 22px at 57% 72%,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(221, 248, 255, 0.54) 28%,
+          transparent 74%
+        );
+
+      filter: blur(0.65px);
+    }
+
+    /* =========================================================
+       INTERACTIONS
+       ========================================================= */
+
+    .player-button:hover {
+      transform: translateY(-1px);
+      filter:
+        brightness(1.03)
+        saturate(1.02);
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.96),
+        0 4px 6px rgba(24, 102, 151, 0.17),
+        0 11px 18px rgba(29, 117, 168, 0.15),
+        0 0 15px var(--outer-glow);
+    }
+
+    .player-button:hover .button-rim {
+      filter:
+        blur(0.34px)
+        brightness(1.08)
+        saturate(1.05);
+    }
+
+    .player-button:hover .button-icon {
+      transform: scale(1.04);
+    }
+
+    .player-button:active {
+      transform: translateY(2px);
+      filter:
+        brightness(0.96)
+        saturate(0.99);
+
+      box-shadow:
+        0 1px 2px rgba(16, 82, 126, 0.22),
+        0 5px 8px rgba(21, 97, 141, 0.15),
+        0 0 9px var(--outer-glow);
+    }
+
+    .player-button:active .button-surface {
+      box-shadow:
+        0 0 0 1px rgba(8, 76, 122, 0.24),
+        inset 0 7px 10px rgba(18, 91, 137, 0.16),
+        inset 0 2px 3px rgba(17, 84, 129, 0.08),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.4);
+    }
+
+    .player-button:active .button-icon {
+      transform: scale(0.96);
+    }
+
+    .player-button:focus-visible {
+      outline:
+        3px solid rgba(255, 255, 255, 0.98);
+      outline-offset: 6px;
+
+      box-shadow:
+        0 0 0 4px rgba(39, 151, 207, 0.43),
+        0 9px 17px rgba(28, 110, 158, 0.17),
+        0 0 18px rgba(72, 191, 237, 0.4);
+    }
+
+    @media (max-width: 520px) {
+      :root {
+        --control-size: 54px;
+        --active-size: 76px;
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      .player-controls {
+        gap: 12px;
+      }
+
+      .button-icon {
+        width: 21px;
+        height: 21px;
+      }
+
+      .player-button.primary .button-icon {
+        width: 25px;
+        height: 25px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .player-button,
+      .button-rim,
+      .button-icon {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="player-controls" aria-label="Music player controls">
+    <!-- Shuffle -->
+    <button class="player-button" type="button" aria-label="Shuffle">
+      <span class="button-rim" aria-hidden="true"></span>
+      <span class="button-surface" aria-hidden="true"></span>
+      <span class="button-glare" aria-hidden="true"></span>
+
+      <span class="button-content">
+        <svg
+          class="button-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M3 7h3c2.3 0 3.6.5 5 2.2L16 15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M16 7l4 0l-2.5 2.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M3 17h3c2.3 0 3.6-.5 5-2.2L16 9"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M16 17h4l-2.5-2.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
+    </button>
+
+    <!-- Previous -->
+    <button class="player-button" type="button" aria-label="Previous track">
+      <span class="button-rim" aria-hidden="true"></span>
+      <span class="button-surface" aria-hidden="true"></span>
+      <span class="button-glare" aria-hidden="true"></span>
+
+      <span class="button-content">
+        <svg
+          class="button-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M7 6v12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M17.5 6l-7 6l7 6V6Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12.3 6l-7 6l7 6V6Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    </button>
+
+    <!-- Pause / selected -->
+    <button class="player-button primary" type="button" aria-label="Pause">
+      <span class="button-rim" aria-hidden="true"></span>
+      <span class="button-surface" aria-hidden="true"></span>
+      <span class="button-glare" aria-hidden="true"></span>
+
+      <span class="button-content">
+        <svg
+          class="button-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <rect
+            x="5"
+            y="4"
+            width="5"
+            height="16"
+            rx="1.6"
+            fill="currentColor"
+          />
+          <rect
+            x="14"
+            y="4"
+            width="5"
+            height="16"
+            rx="1.6"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    </button>
+
+    <!-- Next -->
+    <button class="player-button" type="button" aria-label="Next track">
+      <span class="button-rim" aria-hidden="true"></span>
+      <span class="button-surface" aria-hidden="true"></span>
+      <span class="button-glare" aria-hidden="true"></span>
+
+      <span class="button-content">
+        <svg
+          class="button-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M17 6v12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M6.5 6l7 6l-7 6V6Z"
+            fill="currentColor"
+          />
+          <path
+            d="M11.7 6l7 6l-7 6V6Z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+    </button>
+  </div>
+</body>
+</html>

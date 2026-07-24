@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aqua Rip to Library Button</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(
+          circle at center,
+          #f8fdff 0%,
+          #eaf8ff 45%,
+          #dff2fc 100%
+        );
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .aqua-button {
+      --button-width: 480px;
+      --button-height: 122px;
+      --button-radius: 22px;
+
+      position: relative;
+      isolation: isolate;
+
+      width: min(var(--button-width), calc(100vw - 40px));
+      height: var(--button-height);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+
+      padding: 0 42px;
+
+      border: 2px solid rgba(0, 163, 224, 0.9);
+      border-radius: var(--button-radius);
+
+      color: white;
+      cursor: pointer;
+      overflow: hidden;
+
+      background:
+        /* Bottom-right white flare */
+        radial-gradient(
+          ellipse 80px 22px at 96% 100%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(210, 242, 255, 0.8) 14%,
+          rgba(105, 206, 255, 0.22) 38%,
+          transparent 70%
+        ),
+
+        /* Top-center glass illumination */
+        radial-gradient(
+          ellipse 85% 100% at 50% -34%,
+          rgba(255, 255, 255, 0.72) 0%,
+          rgba(225, 249, 255, 0.32) 38%,
+          transparent 66%
+        ),
+
+        /* Main vertical aqua body */
+        linear-gradient(
+          180deg,
+          #84e3ff 0%,
+          #5bd4fb 17%,
+          #35c4f5 48%,
+          #17b4ed 72%,
+          #079fdc 100%
+        );
+
+      box-shadow:
+        /* Bright glass rim */
+        inset 0 2px 1px rgba(255, 255, 255, 0.95),
+        inset 0 5px 6px rgba(255, 255, 255, 0.3),
+
+        /* Side volume */
+        inset 5px 0 7px rgba(0, 122, 197, 0.25),
+        inset -5px 0 7px rgba(0, 112, 203, 0.22),
+
+        /* Darker lower edge */
+        inset 0 -5px 5px rgba(0, 104, 185, 0.36),
+        inset 0 -9px 12px rgba(0, 142, 210, 0.2),
+
+        /* Thin cyan outer rim */
+        0 0 0 2px rgba(81, 215, 255, 0.52),
+
+        /* Aqua glow */
+        0 0 10px rgba(0, 183, 244, 0.65),
+        0 8px 15px rgba(0, 118, 184, 0.24),
+        0 18px 25px rgba(50, 170, 225, 0.15);
+
+      transition:
+        transform 120ms ease,
+        filter 120ms ease,
+        box-shadow 120ms ease;
+    }
+
+    /*
+      Inner translucent plastic border.
+      This gives the edge a rounded, semi-transparent volume.
+    */
+    .aqua-button::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: 3px;
+      border-radius: calc(var(--button-radius) - 4px);
+
+      border:
+        1px solid rgba(204, 247, 255, 0.76);
+
+      background:
+        /* Thin bright highlight along the top */
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.38) 0%,
+          rgba(255, 255, 255, 0.11) 10%,
+          transparent 28%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.88),
+        inset 0 -2px 2px rgba(0, 122, 203, 0.32);
+    }
+
+    /*
+      Directional glint along the lower-right border.
+    */
+    .aqua-button::after {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+
+      right: 16px;
+      bottom: -1px;
+
+      width: 105px;
+      height: 7px;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(175, 230, 255, 0.35) 25%,
+          rgba(255, 255, 255, 0.96) 72%,
+          transparent 100%
+        );
+
+      filter: blur(2px);
+      transform: rotate(-1deg);
+
+      box-shadow:
+        0 0 7px rgba(255, 255, 255, 0.95),
+        0 0 13px rgba(106, 203, 255, 0.8);
+    }
+
+    .button-content {
+      position: relative;
+      z-index: 2;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .button-icon {
+      width: 59px;
+      height: 59px;
+      flex: 0 0 auto;
+
+      overflow: visible;
+
+      filter:
+        drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))
+        drop-shadow(0 2px 2px rgba(0, 111, 185, 0.35));
+    }
+
+    .button-label {
+      white-space: nowrap;
+
+      font-size: 38px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.8px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55),
+        0 0 3px rgba(255, 255, 255, 0.48),
+        0 2px 3px rgba(0, 94, 168, 0.42);
+    }
+
+    .aqua-button:hover {
+      filter: brightness(1.04) saturate(1.04);
+
+      box-shadow:
+        inset 0 2px 1px rgba(255, 255, 255, 1),
+        inset 0 5px 7px rgba(255, 255, 255, 0.36),
+        inset 5px 0 7px rgba(0, 122, 197, 0.25),
+        inset -5px 0 7px rgba(0, 112, 203, 0.22),
+        inset 0 -5px 5px rgba(0, 104, 185, 0.36),
+        inset 0 -9px 12px rgba(0, 142, 210, 0.2),
+        0 0 0 2px rgba(81, 215, 255, 0.62),
+        0 0 14px rgba(0, 183, 244, 0.78),
+        0 9px 17px rgba(0, 118, 184, 0.27),
+        0 18px 27px rgba(50, 170, 225, 0.18);
+    }
+
+    .aqua-button:active {
+      transform: translateY(2px);
+      filter: brightness(0.98);
+
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.75),
+        inset 0 5px 9px rgba(0, 111, 187, 0.23),
+        inset 4px 0 7px rgba(0, 105, 180, 0.26),
+        inset -4px 0 7px rgba(0, 105, 180, 0.22),
+        inset 0 -3px 4px rgba(0, 93, 167, 0.36),
+        0 0 0 2px rgba(81, 215, 255, 0.5),
+        0 0 9px rgba(0, 183, 244, 0.56),
+        0 5px 9px rgba(0, 103, 167, 0.22);
+    }
+
+    .aqua-button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.98);
+      outline-offset: 5px;
+    }
+
+    @media (max-width: 540px) {
+      .aqua-button {
+        --button-height: 96px;
+
+        gap: 16px;
+        padding: 0 24px;
+        border-radius: 19px;
+      }
+
+      .button-content {
+        gap: 16px;
+      }
+
+      .button-icon {
+        width: 47px;
+        height: 47px;
+      }
+
+      .button-label {
+        font-size: clamp(26px, 7vw, 34px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="aqua-button" type="button">
+    <span class="button-content">
+
+      <svg
+        class="button-icon"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+      >
+        <!-- Main disc -->
+        <path
+          d="M43.8 9.4
+             A24 24 0 1 0 38.5 55.2"
+          fill="none"
+          stroke="white"
+          stroke-width="3.5"
+          stroke-linecap="round"
+        />
+
+        <!-- Disc center ring -->
+        <circle
+          cx="29"
+          cy="31"
+          r="7.2"
+          fill="none"
+          stroke="white"
+          stroke-width="3.5"
+        />
+
+        <!-- Disc reflection marks -->
+        <path
+          d="M39.5 13.5
+             L43.5 16.2
+             L40.5 21"
+          fill="none"
+          stroke="white"
+          stroke-width="3.1"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+
+        <circle
+          cx="20.5"
+          cy="20.5"
+          r="1.8"
+          fill="white"
+          opacity="0.9"
+        />
+
+        <!-- Download badge -->
+        <circle
+          cx="45"
+          cy="44"
+          r="13"
+          fill="white"
+        />
+
+        <!-- Download arrow -->
+        <path
+          d="M45 36.5
+             V46.5
+             M40.5 42.5
+             L45 47
+             L49.5 42.5
+             M38.5 50
+             H51.5"
+          fill="none"
+          stroke="#18afe8"
+          stroke-width="3.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+
+      <span class="button-label">Rip to Library</span>
+    </span>
+  </button>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Liquid Glass Image Panel</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --panel-size: 420px;
+      --panel-radius: 34px;
+      --rim-width: 8px;
+
+      --glass-blue: rgba(85, 197, 240, 0.74);
+      --glass-dark: rgba(10, 106, 174, 0.72);
+      --glass-light: rgba(226, 251, 255, 0.98);
+      --glass-glow: rgba(73, 201, 248, 0.44);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse at 50% 30%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(231, 249, 255, 0.75) 48%,
+          transparent 76%
+        ),
+        linear-gradient(
+          180deg,
+          #eafaff 0%,
+          #c8edf9 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    /* =========================================================
+       PANEL
+       ========================================================= */
+
+    .liquid-image-panel {
+      position: relative;
+      isolation: isolate;
+
+      width: min(var(--panel-size), calc(100vw - 40px));
+      aspect-ratio: 1;
+
+      border-radius: var(--panel-radius);
+
+      /*
+        The panel itself remains transparent. The image, glass
+        surface, rim, highlights, and droplets are separate layers.
+      */
+      background: transparent;
+
+      box-shadow:
+        0 2px 3px rgba(17, 98, 155, 0.22),
+        0 10px 20px rgba(25, 117, 170, 0.2),
+        0 24px 36px rgba(42, 157, 204, 0.13),
+        0 0 18px var(--glass-glow);
+    }
+
+    /* =========================================================
+       REPLACEABLE IMAGE
+       ========================================================= */
+
+    .image-window {
+      position: absolute;
+      z-index: 1;
+
+      inset: var(--rim-width);
+
+      overflow: hidden;
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--rim-width)
+        );
+
+      /*
+        This gradient is only a fallback placeholder behind the
+        actual image.
+      */
+      background:
+        radial-gradient(
+          circle at 47% 58%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.62) 5%,
+          rgba(118, 237, 255, 0.42) 19%,
+          transparent 38%
+        ),
+        conic-gradient(
+          from 230deg at 47% 58%,
+          #0368ed,
+          #47dfff,
+          #affff6,
+          #d2bbff,
+          #9b6fff,
+          #4b6fff,
+          #09c6ed,
+          #0368ed
+        );
+
+      box-shadow:
+        0 0 0 1px rgba(10, 111, 174, 0.32),
+        inset 0 4px 9px rgba(16, 104, 164, 0.18),
+        inset 0 1px 2px rgba(255, 255, 255, 0.72),
+        inset 0 -2px 4px rgba(255, 255, 255, 0.42);
+    }
+
+    .panel-image {
+      display: block;
+
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+      object-position: center;
+
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /*
+      Gentle illumination over any replacement image.
+    */
+    .image-window::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+
+      inset: 0;
+
+      background:
+        radial-gradient(
+          ellipse 95% 54% at 50% -12%,
+          rgba(255, 255, 255, 0.28) 0%,
+          rgba(255, 255, 255, 0.08) 48%,
+          transparent 78%
+        ),
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.16) 0%,
+          transparent 28%,
+          transparent 72%,
+          rgba(77, 214, 255, 0.08) 100%
+        );
+    }
+
+    /* =========================================================
+       LIQUID GLASS BORDER
+       ========================================================= */
+
+    .liquid-rim {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+
+      inset: 0;
+      padding: var(--rim-width);
+
+      border-radius: inherit;
+
+      background:
+        /*
+          Broad, feathered reflections around the border.
+        */
+        radial-gradient(
+          ellipse 58% 24% at 26% -1%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.92) 6%,
+          rgba(215, 247, 255, 0.68) 19%,
+          rgba(121, 214, 245, 0.34) 41%,
+          rgba(33, 143, 204, 0.12) 66%,
+          transparent 87%
+        ),
+
+        radial-gradient(
+          ellipse 43% 23% at 80% 1%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(255, 255, 255, 0.78) 7%,
+          rgba(202, 241, 255, 0.52) 22%,
+          rgba(104, 199, 237, 0.26) 45%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 54% 25% at 20% 101%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(235, 253, 255, 0.76) 8%,
+          rgba(178, 235, 250, 0.48) 23%,
+          rgba(72, 181, 226, 0.23) 48%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 61% 27% at 80% 102%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.9) 7%,
+          rgba(213, 247, 255, 0.62) 22%,
+          rgba(112, 207, 241, 0.32) 44%,
+          rgba(31, 142, 201, 0.11) 68%,
+          transparent 88%
+        ),
+
+        radial-gradient(
+          ellipse 28% 70% at 0% 46%,
+          rgba(238, 254, 255, 0.82) 0%,
+          rgba(137, 224, 247, 0.45) 31%,
+          rgba(25, 139, 198, 0.17) 61%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 27% 72% at 100% 55%,
+          rgba(238, 254, 255, 0.78) 0%,
+          rgba(132, 216, 243, 0.41) 31%,
+          rgba(19, 126, 186, 0.17) 62%,
+          transparent 86%
+        ),
+
+        /*
+          Continuous translucent material beneath the
+          localized reflections.
+        */
+        linear-gradient(
+          150deg,
+          var(--glass-light) 0%,
+          var(--glass-blue) 24%,
+          var(--glass-dark) 55%,
+          rgba(93, 204, 241, 0.76) 76%,
+          var(--glass-light) 100%
+        );
+
+      /*
+        Remove the center, leaving a rounded ring.
+      */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter:
+        blur(0.45px)
+        saturate(1.06);
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.96),
+        inset 0 -2px 3px rgba(8, 103, 173, 0.28);
+    }
+
+    /*
+      Soft luminous halo behind the glass border.
+    */
+    .liquid-rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+
+      inset: 1px;
+
+      border-radius: inherit;
+
+      box-shadow:
+        0 0 5px rgba(255, 255, 255, 0.8),
+        0 0 14px var(--glass-glow);
+
+      opacity: 0.8;
+    }
+
+    /*
+      Thin specular streaks following the top and bottom edges.
+    */
+    .liquid-rim::after {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 54% 4% at 33% 1%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.74) 12%,
+          rgba(216, 247, 255, 0.28) 43%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 38% 4% at 80% 2%,
+          rgba(255, 255, 255, 0.84) 0%,
+          rgba(230, 250, 255, 0.48) 22%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 49% 5% at 24% 99%,
+          rgba(255, 255, 255, 0.84) 0%,
+          rgba(221, 248, 255, 0.46) 24%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 61% 5% at 77% 99%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.68) 13%,
+          rgba(203, 242, 255, 0.26) 44%,
+          transparent 84%
+        );
+
+      filter: blur(1.5px);
+    }
+
+    /* =========================================================
+       INNER GLASS SEAM
+       ========================================================= */
+
+    .inner-glass-edge {
+      position: absolute;
+      z-index: 4;
+      pointer-events: none;
+
+      inset: calc(var(--rim-width) - 1px);
+
+      border:
+        1px solid rgba(227, 251, 255, 0.68);
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--rim-width) +
+          1px
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.76),
+        inset 0 3px 7px rgba(29, 129, 185, 0.1),
+        inset 0 -1px 2px rgba(8, 91, 157, 0.22),
+        0 0 2px rgba(255, 255, 255, 0.72);
+    }
+
+    /* =========================================================
+       DROPLET LAYER
+       ========================================================= */
+
+    .droplets {
+      position: absolute;
+      z-index: 6;
+      pointer-events: none;
+
+      inset: var(--rim-width);
+
+      overflow: hidden;
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--rim-width)
+        );
+    }
+
+    .drop {
+      --drop-size: 16px;
+      --drop-rotate: 0deg;
+
+      position: absolute;
+
+      width: var(--drop-size);
+      height: var(--drop-size);
+
+      border:
+        1px solid rgba(214, 249, 255, 0.72);
+
+      border-radius:
+        55% 45% 54% 46% /
+        48% 52% 48% 52%;
+
+      transform: rotate(var(--drop-rotate));
+
+      background:
+        radial-gradient(
+          circle at 31% 24%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.86) 8%,
+          rgba(226, 250, 255, 0.42) 18%,
+          transparent 34%
+        ),
+
+        radial-gradient(
+          circle at 68% 70%,
+          rgba(4, 111, 185, 0.34) 0%,
+          rgba(23, 147, 207, 0.16) 30%,
+          transparent 62%
+        ),
+
+        linear-gradient(
+          145deg,
+          rgba(243, 254, 255, 0.58) 0%,
+          rgba(147, 225, 248, 0.2) 48%,
+          rgba(16, 126, 193, 0.28) 100%
+        );
+
+      box-shadow:
+        inset 1px 1px 2px rgba(255, 255, 255, 0.88),
+        inset -2px -2px 3px rgba(5, 96, 167, 0.23),
+
+        1px 2px 3px rgba(4, 86, 153, 0.34),
+        2px 5px 8px rgba(2, 77, 140, 0.16),
+
+        -1px -1px 2px rgba(255, 255, 255, 0.54);
+
+      backdrop-filter:
+        blur(1.5px)
+        brightness(1.08)
+        saturate(1.16);
+    }
+
+    /*
+      Small inner lens reflection.
+    */
+    .drop::before {
+      content: "";
+      position: absolute;
+
+      left: 21%;
+      top: 15%;
+
+      width: 34%;
+      height: 27%;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          ellipse at center,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(255, 255, 255, 0.58) 42%,
+          transparent 76%
+        );
+
+      filter: blur(0.4px);
+      transform: rotate(-22deg);
+    }
+
+    /*
+      Refraction/shadow concentrated at the lower edge.
+    */
+    .drop::after {
+      content: "";
+      position: absolute;
+
+      left: 17%;
+      right: 11%;
+      bottom: 5%;
+
+      height: 22%;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          ellipse at center,
+          rgba(2, 95, 169, 0.36) 0%,
+          rgba(16, 135, 197, 0.16) 42%,
+          transparent 76%
+        );
+
+      filter: blur(0.7px);
+    }
+
+    /* =========================================================
+       DROPLET PLACEMENT
+       ========================================================= */
+
+    .drop-1 {
+      --drop-size: 15px;
+      --drop-rotate: -10deg;
+
+      top: 11%;
+      right: 25%;
+    }
+
+    .drop-2 {
+      --drop-size: 21px;
+      --drop-rotate: 8deg;
+
+      top: 55%;
+      right: 4%;
+    }
+
+    .drop-3 {
+      --drop-size: 11px;
+      --drop-rotate: -5deg;
+
+      top: 61%;
+      right: 6%;
+    }
+
+    .drop-4 {
+      --drop-size: 14px;
+      --drop-rotate: 13deg;
+
+      bottom: 19%;
+      right: 19%;
+    }
+
+    .drop-5 {
+      --drop-size: 22px;
+      --drop-rotate: -6deg;
+
+      bottom: 10%;
+      right: 7%;
+    }
+
+    .drop-6 {
+      --drop-size: 13px;
+      --drop-rotate: 9deg;
+
+      bottom: 7%;
+      right: 23%;
+    }
+
+    .drop-7 {
+      --drop-size: 15px;
+      --drop-rotate: -12deg;
+
+      bottom: 11%;
+      left: 13%;
+    }
+
+    .drop-8 {
+      --drop-size: 18px;
+      --drop-rotate: 7deg;
+
+      bottom: 6%;
+      left: 4%;
+    }
+
+    .drop-9 {
+      --drop-size: 8px;
+      --drop-rotate: -8deg;
+
+      bottom: 3%;
+      left: 16%;
+    }
+
+    .drop-10 {
+      --drop-size: 7px;
+      --drop-rotate: 11deg;
+
+      top: 8%;
+      left: 8%;
+    }
+
+    .drop-11 {
+      --drop-size: 5px;
+
+      top: 15%;
+      left: 10%;
+    }
+
+    .drop-12 {
+      --drop-size: 7px;
+
+      bottom: 14%;
+      right: 30%;
+    }
+
+    /*
+      Tiny nearly spherical beads.
+    */
+    .drop.small {
+      border-radius: 50%;
+
+      box-shadow:
+        inset 1px 1px 1px rgba(255, 255, 255, 0.92),
+        inset -1px -1px 2px rgba(4, 94, 166, 0.24),
+        1px 2px 3px rgba(4, 75, 135, 0.26);
+    }
+
+    /* =========================================================
+       LARGE GLASS REFLECTIONS
+       ========================================================= */
+
+    .glass-reflections {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+
+      inset: var(--rim-width);
+
+      overflow: hidden;
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--rim-width)
+        );
+
+      background:
+        linear-gradient(
+          117deg,
+          transparent 0%,
+          transparent 10%,
+          rgba(255, 255, 255, 0.13) 16%,
+          rgba(255, 255, 255, 0.025) 25%,
+          transparent 32%
+        ),
+
+        linear-gradient(
+          107deg,
+          transparent 0%,
+          transparent 27%,
+          rgba(255, 255, 255, 0.09) 34%,
+          transparent 41%
+        ),
+
+        radial-gradient(
+          ellipse 90% 45% at 50% -8%,
+          rgba(255, 255, 255, 0.17) 0%,
+          transparent 72%
+        );
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 520px) {
+      :root {
+        --panel-radius: 28px;
+        --rim-width: 7px;
+      }
+
+      body {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <figure class="liquid-image-panel">
+    <div class="image-window">
+      <!--
+        Replace this src with any image URL or local file.
+
+        The embedded transparent pixel allows the CSS placeholder
+        to display while keeping this example self-contained.
+      -->
+      <img
+        class="panel-image"
+        src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+        alt="Replaceable panel artwork"
+      />
+    </div>
+
+    <span class="liquid-rim" aria-hidden="true"></span>
+    <span class="inner-glass-edge" aria-hidden="true"></span>
+    <span class="glass-reflections" aria-hidden="true"></span>
+
+    <span class="droplets" aria-hidden="true">
+      <i class="drop drop-1"></i>
+      <i class="drop drop-2"></i>
+      <i class="drop drop-3"></i>
+      <i class="drop drop-4"></i>
+      <i class="drop drop-5"></i>
+      <i class="drop drop-6"></i>
+      <i class="drop drop-7"></i>
+      <i class="drop drop-8"></i>
+      <i class="drop small drop-9"></i>
+      <i class="drop small drop-10"></i>
+      <i class="drop small drop-11"></i>
+      <i class="drop small drop-12"></i>
+    </span>
+  </figure>
+</body>
+</html>

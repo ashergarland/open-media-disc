@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aqua Toggle Switch</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --switch-width: 272px;
+      --switch-height: 92px;
+      --knob-size: 88px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse at 50% 40%,
+          #ffffff 0%,
+          #effcff 48%,
+          #dff6fc 100%
+        );
+
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .toggle-demo {
+      width: min(570px, calc(100vw - 40px));
+      padding: 34px 42px 48px;
+    }
+
+    .toggle-title {
+      margin: 0 0 43px;
+
+      color: #064f86;
+
+      font-size: 27px;
+      font-weight: 750;
+      line-height: 1;
+      letter-spacing: -0.5px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 0 3px rgba(40, 139, 195, 0.28);
+    }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 72px var(--switch-width) 72px;
+      align-items: center;
+      justify-content: center;
+      gap: 23px;
+    }
+
+    .state-label {
+      color: #155f9c;
+
+      font-size: 31px;
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: -0.8px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 0 3px rgba(28, 132, 192, 0.25);
+
+      transition:
+        color 180ms ease,
+        opacity 180ms ease,
+        filter 180ms ease;
+    }
+
+    .state-label.on {
+      text-align: right;
+    }
+
+    .state-label.off {
+      text-align: left;
+    }
+
+    .toggle-control {
+      position: relative;
+      display: inline-block;
+
+      width: var(--switch-width);
+      height: var(--switch-height);
+
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toggle-input {
+      position: absolute;
+
+      width: 1px;
+      height: 1px;
+
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /*
+      Main translucent aqua capsule.
+    */
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+
+      overflow: hidden;
+
+      border: 2px solid rgba(0, 143, 206, 0.82);
+      border-radius: 999px;
+
+      background:
+        radial-gradient(
+          ellipse 90% 85% at 50% -5%,
+          rgba(255, 255, 255, 0.68) 0%,
+          rgba(226, 250, 255, 0.3) 38%,
+          transparent 68%
+        ),
+        linear-gradient(
+          180deg,
+          #58dcfa 0%,
+          #34d2f5 24%,
+          #18c2ec 58%,
+          #08acd9 100%
+        );
+
+      box-shadow:
+        inset 0 3px 3px rgba(255, 255, 255, 0.9),
+        inset 0 7px 8px rgba(255, 255, 255, 0.2),
+        inset 5px 0 7px rgba(0, 106, 181, 0.18),
+        inset -5px 0 7px rgba(0, 104, 179, 0.2),
+        inset 0 -7px 8px rgba(0, 93, 168, 0.29),
+
+        0 0 0 2px rgba(110, 224, 255, 0.38),
+        0 3px 5px rgba(0, 105, 170, 0.22),
+        0 10px 18px rgba(0, 133, 196, 0.2),
+        0 0 13px rgba(70, 213, 252, 0.42);
+
+      transition:
+        filter 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
+    }
+
+    /*
+      Upper glossy reflection.
+    */
+    .toggle-track::before {
+      content: "";
+      position: absolute;
+
+      left: 24px;
+      right: 24px;
+      top: 5px;
+
+      height: 7px;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.74) 18%,
+          rgba(255, 255, 255, 0.52) 64%,
+          transparent 100%
+        );
+
+      filter: blur(1px);
+      opacity: 0.9;
+    }
+
+    /*
+      Lower reflected edge.
+    */
+    .toggle-track::after {
+      content: "";
+      position: absolute;
+
+      left: 20px;
+      right: 20px;
+      bottom: 3px;
+
+      height: 5px;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(168, 239, 255, 0.38),
+          rgba(255, 255, 255, 0.67),
+          transparent
+        );
+
+      filter: blur(1.5px);
+      opacity: 0.72;
+    }
+
+    /*
+      Glass control knob.
+    */
+    .toggle-knob {
+      position: absolute;
+      z-index: 3;
+
+      top: 50%;
+      right: 2px;
+
+      width: var(--knob-size);
+      height: var(--knob-size);
+
+      border: 2px solid rgba(55, 171, 221, 0.72);
+      border-radius: 50%;
+
+      transform: translateY(-50%);
+
+      background:
+        radial-gradient(
+          circle at 28% 21%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.85) 11%,
+          rgba(255, 255, 255, 0.2) 31%,
+          transparent 44%
+        ),
+        radial-gradient(
+          ellipse at 53% 78%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(242, 253, 255, 0.53) 34%,
+          transparent 62%
+        ),
+        radial-gradient(
+          circle at 74% 62%,
+          rgba(70, 207, 246, 0.38) 0%,
+          rgba(96, 218, 247, 0.12) 40%,
+          transparent 61%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(242, 253, 255, 0.97) 0%,
+          rgba(204, 241, 251, 0.84) 42%,
+          rgba(163, 222, 243, 0.64) 100%
+        );
+
+      box-shadow:
+        inset 0 4px 5px rgba(255, 255, 255, 0.95),
+        inset 4px 2px 6px rgba(255, 255, 255, 0.54),
+        inset -5px -6px 8px rgba(26, 143, 205, 0.23),
+
+        0 0 0 2px rgba(222, 248, 255, 0.52),
+        0 2px 4px rgba(0, 91, 158, 0.27),
+        0 7px 11px rgba(0, 101, 170, 0.22),
+        0 0 12px rgba(58, 194, 239, 0.54);
+
+      transition:
+        right 260ms cubic-bezier(0.22, 0.8, 0.25, 1),
+        transform 150ms ease,
+        filter 180ms ease;
+    }
+
+    /*
+      Inner glass lens ring.
+    */
+    .toggle-knob::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(226, 249, 255, 0.16) 0%,
+          rgba(255, 255, 255, 0.15) 53%,
+          rgba(58, 178, 226, 0.14) 100%
+        );
+
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.9),
+        inset 0 -3px 4px rgba(15, 136, 197, 0.12);
+    }
+
+    /*
+      Centered status LED.
+    */
+    .status-led {
+      position: absolute;
+      z-index: 5;
+
+      left: 50%;
+      top: 50%;
+
+      width: 16px;
+      height: 16px;
+
+      transform: translate(-50%, -50%);
+
+      border: 2px solid rgba(20, 174, 89, 0.58);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle at 34% 28%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(204, 255, 224, 0.9) 14%,
+          #52e68d 34%,
+          #16bd63 70%,
+          #079449 100%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.9),
+        inset 0 -1px 2px rgba(0, 103, 48, 0.28),
+        0 0 3px rgba(9, 194, 87, 0.95),
+        0 0 8px rgba(22, 221, 108, 0.68),
+        0 0 14px rgba(28, 224, 115, 0.36);
+
+      transition:
+        opacity 180ms ease,
+        filter 180ms ease,
+        background 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+    }
+
+    /*
+      OFF state.
+    */
+    .toggle-input:not(:checked) + .toggle-track {
+      filter: saturate(0.6) brightness(1.07);
+
+      background:
+        radial-gradient(
+          ellipse 90% 85% at 50% -5%,
+          rgba(255, 255, 255, 0.75) 0%,
+          rgba(235, 251, 255, 0.38) 42%,
+          transparent 70%
+        ),
+        linear-gradient(
+          180deg,
+          #c9eef8 0%,
+          #a9e2f1 40%,
+          #85cfdf 100%
+        );
+    }
+
+    .toggle-input:not(:checked) + .toggle-track .toggle-knob {
+      right: calc(
+        var(--switch-width) - var(--knob-size) - 2px
+      );
+    }
+
+    .toggle-input:not(:checked)
+      + .toggle-track
+      .status-led {
+      opacity: 0.55;
+      filter: grayscale(1);
+
+      border-color: rgba(80, 156, 183, 0.42);
+
+      background:
+        radial-gradient(
+          circle at 34% 28%,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(224, 247, 253, 0.8) 20%,
+          #a8d8e5 52%,
+          #6eb7ca 100%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.82),
+        inset 0 -1px 2px rgba(30, 112, 143, 0.2),
+        0 0 3px rgba(83, 181, 211, 0.28);
+    }
+
+    /*
+      Label emphasis.
+    */
+    .toggle-demo:has(.toggle-input:checked) .state-label.on {
+      color: #0789d6;
+
+      filter:
+        drop-shadow(
+          0 0 2px rgba(0, 169, 234, 0.28)
+        );
+    }
+
+    .toggle-demo:has(.toggle-input:checked) .state-label.off {
+      opacity: 0.72;
+    }
+
+    .toggle-demo:has(.toggle-input:not(:checked)) .state-label.on {
+      opacity: 0.72;
+    }
+
+    .toggle-demo:has(.toggle-input:not(:checked)) .state-label.off {
+      color: #0789d6;
+
+      filter:
+        drop-shadow(
+          0 0 2px rgba(0, 169, 234, 0.28)
+        );
+    }
+
+    /*
+      Interaction states.
+    */
+    .toggle-control:hover .toggle-track {
+      filter: brightness(1.035) saturate(1.03);
+    }
+
+    .toggle-control:hover .toggle-knob {
+      filter: brightness(1.035);
+    }
+
+    .toggle-control:active .toggle-knob {
+      transform:
+        translateY(-50%)
+        scale(0.97);
+    }
+
+    .toggle-input:focus-visible + .toggle-track {
+      outline: 3px solid rgba(0, 143, 214, 0.4);
+      outline-offset: 6px;
+    }
+
+    @media (max-width: 540px) {
+      :root {
+        --switch-width: 220px;
+        --switch-height: 76px;
+        --knob-size: 72px;
+      }
+
+      .toggle-demo {
+        padding: 28px 18px 40px;
+      }
+
+      .toggle-title {
+        margin-bottom: 34px;
+        font-size: 23px;
+      }
+
+      .toggle-row {
+        grid-template-columns:
+          52px
+          var(--switch-width)
+          52px;
+
+        gap: 13px;
+      }
+
+      .state-label {
+        font-size: 24px;
+      }
+
+      .status-led {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="toggle-demo">
+    <h1 class="toggle-title">TOGGLE SWITCH</h1>
+
+    <div class="toggle-row">
+      <span class="state-label on" id="onLabel">
+        ON
+      </span>
+
+      <label class="toggle-control">
+        <input
+          class="toggle-input"
+          type="checkbox"
+          role="switch"
+          aria-labelledby="onLabel offLabel"
+          checked
+        />
+
+        <span class="toggle-track">
+          <span class="toggle-knob">
+            <span class="status-led"></span>
+          </span>
+        </span>
+      </label>
+
+      <span class="state-label off" id="offLabel">
+        OFF
+      </span>
+    </div>
+  </section>
+</body>
+</html>

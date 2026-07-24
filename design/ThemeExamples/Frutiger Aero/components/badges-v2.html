@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Feathered Liquid Glass Badges</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --badge-height: 92px;
+      --badge-radius: 46px;
+      --rim-width: 6px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 42px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse 82% 90% at 50% 22%,
+          rgba(255, 255, 255, 0.86) 0%,
+          rgba(231, 250, 255, 0.5) 48%,
+          transparent 76%
+        ),
+        linear-gradient(
+          180deg,
+          #e9faff 0%,
+          #c4eaf7 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .badge-demo {
+      width: min(940px, 100%);
+    }
+
+    .badge-heading {
+      margin: 0 0 28px 2px;
+
+      color: #164f7f;
+
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.4px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.96),
+        0 0 3px rgba(31, 111, 164, 0.18);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 38px;
+    }
+
+    /* =========================================================
+       SHARED BADGE
+       ========================================================= */
+
+    .glass-badge {
+      --body-color: rgba(216, 241, 251, 0.98);
+
+      --text-color: #1977b7;
+
+      --rim-dark: rgba(16, 126, 181, 0.88);
+      --rim-medium: rgba(70, 184, 226, 0.82);
+      --rim-light: rgba(196, 243, 255, 0.92);
+
+      --inner-shadow: rgba(20, 111, 167, 0.2);
+      --outer-glow: rgba(51, 178, 229, 0.34);
+      --cast-shadow: rgba(24, 108, 159, 0.2);
+
+      position: relative;
+      isolation: isolate;
+
+      height: var(--badge-height);
+      padding: 0 32px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      border: 0;
+      border-radius: var(--badge-radius);
+
+      color: var(--text-color);
+
+      /*
+        The outer element remains transparent. The rim and the
+        inset body are rendered as independent layers.
+      */
+      background: transparent;
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.72),
+        0 3px 4px var(--cast-shadow),
+        0 9px 15px rgba(25, 108, 157, 0.18),
+        0 17px 26px rgba(44, 151, 196, 0.12),
+        0 0 15px var(--outer-glow);
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92),
+        0 0 2px rgba(255, 255, 255, 0.4);
+
+      transition:
+        transform 140ms ease,
+        filter 140ms ease,
+        box-shadow 140ms ease;
+    }
+
+    /* =========================================================
+       LIQUID BORDER
+
+       A masked ring containing broad radial highlights.
+       The white peaks are narrow, but the transitions occupy
+       large sections of the perimeter.
+       ========================================================= */
+
+    .liquid-rim {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: 0;
+
+      padding: var(--rim-width);
+
+      border-radius: inherit;
+
+      background:
+        /*
+          Upper-left highlight:
+          very small white core, very broad transition.
+        */
+        radial-gradient(
+          ellipse 42% 30% at 18% -2%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.98) 4%,
+          rgba(229, 251, 255, 0.84) 12%,
+          rgba(169, 232, 250, 0.55) 27%,
+          rgba(71, 181, 222, 0.24) 49%,
+          transparent 76%
+        ),
+
+        /*
+          Upper-right reflection.
+        */
+        radial-gradient(
+          ellipse 34% 28% at 82% 0%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.9) 5%,
+          rgba(220, 247, 255, 0.72) 14%,
+          rgba(154, 220, 245, 0.43) 31%,
+          rgba(64, 169, 214, 0.18) 53%,
+          transparent 78%
+        ),
+
+        /*
+          Bottom-left reflection.
+        */
+        radial-gradient(
+          ellipse 39% 27% at 19% 103%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(244, 255, 255, 0.84) 5%,
+          rgba(195, 243, 252, 0.62) 15%,
+          rgba(107, 209, 235, 0.37) 33%,
+          rgba(36, 152, 202, 0.16) 54%,
+          transparent 79%
+        ),
+
+        /*
+          Bottom-right reflection.
+        */
+        radial-gradient(
+          ellipse 48% 30% at 82% 103%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.96) 4%,
+          rgba(220, 249, 255, 0.76) 13%,
+          rgba(142, 222, 246, 0.47) 30%,
+          rgba(52, 168, 215, 0.2) 52%,
+          transparent 79%
+        ),
+
+        /*
+          Soft side illumination keeps the curved ends from
+          becoming uniformly dark.
+        */
+        radial-gradient(
+          ellipse 18% 76% at 0% 50%,
+          rgba(232, 253, 255, 0.7) 0%,
+          rgba(128, 218, 243, 0.38) 30%,
+          rgba(21, 140, 194, 0.14) 58%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 18% 76% at 100% 50%,
+          rgba(232, 253, 255, 0.66) 0%,
+          rgba(128, 218, 243, 0.34) 30%,
+          rgba(21, 140, 194, 0.14) 58%,
+          transparent 82%
+        ),
+
+        /*
+          Continuous translucent rim underneath all reflections.
+        */
+        linear-gradient(
+          180deg,
+          var(--rim-light) 0%,
+          var(--rim-medium) 25%,
+          var(--rim-dark) 62%,
+          var(--rim-medium) 83%,
+          var(--rim-light) 100%
+        );
+
+      /*
+        Cut out the middle, leaving only the border ring.
+      */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      /*
+        A tiny blur blends the radial layers together without
+        destroying the border definition.
+      */
+      filter:
+        blur(0.45px)
+        saturate(1.06);
+
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.96),
+        inset 0 -1px 2px var(--inner-shadow),
+        0 0 3px rgba(255, 255, 255, 0.68);
+    }
+
+    /*
+      Secondary soft glow behind the liquid border.
+    */
+    .liquid-rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+
+      inset: 1px;
+
+      border-radius: inherit;
+
+      box-shadow:
+        0 0 5px rgba(255, 255, 255, 0.58),
+        0 0 11px var(--outer-glow);
+
+      opacity: 0.72;
+    }
+
+    /*
+      Thin specular streaks. They are deliberately broad and
+      blurred so there is no visibly abrupt start or end.
+    */
+    .liquid-rim::after {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 34% 7% at 22% 1%,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(255, 255, 255, 0.7) 8%,
+          rgba(225, 249, 255, 0.34) 30%,
+          transparent 76%
+        ),
+
+        radial-gradient(
+          ellipse 28% 6% at 78% 1%,
+          rgba(255, 255, 255, 0.84) 0%,
+          rgba(236, 252, 255, 0.56) 15%,
+          rgba(184, 235, 250, 0.24) 38%,
+          transparent 79%
+        ),
+
+        radial-gradient(
+          ellipse 31% 7% at 21% 99%,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(231, 251, 255, 0.5) 17%,
+          rgba(157, 224, 246, 0.21) 41%,
+          transparent 80%
+        ),
+
+        radial-gradient(
+          ellipse 42% 8% at 79% 99%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(255, 255, 255, 0.72) 9%,
+          rgba(215, 247, 255, 0.34) 32%,
+          transparent 79%
+        );
+
+      filter: blur(1.4px);
+      opacity: 0.92;
+    }
+
+    /* =========================================================
+       FLAT INSET BODY
+       ========================================================= */
+
+    .inner-surface {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: var(--rim-width);
+
+      border-radius:
+        calc(
+          var(--badge-radius) -
+          var(--rim-width)
+        );
+
+      /*
+        Deliberately flat fill.
+      */
+      background: var(--body-color);
+
+      border:
+        1px solid rgba(255, 255, 255, 0.5);
+
+      box-shadow:
+        /*
+          Dark inner seam makes the body appear recessed
+          beneath the raised liquid border.
+        */
+        0 0 0 1px var(--inner-shadow),
+
+        inset 0 3px 5px rgba(29, 117, 163, 0.12),
+        inset 0 1px 1px rgba(255, 255, 255, 0.62),
+        inset 0 -1px 2px rgba(255, 255, 255, 0.5);
+    }
+
+    /*
+      Very subtle surface reflection. This does not change the
+      body color enough to make it look inflated.
+    */
+    .inner-surface::before {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 74% 42% at 50% -10%,
+          rgba(255, 255, 255, 0.22) 0%,
+          rgba(255, 255, 255, 0.09) 40%,
+          transparent 74%
+        );
+    }
+
+    .badge-content {
+      position: relative;
+      z-index: 3;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .badge-label {
+      white-space: nowrap;
+
+      font-size: 25px;
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: -0.6px;
+    }
+
+    .badge-icon {
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    /* =========================================================
+       VERIFIED BADGE
+       ========================================================= */
+
+    .verified-badge {
+      width: 300px;
+
+      --body-color: rgba(197, 247, 220, 0.98);
+
+      --text-color: #124d69;
+
+      --rim-dark: rgba(0, 157, 73, 0.9);
+      --rim-medium: rgba(43, 213, 119, 0.84);
+      --rim-light: rgba(195, 255, 220, 0.96);
+
+      --inner-shadow: rgba(0, 136, 63, 0.22);
+      --outer-glow: rgba(26, 225, 111, 0.4);
+      --cast-shadow: rgba(0, 118, 57, 0.2);
+    }
+
+    .verified-icon {
+      width: 48px;
+      height: 48px;
+
+      filter:
+        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.84))
+        drop-shadow(0 2px 2px rgba(0, 125, 58, 0.2));
+    }
+
+    /* =========================================================
+       FLAC BADGE
+       ========================================================= */
+
+    .flac-badge {
+      width: 354px;
+
+      --body-color: rgba(216, 241, 251, 0.98);
+
+      --text-color: #1979bd;
+
+      --rim-dark: rgba(15, 116, 171, 0.88);
+      --rim-medium: rgba(68, 179, 222, 0.82);
+      --rim-light: rgba(202, 244, 255, 0.96);
+
+      --inner-shadow: rgba(10, 104, 166, 0.2);
+      --outer-glow: rgba(59, 183, 235, 0.36);
+      --cast-shadow: rgba(20, 104, 159, 0.2);
+    }
+
+    .flac-icon {
+      width: 49px;
+      height: 49px;
+
+      filter:
+        drop-shadow(0 1px 0 rgba(255, 255, 255, 0.84))
+        drop-shadow(0 2px 2px rgba(15, 104, 168, 0.2));
+    }
+
+    /* =========================================================
+       INTERACTION
+       ========================================================= */
+
+    .glass-badge:hover {
+      transform: translateY(-1px);
+
+      filter:
+        brightness(1.025)
+        saturate(1.035);
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.8),
+        0 3px 4px var(--cast-shadow),
+        0 10px 17px rgba(25, 108, 157, 0.2),
+        0 19px 29px rgba(44, 151, 196, 0.14),
+        0 0 19px var(--outer-glow);
+    }
+
+    .glass-badge:active {
+      transform: translateY(1px);
+
+      filter: brightness(0.985);
+
+      box-shadow:
+        0 1px 2px var(--cast-shadow),
+        0 5px 9px rgba(25, 108, 157, 0.16),
+        0 0 11px var(--outer-glow);
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --badge-height: 80px;
+        --badge-radius: 40px;
+        --rim-width: 5px;
+      }
+
+      body {
+        padding: 28px 20px;
+      }
+
+      .badge-row {
+        gap: 24px;
+      }
+
+      .verified-badge {
+        width: 265px;
+      }
+
+      .flac-badge {
+        width: 310px;
+      }
+
+      .glass-badge {
+        padding: 0 24px;
+      }
+
+      .badge-label {
+        font-size: 21px;
+      }
+
+      .verified-icon,
+      .flac-icon {
+        width: 41px;
+        height: 41px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="badge-demo">
+    <h1 class="badge-heading">BADGES</h1>
+
+    <div class="badge-row">
+
+      <!-- VERIFIED -->
+      <div class="glass-badge verified-badge">
+        <span class="liquid-rim" aria-hidden="true"></span>
+        <span class="inner-surface" aria-hidden="true"></span>
+
+        <span class="badge-content">
+          <svg
+            class="badge-icon verified-icon"
+            viewBox="0 0 64 64"
+            aria-hidden="true"
+          >
+            <defs>
+              <radialGradient
+                id="verifiedSurface"
+                cx="35%"
+                cy="25%"
+                r="80%"
+              >
+                <stop
+                  offset="0%"
+                  stop-color="#ffffff"
+                  stop-opacity="0.84"
+                />
+
+                <stop
+                  offset="55%"
+                  stop-color="#effff5"
+                  stop-opacity="0.36"
+                />
+
+                <stop
+                  offset="100%"
+                  stop-color="#c4f8d8"
+                  stop-opacity="0.18"
+                />
+              </radialGradient>
+            </defs>
+
+            <circle
+              cx="32"
+              cy="32"
+              r="25"
+              fill="url(#verifiedSurface)"
+              stroke="#0dd15a"
+              stroke-width="4"
+            />
+
+            <circle
+              cx="32"
+              cy="32"
+              r="20.5"
+              fill="none"
+              stroke="white"
+              stroke-opacity="0.52"
+              stroke-width="1"
+            />
+
+            <path
+              d="
+                M20.5 32.2
+                L28.5 40.2
+                L44 23.8
+              "
+              fill="none"
+              stroke="#0cca51"
+              stroke-width="5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+          <span class="badge-label">Verified</span>
+        </span>
+      </div>
+
+      <!-- FLAC -->
+      <div class="glass-badge flac-badge">
+        <span class="liquid-rim" aria-hidden="true"></span>
+        <span class="inner-surface" aria-hidden="true"></span>
+
+        <span class="badge-content">
+          <svg
+            class="badge-icon flac-icon"
+            viewBox="0 0 64 64"
+            aria-hidden="true"
+          >
+            <g
+              fill="none"
+              stroke="#1989dc"
+              stroke-linecap="round"
+            >
+              <line x1="8" y1="32" x2="8" y2="32" stroke-width="4" />
+              <line x1="15" y1="25" x2="15" y2="39" stroke-width="4" />
+              <line x1="23" y1="14" x2="23" y2="50" stroke-width="4" />
+              <line x1="31" y1="21" x2="31" y2="43" stroke-width="4" />
+              <line x1="39" y1="11" x2="39" y2="53" stroke-width="4" />
+              <line x1="47" y1="24" x2="47" y2="40" stroke-width="4" />
+              <line x1="55" y1="32" x2="55" y2="32" stroke-width="4" />
+            </g>
+
+            <g
+              fill="none"
+              stroke="white"
+              stroke-opacity="0.5"
+              stroke-linecap="round"
+              stroke-width="1.2"
+            >
+              <line x1="21.5" y1="15" x2="21.5" y2="48" />
+              <line x1="37.5" y1="12" x2="37.5" y2="50" />
+            </g>
+          </svg>
+
+          <span class="badge-label">FLAC lossless</span>
+        </span>
+      </div>
+
+    </div>
+  </main>
+</body>
+</html>

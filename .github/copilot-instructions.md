@@ -68,7 +68,8 @@ open-album-cartridge/
 
 Note: code repos live in their own folders under
 `C:\Users\asher\Projects\ashergarland\OpenMediaDisc`. The design source
-documents are in the sibling `sources/` folder and are read-only reference.
+documents live in this repo's `design/` folder and are historical read-only
+reference (OAC-era specs, UI mockups, and theme showcases).
 
 ## Conventions
 

@@ -1,0 +1,482 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Liquid Glass Progress Bar</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --progress: 68%;
+      --bar-height: 54px;
+      --bar-radius: 27px;
+      --rim-width: 5px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse 78% 90% at 50% 22%,
+          rgba(255, 255, 255, 0.94) 0%,
+          rgba(232, 249, 255, 0.68) 48%,
+          transparent 76%
+        ),
+        linear-gradient(
+          180deg,
+          #eafaff 0%,
+          #caedf9 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .progress-demo {
+      width: min(720px, calc(100vw - 40px));
+    }
+
+    .progress-title {
+      margin: 0 0 34px 8px;
+
+      color: #124f80;
+
+      font-size: 25px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.5px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.96),
+        0 0 3px rgba(28, 107, 162, 0.2);
+    }
+
+    .progress-component {
+      width: 100%;
+    }
+
+    /* =========================================================
+       OUTER TRACK
+       ========================================================= */
+
+    .progress-track {
+      --track-rim-dark: rgba(44, 127, 171, 0.68);
+      --track-rim-mid: rgba(139, 210, 236, 0.72);
+      --track-rim-light: rgba(232, 251, 255, 0.98);
+
+      position: relative;
+      isolation: isolate;
+
+      width: 100%;
+      height: var(--bar-height);
+
+      border-radius: var(--bar-radius);
+
+      background: transparent;
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.9),
+        0 3px 4px rgba(35, 116, 160, 0.16),
+        0 8px 14px rgba(43, 131, 174, 0.12),
+        0 0 11px rgba(96, 192, 230, 0.24);
+    }
+
+    /*
+      Feathered liquid-glass border around the empty track.
+    */
+    .track-rim {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: 0;
+      padding: var(--rim-width);
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 43% 44% at 17% -8%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.94) 5%,
+          rgba(226, 249, 255, 0.74) 16%,
+          rgba(155, 221, 245, 0.42) 35%,
+          rgba(55, 156, 204, 0.14) 61%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 40% 42% at 82% -7%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(255, 255, 255, 0.84) 7%,
+          rgba(218, 246, 255, 0.62) 19%,
+          rgba(137, 210, 239, 0.34) 39%,
+          rgba(45, 145, 196, 0.12) 63%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 42% 40% at 19% 108%,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(239, 253, 255, 0.74) 8%,
+          rgba(179, 233, 249, 0.48) 22%,
+          rgba(82, 181, 220, 0.24) 44%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 52% 44% at 82% 108%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(255, 255, 255, 0.92) 6%,
+          rgba(216, 247, 255, 0.68) 18%,
+          rgba(133, 212, 240, 0.38) 40%,
+          rgba(43, 146, 194, 0.13) 65%,
+          transparent 86%
+        ),
+
+        linear-gradient(
+          180deg,
+          var(--track-rim-light) 0%,
+          var(--track-rim-mid) 28%,
+          var(--track-rim-dark) 66%,
+          var(--track-rim-mid) 84%,
+          var(--track-rim-light) 100%
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter:
+        blur(0.45px)
+        saturate(1.03);
+    }
+
+    .track-rim::after {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 37% 11% at 22% 2%,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(255, 255, 255, 0.68) 10%,
+          rgba(218, 247, 255, 0.28) 37%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 34% 10% at 77% 2%,
+          rgba(255, 255, 255, 0.84) 0%,
+          rgba(235, 251, 255, 0.5) 19%,
+          rgba(176, 229, 247, 0.18) 48%,
+          transparent 84%
+        ),
+
+        radial-gradient(
+          ellipse 42% 11% at 78% 98%,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(244, 253, 255, 0.58) 16%,
+          rgba(173, 228, 246, 0.2) 47%,
+          transparent 84%
+        );
+
+      filter: blur(1.4px);
+      opacity: 0.88;
+    }
+
+    /*
+      Flat recessed interior of the empty track.
+    */
+    .track-surface {
+      position: absolute;
+      z-index: 1;
+
+      inset: var(--rim-width);
+
+      border-radius:
+        calc(var(--bar-radius) - var(--rim-width));
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(225, 242, 249, 0.96) 0%,
+          rgba(209, 232, 241, 0.98) 100%
+        );
+
+      border:
+        1px solid rgba(255, 255, 255, 0.5);
+
+      box-shadow:
+        0 0 0 1px rgba(41, 121, 165, 0.2),
+
+        inset 0 5px 8px rgba(57, 132, 169, 0.15),
+        inset 0 1px 2px rgba(255, 255, 255, 0.6),
+        inset 0 -2px 3px rgba(255, 255, 255, 0.52);
+    }
+
+    .track-surface::before {
+      content: "";
+      position: absolute;
+
+      inset: 0;
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 78% 100% at 50% -52%,
+          rgba(255, 255, 255, 0.3) 0%,
+          rgba(255, 255, 255, 0.1) 48%,
+          transparent 78%
+        );
+    }
+
+    /* =========================================================
+       FILLED PORTION
+       ========================================================= */
+
+    .progress-fill {
+      position: absolute;
+      z-index: 3;
+
+      left: 0;
+      top: 0;
+
+      width: var(--progress);
+      height: 100%;
+
+      min-width: var(--bar-height);
+
+      overflow: hidden;
+
+      border-radius: var(--bar-radius);
+
+      background:
+        /* Broad upper glass illumination */
+        radial-gradient(
+          ellipse 94% 110% at 50% -45%,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(222, 249, 255, 0.42) 36%,
+          transparent 68%
+        ),
+
+        /* Main cyan body */
+        linear-gradient(
+          180deg,
+          #74e5ff 0%,
+          #36cdf7 23%,
+          #0db8ec 57%,
+          #008fd3 100%
+        );
+
+      border:
+        2px solid rgba(0, 153, 217, 0.9);
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.96),
+        inset 0 6px 7px rgba(255, 255, 255, 0.28),
+
+        inset 5px 0 7px rgba(0, 104, 177, 0.2),
+        inset -5px 0 7px rgba(0, 96, 170, 0.2),
+
+        inset 0 -4px 4px rgba(0, 86, 161, 0.35),
+        inset 0 -9px 11px rgba(0, 127, 192, 0.18),
+
+        0 0 0 2px rgba(78, 215, 251, 0.42),
+        0 0 9px rgba(0, 185, 239, 0.62),
+        0 4px 8px rgba(0, 113, 177, 0.22);
+
+      transition: width 500ms ease;
+    }
+
+    /*
+      Inner translucent border on the filled region.
+    */
+    .progress-fill::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: 3px;
+
+      border:
+        1px solid rgba(211, 249, 255, 0.72);
+
+      border-radius:
+        calc(var(--bar-radius) - 4px);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.38) 0%,
+          rgba(255, 255, 255, 0.1) 14%,
+          transparent 34%
+        );
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.86),
+        inset 0 -2px 2px rgba(0, 111, 190, 0.28);
+    }
+
+    /*
+      Bright lens flare on the rounded leading edge.
+    */
+    .progress-fill::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+
+      right: -4px;
+      top: 50%;
+
+      width: 34px;
+      height: 64px;
+
+      border-radius: 50%;
+
+      transform: translateY(-50%);
+
+      background:
+        radial-gradient(
+          ellipse at center,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(223, 249, 255, 0.7) 16%,
+          rgba(101, 213, 248, 0.28) 40%,
+          transparent 72%
+        );
+
+      filter: blur(2px);
+    }
+
+    .progress-value {
+      position: absolute;
+      z-index: 5;
+
+      right: 22px;
+      top: 50%;
+
+      transform: translateY(-50%);
+
+      color: #ffffff;
+
+      font-size: 25px;
+      font-weight: 650;
+      line-height: 1;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.42),
+        0 0 3px rgba(255, 255, 255, 0.55),
+        0 2px 3px rgba(0, 91, 163, 0.45);
+    }
+
+    /* =========================================================
+       STATUS TEXT
+       ========================================================= */
+
+    .progress-message {
+      margin: 28px 0 0;
+
+      color: #226b9d;
+
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.2;
+      text-align: center;
+      letter-spacing: -0.4px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.94),
+        0 0 3px rgba(37, 121, 173, 0.12);
+    }
+
+    @media (max-width: 620px) {
+      :root {
+        --bar-height: 46px;
+        --bar-radius: 23px;
+        --rim-width: 4px;
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      .progress-title {
+        margin-bottom: 26px;
+        font-size: 22px;
+      }
+
+      .progress-value {
+        right: 17px;
+        font-size: 21px;
+      }
+
+      .progress-message {
+        margin-top: 23px;
+        font-size: 20px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .progress-fill {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="progress-demo">
+    <h1 class="progress-title">PROGRESS BAR</h1>
+
+    <div class="progress-component">
+      <div
+        class="progress-track"
+        role="progressbar"
+        aria-label="Writing disc"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="68"
+      >
+        <span class="track-rim" aria-hidden="true"></span>
+        <span class="track-surface" aria-hidden="true"></span>
+
+        <span class="progress-fill">
+          <span class="progress-value">68%</span>
+        </span>
+      </div>
+
+      <p class="progress-message">
+        Writing disc... please wait.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
+```

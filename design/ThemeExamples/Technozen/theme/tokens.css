@@ -1,0 +1,51 @@
+/* =====================================================================
+   OMD STUDIO - FRUTIGER AERO / AQUA THEME - DESIGN TOKENS
+   Single source of truth for palette, type stack, and shared recipes.
+   ===================================================================== */
+
+:root {
+      --font: "Segoe UI", "Frutiger", "Helvetica Neue", Arial, sans-serif;
+
+      /* Reference palette (visual_theme_Frutiger_Aero.png) */
+      --pal-cyan:   #5db433;
+      --pal-sky:    #98cf78;
+      --pal-ice:    #dbe8d1;
+      --pal-white:  #fbfcfa;
+      --pal-silver: #d1d5ce;
+      --pal-ink:    #333d30;
+      --pal-green:  #58af7e;
+      --pal-violet: #b7dba0;
+
+      --ink:        #386726;
+      --ink-strong: #366a22;
+      /* Darkened to ~5:1 on white / ~4.5:1 on the frosted aqua cards (WCAG AA). */
+      --ink-muted:  rgba(56, 103, 38, 0.85);
+
+      /* Aqua fill stops (button lab) */
+      --cyan-top: #aedc91; --cyan-mid: #80c55b; --cyan-bottom: #5dab38;
+
+      /* Component surface tokens (app-component showcase; theme-adaptive) */
+      --surface-1: linear-gradient(180deg, rgba(255,255,255,.7) 0%, rgba(233,245,231,.5) 100%);
+      --surface-border: rgba(255,255,255,.82);
+      --surface-hairline: rgba(60,80,58,.16);
+
+      /* Shared liquid-rim reflection sets (consolidation) — one canonical
+         highlight pattern reused by every control-sized glass rim, and one
+         reused by the thick glass panels. */
+      --rim-control-reflections:
+        radial-gradient(ellipse 48% 30% at 18% -2%, rgba(255,255,255,1) 0%, rgba(255,255,255,.95) 7%, rgba(237, 243, 233, .77) 18%, rgba(185, 217, 165, .45) 38%, rgba(108, 168, 78, .16) 63%, transparent 86%),
+        radial-gradient(ellipse 40% 28% at 83% -1%, rgba(255,255,255,.98) 0%, rgba(246, 249, 244, .82) 9%, rgba(230, 239, 223, .6) 20%, rgba(168, 210, 142, .33) 42%, rgba(96, 157, 67, .12) 64%, transparent 86%),
+        radial-gradient(ellipse 46% 30% at 18% 102%, rgba(255,255,255,.96) 0%, rgba(243, 247, 240, .72) 10%, rgba(206, 226, 193, .46) 24%, rgba(137, 187, 110, .23) 46%, transparent 83%),
+        radial-gradient(ellipse 52% 31% at 81% 102%, rgba(255,255,255,1) 0%, rgba(253, 254, 252, .92) 7%, rgba(234, 241, 228, .67) 18%, rgba(176, 214, 152, .38) 38%, rgba(100, 161, 71, .13) 62%, transparent 85%),
+        radial-gradient(ellipse 18% 82% at 0% 50%, rgba(247, 249, 245, .74) 0%, rgba(183, 217, 162, .39) 33%, rgba(82, 146, 53, .15) 63%, transparent 85%),
+        radial-gradient(ellipse 18% 82% at 100% 50%, rgba(246, 249, 244, .72) 0%, rgba(180, 215, 158, .37) 33%, rgba(79, 142, 51, .15) 63%, transparent 85%);
+
+      --rim-panel-bg:
+        radial-gradient(ellipse 56% 18% at 13% -2%, rgba(255,255,255,1) 0%, rgba(255,255,255,.94) 6%, rgba(238, 243, 234, .7) 19%, rgba(183, 217, 162, .32) 42%, rgba(116, 173, 87, .09) 68%, transparent 88%),
+        radial-gradient(ellipse 48% 17% at 87% -2%, rgba(255,255,255,.96) 0%, rgba(248, 250, 247, .78) 9%, rgba(228, 237, 221, .52) 23%, rgba(164, 207, 138, .23) 47%, transparent 85%),
+        radial-gradient(ellipse 49% 18% at 15% 102%, rgba(255,255,255,.96) 0%, rgba(246, 249, 243, .76) 8%, rgba(209, 228, 195, .43) 25%, rgba(136, 188, 108, .18) 50%, transparent 86%),
+        radial-gradient(ellipse 62% 20% at 84% 103%, rgba(255,255,255,1) 0%, rgba(255,255,255,.91) 7%, rgba(234, 241, 229, .61) 20%, rgba(174, 214, 149, .3) 43%, transparent 86%),
+        radial-gradient(ellipse 14% 70% at 0% 50%, rgba(255,255,255,.85) 0%, rgba(230, 239, 224, .58) 18%, rgba(166, 210, 140, .29) 43%, transparent 89%),
+        radial-gradient(ellipse 14% 70% at 100% 50%, rgba(255,255,255,.8) 0%, rgba(227, 237, 220, .51) 18%, rgba(158, 204, 131, .26) 44%, transparent 89%),
+        linear-gradient(180deg, rgba(252, 253, 252, .96) 0%, rgba(219, 231, 210, .62) 18%, rgba(133, 185, 105, .35) 43%, rgba(82, 138, 57, .46) 66%, rgba(181, 216, 158, .52) 84%, rgba(249, 251, 248, .94) 100%);
+    }

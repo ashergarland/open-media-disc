@@ -28,7 +28,7 @@ Public, in-repo (this is the source of truth for anything shipped):
 
 Strategy and design sources to draw from (may be outside this repo):
 
-- `OpenMediaDisc/sources/` OAC-era design specs and product family docs
+- `design/` (in this repo) OAC-era design specs and product family docs
 - `ThePhysicalEdition/sources/sources_v2/omd/` OMD value proposition, cartridge
   and case design specs, decision records
 - `ThePhysicalEdition/sources/` company-level business and strategy material

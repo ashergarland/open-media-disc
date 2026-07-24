@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Liquid Aero Track List</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --panel-width: 480px;
+      --panel-radius: 28px;
+      --glass-rim-width: 8px;
+
+      --row-height: 56px;
+      --row-radius: 12px;
+
+      --blue-dark: #07558a;
+      --blue-mid: #1377ac;
+      --cyan: #0db8e8;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px;
+
+      display: grid;
+      place-items: center;
+
+      background:
+        radial-gradient(
+          ellipse 72% 70% at 50% 22%,
+          rgba(255, 255, 255, 0.98) 0%,
+          rgba(237, 251, 255, 0.78) 48%,
+          transparent 80%
+        ),
+        radial-gradient(
+          ellipse 54% 42% at 18% 86%,
+          rgba(79, 207, 241, 0.18),
+          transparent 80%
+        ),
+        linear-gradient(
+          180deg,
+          #edfaff 0%,
+          #c8eaf5 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    /* =========================================================
+       PANEL
+       ========================================================= */
+
+    .track-panel {
+      position: relative;
+      isolation: isolate;
+
+      width: min(
+        var(--panel-width),
+        calc(100vw - 32px)
+      );
+
+      min-height: 620px;
+
+      overflow: hidden;
+      border-radius: var(--panel-radius);
+
+      color: var(--blue-dark);
+      background: transparent;
+
+      box-shadow:
+        0 2px 2px rgba(255, 255, 255, 0.9),
+        0 6px 10px rgba(20, 96, 145, 0.18),
+        0 18px 30px rgba(25, 118, 168, 0.17),
+        0 30px 50px rgba(37, 142, 186, 0.1),
+        0 0 22px rgba(66, 190, 233, 0.25);
+    }
+
+    /* =========================================================
+       THICK TRANSPARENT 3D GLASS RIM
+       ========================================================= */
+
+    .glass-rim {
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+
+      inset: 0;
+      padding: var(--glass-rim-width);
+
+      border-radius: inherit;
+
+      background:
+        /* Strong top-left refraction */
+        radial-gradient(
+          ellipse 56% 18% at 13% -2%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.94) 6%,
+          rgba(222, 248, 255, 0.7) 19%,
+          rgba(135, 217, 244, 0.32) 42%,
+          rgba(53, 160, 207, 0.09) 68%,
+          transparent 88%
+        ),
+
+        /* Top-right refraction */
+        radial-gradient(
+          ellipse 48% 17% at 87% -2%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(242, 253, 255, 0.78) 9%,
+          rgba(205, 242, 253, 0.52) 23%,
+          rgba(111, 199, 234, 0.23) 47%,
+          transparent 85%
+        ),
+
+        /* Bright lower-left glass edge */
+        radial-gradient(
+          ellipse 49% 18% at 15% 102%,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(237, 252, 255, 0.76) 8%,
+          rgba(173, 231, 250, 0.43) 25%,
+          rgba(77, 179, 219, 0.18) 50%,
+          transparent 86%
+        ),
+
+        /* Strong lower-right caustic */
+        radial-gradient(
+          ellipse 62% 20% at 84% 103%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.91) 7%,
+          rgba(215, 248, 255, 0.61) 20%,
+          rgba(123, 211, 240, 0.3) 43%,
+          transparent 86%
+        ),
+
+        /* Left curved glass wall */
+        radial-gradient(
+          ellipse 14% 70% at 0% 50%,
+          rgba(255, 255, 255, 0.85) 0%,
+          rgba(208, 246, 255, 0.58) 18%,
+          rgba(112, 207, 238, 0.29) 43%,
+          rgba(21, 127, 181, 0.09) 69%,
+          transparent 89%
+        ),
+
+        /* Right curved glass wall */
+        radial-gradient(
+          ellipse 14% 70% at 100% 50%,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(203, 243, 254, 0.51) 18%,
+          rgba(102, 198, 233, 0.26) 44%,
+          rgba(17, 117, 173, 0.08) 70%,
+          transparent 89%
+        ),
+
+        /* Transparent acrylic material underneath */
+        linear-gradient(
+          180deg,
+          rgba(250, 255, 255, 0.96) 0%,
+          rgba(192, 235, 249, 0.62) 18%,
+          rgba(74, 172, 216, 0.35) 43%,
+          rgba(25, 113, 170, 0.46) 66%,
+          rgba(132, 216, 242, 0.52) 84%,
+          rgba(244, 254, 255, 0.94) 100%
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter:
+        blur(0.35px)
+        saturate(1.03);
+    }
+
+    /*
+      Exterior and interior refraction around the glass wall.
+    */
+    .glass-rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+
+      inset: 1px;
+      border-radius: inherit;
+
+      box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.96),
+        inset 0 -2px 3px rgba(24, 116, 170, 0.25),
+        inset 3px 0 4px rgba(255, 255, 255, 0.48),
+        inset -3px 0 5px rgba(32, 128, 180, 0.19),
+
+        0 0 4px rgba(255, 255, 255, 0.9),
+        0 0 13px rgba(105, 210, 244, 0.3);
+
+      opacity: 0.95;
+    }
+
+    /*
+      Long specular streaks make the border appear rounded,
+      transparent, and three-dimensional.
+    */
+    .glass-rim::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 45% 2.8% at 22% 1%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.77) 12%,
+          rgba(215, 246, 255, 0.31) 40%,
+          transparent 85%
+        ),
+
+        radial-gradient(
+          ellipse 34% 2.6% at 79% 1%,
+          rgba(255, 255, 255, 0.92) 0%,
+          rgba(238, 253, 255, 0.56) 20%,
+          rgba(160, 224, 247, 0.18) 49%,
+          transparent 86%
+        ),
+
+        radial-gradient(
+          ellipse 42% 3% at 18% 99%,
+          rgba(255, 255, 255, 0.91) 0%,
+          rgba(226, 249, 255, 0.51) 21%,
+          rgba(123, 207, 236, 0.15) 52%,
+          transparent 87%
+        ),
+
+        radial-gradient(
+          ellipse 58% 3.2% at 81% 99%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 255, 0.72) 12%,
+          rgba(194, 239, 253, 0.27) 41%,
+          transparent 86%
+        );
+
+      filter: blur(1.5px);
+      opacity: 0.96;
+    }
+
+    /*
+      Thin inner seam visible beneath the thick transparent wall.
+    */
+    .glass-seam {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: var(--glass-rim-width);
+
+      border: 1px solid rgba(43, 137, 187, 0.25);
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--glass-rim-width)
+        );
+
+      box-shadow:
+        inset 0 2px 4px rgba(21, 103, 153, 0.16),
+        0 1px 1px rgba(255, 255, 255, 0.84),
+        0 0 5px rgba(102, 210, 243, 0.12);
+    }
+
+    /* =========================================================
+       PANEL FACE
+       ========================================================= */
+
+    .panel-surface {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: var(--glass-rim-width);
+
+      overflow: hidden;
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--glass-rim-width)
+        );
+
+      background:
+        radial-gradient(
+          ellipse 145% 108% at -18% 114%,
+          rgba(18, 199, 232, 0.25) 0%,
+          rgba(73, 212, 237, 0.17) 34%,
+          rgba(148, 232, 246, 0.08) 60%,
+          transparent 89%
+        ),
+
+        radial-gradient(
+          ellipse 155% 95% at 50% -28%,
+          rgba(255, 255, 255, 0.99) 0%,
+          rgba(248, 254, 255, 0.86) 28%,
+          rgba(229, 248, 253, 0.53) 54%,
+          rgba(207, 239, 248, 0.18) 79%,
+          transparent 100%
+        ),
+
+        linear-gradient(
+          135deg,
+          rgba(220, 246, 252, 0.96) 0%,
+          rgba(205, 238, 248, 0.94) 43%,
+          rgba(220, 246, 251, 0.96) 100%
+        );
+
+      backdrop-filter:
+        blur(9px)
+        saturate(1.08);
+
+      -webkit-backdrop-filter:
+        blur(9px)
+        saturate(1.08);
+
+      box-shadow:
+        inset 0 5px 10px rgba(23, 107, 157, 0.11),
+        inset 0 1px 2px rgba(255, 255, 255, 0.92),
+        inset 0 -4px 6px rgba(255, 255, 255, 0.42);
+    }
+
+    .panel-surface::before {
+      content: "";
+      position: absolute;
+
+      top: -100px;
+      right: -5px;
+
+      width: 195px;
+      height: 820px;
+
+      transform: rotate(20deg);
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.015) 13%,
+          rgba(255, 255, 255, 0.09) 34%,
+          rgba(255, 255, 255, 0.23) 49%,
+          rgba(255, 255, 255, 0.1) 65%,
+          rgba(255, 255, 255, 0.02) 81%,
+          transparent 100%
+        );
+
+      filter: blur(10px);
+      opacity: 0.53;
+    }
+
+    /* =========================================================
+       CONTENT
+       ========================================================= */
+
+    .panel-content {
+      position: relative;
+      z-index: 4;
+
+      min-height: 620px;
+
+      display: flex;
+      flex-direction: column;
+
+      padding:
+        var(--glass-rim-width);
+    }
+
+    .panel-header {
+      flex: 0 0 59px;
+
+      min-width: 0;
+      padding: 0 27px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+
+      border-bottom:
+        1px solid rgba(68, 157, 200, 0.18);
+
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.68);
+    }
+
+    .panel-title {
+      min-width: 0;
+      margin: 0;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+
+      color: #064f84;
+
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.25px;
+      text-transform: uppercase;
+
+      text-shadow:
+        -1px -1px 0 rgba(7, 72, 117, 0.11),
+        1px 1px 0 rgba(255, 255, 255, 0.79);
+    }
+
+    .track-summary {
+      flex: 0 0 auto;
+      white-space: nowrap;
+
+      color: #145c91;
+
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1;
+
+      text-shadow:
+        -1px -1px 0 rgba(7, 72, 117, 0.08),
+        1px 1px 0 rgba(255, 255, 255, 0.77);
+    }
+
+    /* =========================================================
+       TRACK LIST
+       ========================================================= */
+
+    .track-list {
+      width: 100%;
+      min-width: 0;
+
+      margin: 0;
+      padding: 8px 15px 0;
+
+      list-style: none;
+
+      display: grid;
+    }
+
+    .track-list > li {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    /*
+      Every row uses exactly the same four columns.
+
+      This prevents the selected state from becoming wider or
+      wrapping when the EQ indicator appears.
+    */
+    .track-row {
+      position: relative;
+      isolation: isolate;
+
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      height: var(--row-height);
+
+      margin: 0;
+      padding: 0 13px;
+
+      display: grid;
+      grid-template-columns:
+        42px
+        minmax(0, 1fr)
+        55px
+        30px;
+
+      align-items: center;
+      column-gap: 4px;
+
+      border: 0;
+      border-bottom:
+        1px solid rgba(64, 151, 195, 0.15);
+
+      color: #105789;
+      background: transparent;
+
+      cursor: pointer;
+      text-align: left;
+
+      transition:
+        color 150ms ease,
+        filter 150ms ease,
+        transform 120ms ease;
+    }
+
+    .track-row:last-child {
+      border-bottom-color:
+        rgba(64, 151, 195, 0.15);
+    }
+
+    .track-position {
+      position: relative;
+
+      width: 42px;
+      height: 100%;
+
+      display: grid;
+      place-items: center;
+    }
+
+    .track-index {
+      grid-area: 1 / 1;
+
+      font-size: 15px;
+      font-weight: 650;
+
+      opacity: 1;
+
+      transition:
+        opacity 130ms ease,
+        transform 130ms ease;
+    }
+
+    .play-icon {
+      grid-area: 1 / 1;
+
+      width: 21px;
+      height: 21px;
+
+      color: #ffffff;
+
+      opacity: 0;
+      transform: scale(0.8);
+
+      filter:
+        drop-shadow(
+          0 1px 1px rgba(0, 82, 150, 0.34)
+        );
+
+      transition:
+        opacity 130ms ease,
+        transform 130ms ease;
+    }
+
+    .track-name {
+      min-width: 0;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .track-time {
+      justify-self: end;
+
+      white-space: nowrap;
+
+      font-size: 15px;
+      font-weight: 650;
+      line-height: 1;
+    }
+
+    /*
+      The EQ column always exists, but its contents are completely
+      hidden unless the track is selected.
+    */
+    .equalizer {
+      width: 25px;
+      height: 24px;
+
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 3px;
+
+      justify-self: end;
+
+      visibility: hidden;
+      opacity: 0;
+
+      transition:
+        opacity 140ms ease;
+    }
+
+    .equalizer span {
+      width: 2px;
+      height: 8px;
+
+      border-radius: 999px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 1px 1px rgba(0, 82, 150, 0.31),
+        0 0 2px rgba(255, 255, 255, 0.58);
+
+      transform-origin: center bottom;
+    }
+
+    /* =========================================================
+       SELECTED TRACK
+       ========================================================= */
+
+    .track-row.selected {
+      border:
+        1px solid rgba(0, 126, 201, 0.72);
+
+      border-radius: var(--row-radius);
+
+      color: #ffffff;
+
+      background:
+        radial-gradient(
+          ellipse 92% 120% at 50% -38%,
+          rgba(255, 255, 255, 0.85) 0%,
+          rgba(229, 250, 255, 0.28) 38%,
+          transparent 71%
+        ),
+
+        linear-gradient(
+          180deg,
+          #67ddfb 0%,
+          #35c8f1 43%,
+          #08a7db 100%
+        );
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.88),
+        inset 0 -4px 5px rgba(0, 84, 163, 0.29),
+        inset 4px 0 6px rgba(0, 99, 172, 0.14),
+        inset -4px 0 6px rgba(0, 99, 172, 0.14),
+
+        0 0 0 2px rgba(124, 226, 251, 0.29),
+        0 3px 5px rgba(0, 104, 169, 0.2),
+        0 7px 12px rgba(0, 125, 184, 0.14),
+        0 0 10px rgba(28, 190, 239, 0.31);
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.43),
+        0 2px 2px rgba(0, 78, 147, 0.34);
+    }
+
+    .track-row.selected::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+
+      inset: -2px;
+      padding: 3px;
+
+      border-radius:
+        calc(var(--row-radius) + 2px);
+
+      background:
+        radial-gradient(
+          ellipse 45% 30% at 18% -3%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(229, 250, 255, 0.76) 18%,
+          rgba(102, 203, 238, 0.34) 42%,
+          transparent 82%
+        ),
+
+        radial-gradient(
+          ellipse 53% 31% at 82% 103%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(218, 248, 255, 0.69) 18%,
+          rgba(94, 195, 232, 0.31) 42%,
+          transparent 83%
+        ),
+
+        linear-gradient(
+          180deg,
+          rgba(222, 251, 255, 0.98),
+          rgba(72, 199, 239, 0.9) 35%,
+          rgba(0, 105, 180, 0.91) 67%,
+          rgba(204, 246, 255, 0.96)
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter: blur(0.35px);
+    }
+
+    .track-row.selected::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+
+      right: -4px;
+      bottom: -4px;
+
+      width: 74px;
+      height: 36px;
+
+      background:
+        radial-gradient(
+          ellipse 48px 5px at 62% 70%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(228, 250, 255, 0.83) 22%,
+          rgba(100, 214, 250, 0.3) 48%,
+          transparent 80%
+        ),
+
+        radial-gradient(
+          ellipse 5px 28px at 62% 70%,
+          rgba(255, 255, 255, 0.95) 0%,
+          rgba(218, 248, 255, 0.52) 28%,
+          transparent 74%
+        );
+
+      filter: blur(0.7px);
+    }
+
+    .track-row.selected .track-index {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    .track-row.selected .play-icon {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .track-row.selected .equalizer {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /*
+      EQ motion is present only on the selected/playing row.
+    */
+    .track-row.selected .equalizer span:nth-child(1) {
+      animation: eq-bar-1 760ms ease-in-out infinite alternate;
+    }
+
+    .track-row.selected .equalizer span:nth-child(2) {
+      animation: eq-bar-2 590ms ease-in-out infinite alternate;
+    }
+
+    .track-row.selected .equalizer span:nth-child(3) {
+      animation: eq-bar-3 820ms ease-in-out infinite alternate;
+    }
+
+    .track-row.selected .equalizer span:nth-child(4) {
+      animation: eq-bar-4 640ms ease-in-out infinite alternate;
+    }
+
+    .track-row.selected .equalizer span:nth-child(5) {
+      animation: eq-bar-5 710ms ease-in-out infinite alternate;
+    }
+
+    @keyframes eq-bar-1 {
+      from { height: 7px; }
+      to   { height: 17px; }
+    }
+
+    @keyframes eq-bar-2 {
+      from { height: 14px; }
+      to   { height: 22px; }
+    }
+
+    @keyframes eq-bar-3 {
+      from { height: 9px; }
+      to   { height: 20px; }
+    }
+
+    @keyframes eq-bar-4 {
+      from { height: 6px; }
+      to   { height: 15px; }
+    }
+
+    @keyframes eq-bar-5 {
+      from { height: 12px; }
+      to   { height: 21px; }
+    }
+
+    .track-row:not(.selected):hover {
+      color: #0872ad;
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0.38) 22%,
+          rgba(255, 255, 255, 0.22) 80%,
+          rgba(255, 255, 255, 0)
+        );
+    }
+
+    .track-row.selected:hover {
+      filter:
+        brightness(1.035)
+        saturate(1.02);
+    }
+
+    .track-row:active {
+      transform: translateY(1px);
+    }
+
+    .track-row:focus-visible {
+      outline:
+        3px solid rgba(255, 255, 255, 0.95);
+
+      outline-offset: -4px;
+    }
+
+    /* =========================================================
+       FOOTER BUTTON
+       ========================================================= */
+
+    .panel-footer {
+      margin-top: auto;
+      padding: 27px 24px 30px;
+
+      display: flex;
+      justify-content: center;
+    }
+
+    .details-button {
+      --button-radius: 22px;
+      --button-rim: 4px;
+
+      position: relative;
+      isolation: isolate;
+
+      width: min(288px, 100%);
+      height: 48px;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 0 48px 0 28px;
+
+      border: 0;
+      border-radius: var(--button-radius);
+
+      color: #0872aa;
+      background: transparent;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.92),
+        0 3px 5px rgba(20, 94, 143, 0.17),
+        0 9px 14px rgba(26, 112, 162, 0.14),
+        0 0 11px rgba(69, 181, 224, 0.2);
+
+      transition:
+        transform 120ms ease,
+        filter 150ms ease,
+        box-shadow 150ms ease;
+    }
+
+    .details-rim {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: 0;
+      padding: var(--button-rim);
+
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 50% 35% at 17% -3%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(228, 250, 255, 0.78) 18%,
+          rgba(137, 215, 242, 0.42) 40%,
+          transparent 83%
+        ),
+
+        radial-gradient(
+          ellipse 53% 34% at 82% 103%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(218, 248, 255, 0.7) 18%,
+          rgba(120, 208, 239, 0.38) 40%,
+          transparent 84%
+        ),
+
+        linear-gradient(
+          180deg,
+          rgba(242, 254, 255, 0.98),
+          rgba(148, 218, 243, 0.61) 34%,
+          rgba(43, 130, 181, 0.56) 67%,
+          rgba(236, 252, 255, 0.96)
+        );
+
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+
+      filter: blur(0.32px);
+    }
+
+    .details-surface {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+
+      inset: var(--button-rim);
+
+      border:
+        1px solid rgba(255, 255, 255, 0.56);
+
+      border-radius:
+        calc(
+          var(--button-radius) -
+          var(--button-rim)
+        );
+
+      background:
+        radial-gradient(
+          ellipse 90% 95% at 50% -24%,
+          rgba(255, 255, 255, 0.8) 0%,
+          rgba(255, 255, 255, 0.24) 40%,
+          transparent 73%
+        ),
+
+        linear-gradient(
+          180deg,
+          rgba(241, 251, 255, 0.99) 0%,
+          rgba(207, 234, 244, 0.99) 100%
+        );
+
+      box-shadow:
+        0 0 0 1px rgba(18, 95, 146, 0.17),
+        inset 0 4px 6px rgba(25, 105, 154, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.84),
+        inset 0 -2px 3px rgba(255, 255, 255, 0.48);
+    }
+
+    .details-label {
+      position: relative;
+      z-index: 3;
+
+      min-width: 0;
+
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+
+      font-size: 15px;
+      font-weight: 600;
+
+      text-shadow:
+        -1px -1px 0 rgba(6, 71, 115, 0.1),
+        1px 1px 0 rgba(255, 255, 255, 0.78);
+    }
+
+    .info-icon {
+      position: absolute;
+      z-index: 4;
+
+      right: 14px;
+      top: 50%;
+
+      width: 23px;
+      height: 23px;
+
+      transform: translateY(-50%);
+
+      color: #0983bc;
+    }
+
+    .details-button:hover {
+      transform: translateY(-1px);
+
+      filter:
+        brightness(1.04)
+        saturate(1.02);
+
+      box-shadow:
+        0 1px 1px rgba(255, 255, 255, 0.96),
+        0 4px 6px rgba(20, 94, 143, 0.17),
+        0 11px 18px rgba(26, 112, 162, 0.16),
+        0 0 16px rgba(70, 192, 234, 0.3);
+    }
+
+    .details-button:active {
+      transform: translateY(2px);
+      filter: brightness(0.97);
+    }
+
+    .details-button:focus-visible {
+      outline:
+        3px solid rgba(255, 255, 255, 0.98);
+
+      outline-offset: 5px;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @media (max-width: 520px) {
+      :root {
+        --panel-radius: 23px;
+        --glass-rim-width: 6px;
+        --row-height: 53px;
+      }
+
+      body {
+        padding: 16px;
+      }
+
+      .track-panel,
+      .panel-content {
+        min-height: 590px;
+      }
+
+      .panel-header {
+        padding: 0 18px;
+        gap: 10px;
+      }
+
+      .panel-title {
+        font-size: 16px;
+      }
+
+      .track-summary {
+        font-size: 13px;
+      }
+
+      .track-list {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .track-row {
+        grid-template-columns:
+          35px
+          minmax(0, 1fr)
+          48px
+          25px;
+
+        padding-left: 7px;
+        padding-right: 7px;
+        column-gap: 3px;
+      }
+
+      .track-position {
+        width: 35px;
+      }
+
+      .track-name,
+      .track-time,
+      .track-index {
+        font-size: 14px;
+      }
+
+      .equalizer {
+        width: 22px;
+        gap: 2px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .track-row,
+      .details-button,
+      .equalizer span {
+        transition: none;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="track-panel" aria-labelledby="trackListTitle">
+    <span class="glass-rim" aria-hidden="true"></span>
+    <span class="glass-seam" aria-hidden="true"></span>
+    <span class="panel-surface" aria-hidden="true"></span>
+
+    <div class="panel-content">
+      <header class="panel-header">
+        <h1 class="panel-title" id="trackListTitle">
+          Track List
+        </h1>
+
+        <span class="track-summary">
+          8 Tracks · 45:32
+        </span>
+      </header>
+
+      <ol class="track-list">
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">1</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Dawn Chorus</span>
+            <span class="track-time">5:12</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button
+            class="track-row selected"
+            type="button"
+            aria-current="true"
+          >
+            <span class="track-position">
+              <span class="track-index">2</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Ocean of Light</span>
+            <span class="track-time">5:26</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">3</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Horizon Drift</span>
+            <span class="track-time">6:08</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">4</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Cloudline</span>
+            <span class="track-time">4:31</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">5</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Neon Tides</span>
+            <span class="track-time">5:05</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">6</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Weightless</span>
+            <span class="track-time">5:47</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">7</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Quiet Signals</span>
+            <span class="track-time">6:17</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+
+        <li>
+          <button class="track-row" type="button">
+            <span class="track-position">
+              <span class="track-index">8</span>
+
+              <svg
+                class="play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M7 4.8L19 12L7 19.2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span class="track-name">Fade Into Blue</span>
+            <span class="track-time">6:06</span>
+
+            <span class="equalizer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </span>
+          </button>
+        </li>
+      </ol>
+
+      <footer class="panel-footer">
+        <button class="details-button" type="button">
+          <span class="details-rim" aria-hidden="true"></span>
+          <span class="details-surface" aria-hidden="true"></span>
+
+          <span class="details-label">
+            View Album Details
+          </span>
+
+          <svg
+            class="info-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            />
+
+            <circle
+              cx="12"
+              cy="8"
+              r="1.2"
+              fill="currentColor"
+            />
+
+            <path
+              d="M12 11v6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </footer>
+    </div>
+  </section>
+
+  <script>
+    const trackRows =
+      document.querySelectorAll(".track-row");
+
+    trackRows.forEach((row) => {
+      row.addEventListener("click", () => {
+        trackRows.forEach((otherRow) => {
+          otherRow.classList.remove("selected");
+          otherRow.removeAttribute("aria-current");
+        });
+
+        row.classList.add("selected");
+        row.setAttribute("aria-current", "true");
+      });
+    });
+  </script>
+</body>
+</html>

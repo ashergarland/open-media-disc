@@ -141,7 +141,7 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 03 | `redesign-03-token-contract` | Done 3c58280 | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
 | 04 | `redesign-04-new-themes` | Done cb71228 | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Done d5b8365 | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
-| 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
+| 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`design/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Next | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Not started | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
 | 09 | `redesign-09-release` | Not started | Verify green, bump the software version, propose commit and tag (confirm-first). |

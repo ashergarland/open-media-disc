@@ -8,7 +8,7 @@ touch-first application shared by desktop and the Raspberry Pi appliance, plus a
 new theme system that replaces the current four themes. It is the shared plan we
 align on once, then execute in large chunks rather than page by page.
 
-Reference mockup: `sources/images/example4_touchScreenUi.png` (a glass "hub" home
+Reference mockup: `design/images/example4_touchScreenUi.png` (a glass "hub" home
 screen with large tiles and a persistent transport bar with VU meters).
 
 ## 1. Goals and constraints

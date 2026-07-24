@@ -11,7 +11,7 @@ deliverable: rewrite it, do not paste it.
 
 ## Where the material lives
 
-- `OpenMediaDisc/sources/` OAC-era design specs and product family docs.
+- `design/` (in this repo) OAC-era design specs and product family docs.
 - `ThePhysicalEdition/sources/sources_v2/omd/` OMD value proposition, cartridge
   and case design, decision records.
 - `ThePhysicalEdition/sources/` company business and strategy material (mostly

@@ -1,5 +1,5 @@
 {
-  "name": "open-album-cartridge",
+  "name": "open-media-disc",
   "version": "0.2.0",
   "private": true,
   "description": "Open Media Disc (OMD): an open-source physical music format. Monorepo for the OMD SDK, CLI, and label tools.",

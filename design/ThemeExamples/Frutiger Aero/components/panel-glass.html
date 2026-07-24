@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Inset Clear Glass Panel</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --panel-width: 540px;
+      --panel-height: 350px;
+
+      --panel-radius: 28px;
+
+      /*
+        The entire rim exists inside the panel bounds.
+        Increase to 5px for a slightly heavier edge.
+      */
+      --glass-rim-width: 4px;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px;
+
+      display: grid;
+      place-items: center;
+
+      /*
+        Detailed background makes the transparent rim easier
+        to evaluate.
+      */
+      background:
+        radial-gradient(
+          circle at 15% 21%,
+          rgba(0, 195, 255, 0.43) 0 5%,
+          rgba(0, 195, 255, 0.13) 12%,
+          transparent 28%
+        ),
+
+        radial-gradient(
+          circle at 82% 72%,
+          rgba(151, 105, 255, 0.31) 0 6%,
+          rgba(151, 105, 255, 0.09) 15%,
+          transparent 31%
+        ),
+
+        repeating-linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.17) 0 18px,
+          rgba(44, 142, 187, 0.075) 18px 36px
+        ),
+
+        linear-gradient(
+          135deg,
+          #bce3f2 0%,
+          #effbff 50%,
+          #b6ddea 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    /* ========================================================
+       PANEL CONTAINER
+    ======================================================== */
+
+    .glass-panel {
+      position: relative;
+      isolation: isolate;
+
+      width: min(
+        var(--panel-width),
+        calc(100vw - 32px)
+      );
+
+      min-height: var(--panel-height);
+
+      overflow: hidden;
+
+      border-radius: var(--panel-radius);
+      background: transparent;
+
+      /*
+        This is a shadow for the complete panel, not part of
+        the glass border. Remove it for a completely flat panel.
+      */
+      box-shadow:
+        0 7px 14px rgba(29, 77, 101, 0.08),
+        0 22px 42px rgba(31, 84, 109, 0.11);
+    }
+
+    /* ========================================================
+       TRANSPARENT PANEL SURFACE
+    ======================================================== */
+
+    .glass-panel__surface {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+
+      inset: 0;
+
+      overflow: hidden;
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 130% 80% at 50% -18%,
+          rgba(255, 255, 255, 0.1) 0%,
+          rgba(255, 255, 255, 0.025) 38%,
+          transparent 73%
+        ),
+
+        rgba(255, 255, 255, 0.005);
+
+      backdrop-filter:
+        blur(8px)
+        saturate(1.1)
+        brightness(1.025);
+
+      -webkit-backdrop-filter:
+        blur(8px)
+        saturate(1.1)
+        brightness(1.025);
+
+      box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.07),
+        inset 0 -2px 4px rgba(25, 69, 91, 0.018);
+    }
+
+    /*
+      Restrained diagonal reflection across the panel face.
+    */
+    .glass-panel__surface::before {
+      content: "";
+      position: absolute;
+
+      top: -110px;
+      right: -20px;
+
+      width: 205px;
+      height: 760px;
+
+      transform: rotate(18deg);
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.005) 18%,
+          rgba(255, 255, 255, 0.035) 38%,
+          rgba(255, 255, 255, 0.085) 48%,
+          rgba(255, 255, 255, 0.028) 61%,
+          transparent 81%
+        );
+
+      filter: blur(10px);
+      opacity: 0.52;
+    }
+
+    /* ========================================================
+       ALL-INNER GLASS BORDER
+    ======================================================== */
+
+    .glass-panel__rim {
+      position: absolute;
+      z-index: 4;
+      pointer-events: none;
+
+      /*
+        The ring begins at the panel edge and extends inward.
+        Nothing is positioned outside the component.
+      */
+      inset: 0;
+      padding: var(--glass-rim-width);
+
+      overflow: hidden;
+      border-radius: inherit;
+
+      background:
+        /*
+          Narrow upper-left liquid reflection.
+        */
+        radial-gradient(
+          ellipse 42% 10% at 13% 0%,
+          rgba(255, 255, 255, 0.82) 0%,
+          rgba(255, 255, 255, 0.58) 5%,
+          rgba(255, 255, 255, 0.15) 11%,
+          rgba(255, 255, 255, 0.025) 18%,
+          transparent 31%
+        ),
+
+        /*
+          Shorter upper-right highlight.
+        */
+        radial-gradient(
+          ellipse 30% 9% at 86% 0%,
+          rgba(255, 255, 255, 0.62) 0%,
+          rgba(255, 255, 255, 0.31) 5%,
+          rgba(255, 255, 255, 0.065) 11%,
+          transparent 27%
+        ),
+
+        /*
+          Lower-left reflected edge.
+        */
+        radial-gradient(
+          ellipse 38% 10% at 14% 100%,
+          rgba(255, 255, 255, 0.45) 0%,
+          rgba(255, 255, 255, 0.19) 6%,
+          rgba(255, 255, 255, 0.035) 13%,
+          transparent 29%
+        ),
+
+        /*
+          Stronger lower-right caustic.
+        */
+        radial-gradient(
+          ellipse 52% 12% at 84% 100%,
+          rgba(255, 255, 255, 0.73) 0%,
+          rgba(255, 255, 255, 0.4) 5%,
+          rgba(255, 255, 255, 0.085) 11%,
+          rgba(255, 255, 255, 0.012) 18%,
+          transparent 31%
+        ),
+
+        /*
+          Very subtle side-wall refraction.
+        */
+        radial-gradient(
+          ellipse 7% 70% at 0% 50%,
+          rgba(255, 255, 255, 0.25) 0%,
+          rgba(255, 255, 255, 0.07) 15%,
+          rgba(21, 65, 88, 0.02) 31%,
+          transparent 59%
+        ),
+
+        radial-gradient(
+          ellipse 7% 70% at 100% 50%,
+          rgba(255, 255, 255, 0.19) 0%,
+          rgba(255, 255, 255, 0.052) 16%,
+          rgba(21, 65, 88, 0.018) 32%,
+          transparent 59%
+        ),
+
+        /*
+          Nearly invisible material layer.
+        */
+        rgba(255, 255, 255, 0.002);
+
+      /*
+        Only the narrow ring receives this refraction.
+      */
+      backdrop-filter:
+        blur(2px)
+        saturate(1.25)
+        brightness(1.09)
+        contrast(1.025);
+
+      -webkit-backdrop-filter:
+        blur(2px)
+        saturate(1.25)
+        brightness(1.09)
+        contrast(1.025);
+
+      /*
+        Remove the center, leaving a thin ring that extends
+        inward from the panel's edge.
+      */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      -webkit-mask-composite: xor;
+
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+      mask-composite: exclude;
+    }
+
+    /*
+      Convex inner embossing.
+
+      Every shadow here is inset, so none of the glass edge
+      protrudes outside the panel.
+    */
+    .glass-panel__rim::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      pointer-events: none;
+
+      inset: 0;
+      border-radius: inherit;
+
+      box-shadow:
+        /* Bright upper inner lip */
+        inset 0 1px 0 rgba(255, 255, 255, 0.68),
+        inset 0 2px 1px rgba(255, 255, 255, 0.17),
+
+        /* Dark lower compression */
+        inset 0 -1px 1px rgba(20, 62, 84, 0.08),
+        inset 0 -2px 2px rgba(20, 62, 84, 0.045),
+
+        /* Rounded side lips */
+        inset 1px 0 1px rgba(255, 255, 255, 0.14),
+        inset -1px 0 2px rgba(20, 63, 85, 0.035);
+    }
+
+    /*
+      Abrupt specular lines create the wet, glossy appearance.
+    */
+    .glass-panel__rim::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+
+      inset: 0;
+      border-radius: inherit;
+
+      background:
+        radial-gradient(
+          ellipse 40% 1.4% at 22% 1px,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(255, 255, 255, 0.67) 5%,
+          rgba(255, 255, 255, 0.15) 10%,
+          transparent 18%
+        ),
+
+        radial-gradient(
+          ellipse 25% 1.25% at 79% 1px,
+          rgba(255, 255, 255, 0.65) 0%,
+          rgba(255, 255, 255, 0.32) 6%,
+          rgba(255, 255, 255, 0.055) 11%,
+          transparent 19%
+        ),
+
+        radial-gradient(
+          ellipse 34% 1.45% at 18% calc(100% - 1px),
+          rgba(255, 255, 255, 0.4) 0%,
+          rgba(255, 255, 255, 0.16) 7%,
+          rgba(255, 255, 255, 0.028) 12%,
+          transparent 20%
+        ),
+
+        radial-gradient(
+          ellipse 48% 1.6% at 81% calc(100% - 1px),
+          rgba(255, 255, 255, 0.77) 0%,
+          rgba(255, 255, 255, 0.47) 5%,
+          rgba(255, 255, 255, 0.09) 10%,
+          transparent 19%
+        );
+
+      filter: blur(0.4px);
+    }
+
+    /* ========================================================
+       INNER BORDER SEAM
+    ======================================================== */
+
+    .glass-panel__seam {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+
+      inset: var(--glass-rim-width);
+
+      border-radius:
+        calc(
+          var(--panel-radius) -
+          var(--glass-rim-width)
+        );
+
+      border:
+        1px solid rgba(255, 255, 255, 0.11);
+
+      /*
+        Only inset shading is used.
+      */
+      box-shadow:
+        inset 0 1px 1px rgba(22, 65, 87, 0.045),
+        inset 1px 0 1px rgba(22, 65, 87, 0.022),
+        inset -1px 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    /* ========================================================
+       LOCALIZED WET GLINTS
+    ======================================================== */
+
+    .glass-panel__glints {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+
+      inset: 0;
+
+      overflow: hidden;
+      border-radius: inherit;
+    }
+
+    /*
+      Thin top highlight positioned completely inside.
+    */
+    .glass-panel__glints::before {
+      content: "";
+      position: absolute;
+
+      top: 1px;
+      left: 26px;
+      right: 26px;
+
+      height: 5px;
+
+      border-radius: 999px;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.025) 8%,
+          rgba(255, 255, 255, 0.38) 18%,
+          rgba(255, 255, 255, 0.7) 30%,
+          rgba(255, 255, 255, 0.22) 48%,
+          rgba(255, 255, 255, 0.035) 69%,
+          rgba(255, 255, 255, 0.29) 84%,
+          transparent 100%
+        );
+
+      filter: blur(0.75px);
+      opacity: 0.75;
+    }
+
+    /*
+      Lower-right internal caustic.
+    */
+    .glass-panel__glints::after {
+      content: "";
+      position: absolute;
+
+      right: 0;
+      bottom: 0;
+
+      width: 68px;
+      height: 29px;
+
+      background:
+        radial-gradient(
+          ellipse 48px 3px at 61% 73%,
+          rgba(255, 255, 255, 0.75) 0%,
+          rgba(255, 255, 255, 0.4) 9%,
+          rgba(255, 255, 255, 0.075) 22%,
+          transparent 46%
+        ),
+
+        radial-gradient(
+          ellipse 3px 23px at 61% 73%,
+          rgba(255, 255, 255, 0.68) 0%,
+          rgba(255, 255, 255, 0.27) 11%,
+          rgba(255, 255, 255, 0.045) 25%,
+          transparent 47%
+        );
+
+      filter: blur(0.4px);
+    }
+
+    /* ========================================================
+       CONTENT
+    ======================================================== */
+
+    .glass-panel__content {
+      position: relative;
+      z-index: 6;
+
+      min-height: var(--panel-height);
+
+      /*
+        Content remains clear of the narrow inset rim.
+      */
+      padding:
+        calc(26px + var(--glass-rim-width));
+
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-title {
+      margin: 0;
+
+      color: rgba(17, 76, 102, 0.92);
+
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .panel-text {
+      max-width: 44ch;
+      margin: 0;
+
+      color: rgba(22, 75, 99, 0.85);
+
+      font-size: 15px;
+      line-height: 1.5;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.24);
+    }
+
+    .content-row {
+      height: 54px;
+
+      border:
+        1px solid rgba(255, 255, 255, 0.08);
+
+      border-radius: 16px;
+
+      background:
+        rgba(255, 255, 255, 0.008);
+
+      backdrop-filter:
+        blur(2px);
+
+      -webkit-backdrop-filter:
+        blur(2px);
+
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.08),
+        inset 0 -1px 2px rgba(26, 72, 94, 0.015);
+    }
+
+    /* ========================================================
+       RESPONSIVE
+    ======================================================== */
+
+    @media (max-width: 560px) {
+      :root {
+        --panel-height: 305px;
+        --panel-radius: 23px;
+        --glass-rim-width: 3px;
+      }
+
+      body {
+        padding: 16px;
+      }
+
+      .glass-panel__content {
+        padding:
+          calc(21px + var(--glass-rim-width));
+      }
+
+      .panel-title {
+        font-size: 21px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section
+    class="glass-panel"
+    aria-label="Panel with an inset transparent glass border"
+  >
+    <span
+      class="glass-panel__surface"
+      aria-hidden="true"
+    ></span>
+
+    <span
+      class="glass-panel__rim"
+      aria-hidden="true"
+    ></span>
+
+    <span
+      class="glass-panel__seam"
+      aria-hidden="true"
+    ></span>
+
+    <span
+      class="glass-panel__glints"
+      aria-hidden="true"
+    ></span>
+
+    <div class="glass-panel__content">
+      <h1 class="panel-title">
+        Inset Clear Glass
+      </h1>
+
+      <p class="panel-text">
+        The transparent glass border is now rendered entirely inside
+        the panel. It does not add to the panel dimensions or extend
+        beyond the outer edge.
+      </p>
+
+      <div class="content-row"></div>
+      <div class="content-row"></div>
+      <div class="content-row"></div>
+    </div>
+  </section>
+</body>
+</html>

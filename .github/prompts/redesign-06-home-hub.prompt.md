@@ -12,7 +12,7 @@ Step 06 of the OMD Studio redesign series. Run in order, one per fresh chat.
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
    "Next" step. Read [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
    sections 3 (target IA) and 4 (touch-first rules).
-2. Look at the reference mockup: `sources/images/example4_touchScreenUi.png`
+2. Look at the reference mockup: `design/images/example4_touchScreenUi.png`
    (a glass hub with large tiles and a persistent transport). Treat it as visual
    direction, not a pixel spec.
 3. Clean tree, green build.

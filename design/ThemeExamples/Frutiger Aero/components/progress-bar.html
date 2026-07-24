@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aqua Storage Progress Bar</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --progress: 45%;
+      --used-label: "364 MB";
+      --free-label: "439 MB";
+      --caption-color: #2a6ea3;
+      --text-color: #21689b;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+
+      background:
+        radial-gradient(
+          ellipse at 50% 35%,
+          #ffffff 0%,
+          #eefbff 50%,
+          #dff4fc 100%
+        );
+
+      font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    .progress-demo {
+      width: min(1328px, 100%);
+      padding: 26px 22px 18px;
+
+      border: 1px solid rgba(123, 191, 222, 0.28);
+      border-radius: 0;
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.46) 0%,
+          rgba(228, 247, 252, 0.34) 100%
+        );
+
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.9),
+        0 3px 12px rgba(87, 165, 202, 0.08);
+    }
+
+    .storage-layout {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) 88px;
+      align-items: start;
+      gap: 18px;
+    }
+
+    .storage-stat {
+      padding-top: 2px;
+      text-align: center;
+      color: var(--text-color);
+    }
+
+    .storage-stat .label {
+      margin-bottom: 8px;
+
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 0 2px rgba(28, 113, 170, 0.1);
+    }
+
+    .storage-stat .value {
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.05;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92),
+        0 0 2px rgba(28, 113, 170, 0.08);
+    }
+
+    .meter-wrap {
+      min-width: 0;
+    }
+
+    .meter {
+      position: relative;
+      height: 20px;
+      border-radius: 999px;
+      overflow: visible;
+
+      border: 1px solid rgba(106, 183, 217, 0.44);
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(245, 252, 255, 0.95) 0%,
+          rgba(221, 243, 251, 0.78) 42%,
+          rgba(202, 232, 243, 0.7) 68%,
+          rgba(237, 249, 253, 0.88) 100%
+        );
+
+      box-shadow:
+        inset 0 2px 3px rgba(255, 255, 255, 0.95),
+        inset 0 -2px 3px rgba(114, 183, 211, 0.18),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+        0 1px 2px rgba(52, 141, 186, 0.14),
+        0 0 5px rgba(255, 255, 255, 0.8);
+    }
+
+    .meter::before {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      left: 10px;
+      right: 10px;
+      top: 2px;
+      height: 4px;
+      border-radius: 999px;
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.15),
+          rgba(255, 255, 255, 0.8),
+          rgba(255, 255, 255, 0.18)
+        );
+
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .meter-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--progress);
+      z-index: 2;
+
+      border-radius: inherit;
+
+      background:
+        linear-gradient(
+          180deg,
+          #76e6ff 0%,
+          #32cef8 25%,
+          #11b9ed 58%,
+          #0095d8 100%
+        );
+
+      box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.82),
+        inset 0 -3px 4px rgba(0, 98, 170, 0.3),
+        0 0 7px rgba(0, 190, 244, 0.42);
+    }
+
+    .meter-fill::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 10px;
+      top: 2px;
+      height: 4px;
+      border-radius: 999px;
+
+      background:
+        linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.15),
+          rgba(255, 255, 255, 0.95),
+          rgba(255, 255, 255, 0.22)
+        );
+    }
+
+    .meter-fill::after {
+      content: "";
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      width: 18px;
+      height: 24px;
+      transform: translateY(-50%);
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          ellipse at center,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(215, 247, 255, 0.82) 25%,
+          rgba(94, 208, 247, 0.28) 55%,
+          transparent 75%
+        );
+
+      filter: blur(1px);
+    }
+
+    .meter-caption {
+      margin-top: 7px;
+      text-align: center;
+
+      color: var(--caption-color);
+
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1;
+
+      text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 0 2px rgba(34, 116, 170, 0.08);
+    }
+
+    @media (max-width: 760px) {
+      .storage-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .storage-stat {
+        padding-top: 0;
+      }
+
+      .storage-stat.used {
+        order: 1;
+      }
+
+      .meter-wrap {
+        order: 2;
+      }
+
+      .storage-stat.free {
+        order: 3;
+      }
+
+      .meter-caption {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-demo">
+    <div class="storage-layout">
+      <div class="storage-stat used">
+        <div class="label">Used</div>
+        <div class="value">364 MB</div>
+      </div>
+
+      <div class="meter-wrap">
+        <div
+          class="meter"
+          role="progressbar"
+          aria-label="Disc storage used"
+          aria-valuemin="0"
+          aria-valuemax="803"
+          aria-valuenow="364"
+        >
+          <div class="meter-fill"></div>
+        </div>
+
+        <div class="meter-caption">45% of 803 MB</div>
+      </div>
+
+      <div class="storage-stat free">
+        <div class="label">Free</div>
+        <div class="value">439 MB</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
