@@ -1137,7 +1137,7 @@ function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
     `${disc.trackCount} tracks`,
     formatClock(disc.totalDurationSeconds),
     disc.audioCodec,
-    disc.audioLossless ? 'Lossless' : 'Lossy',
+    ...qualityFacts(disc),
   ];
   const summary = el('div', { class: 'omd-album-head' }, [
     el('div', { class: 'omd-album-hero-art' }, [
@@ -1252,7 +1252,6 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     `${disc.trackCount} tracks`,
     formatClock(disc.totalDurationSeconds),
     disc.audioCodec,
-    disc.audioLossless ? 'Lossless' : 'Lossy',
   ];
   if (disc.audioSampleRate) facts.push(`${formatKHz(disc.audioSampleRate)} kHz`);
   if (disc.audioBitDepth) facts.push(`${disc.audioBitDepth}-bit`);
@@ -1342,6 +1341,28 @@ function playerView(): HTMLElement {
 function formatKHz(hz: number): string {
   const khz = hz / 1000;
   return Number.isInteger(khz) ? String(khz) : khz.toFixed(1);
+}
+
+/**
+ * Honest, format-specific audio facts. Instead of a Lossless/Lossy label (which
+ * only describes the container, and would call a FLAC transcoded from an MP3
+ * "lossless"), state the codec's real parameters: sample rate and bit depth for
+ * lossless formats, average bitrate for lossy ones.
+ */
+function qualityFacts(disc: StudioDiscInfo): string[] {
+  const out: string[] = [];
+  if (disc.audioLossless) {
+    if (disc.audioSampleRate) out.push(`${formatKHz(disc.audioSampleRate)} kHz`);
+    if (disc.audioBitDepth) out.push(`${disc.audioBitDepth}-bit`);
+  } else if (disc.audioBitrate) {
+    out.push(`${Math.round(disc.audioBitrate / 1000)} kbps`);
+  }
+  return out;
+}
+
+/** A compact codec summary, e.g. "FLAC \u00b7 44.1 kHz \u00b7 16-bit" or "MP3 \u00b7 320 kbps". */
+function codecLine(disc: StudioDiscInfo): string {
+  return [disc.audioCodec, ...qualityFacts(disc)].join(' \u00b7 ');
 }
 
 function formatBytes(bytes: number): string {
@@ -2564,18 +2585,55 @@ function hubMiniTile(opts: { icon: IconName; title: string; sub: string; onClick
   ]);
 }
 
-/** The wide Now Playing tile: art plus the loaded album, routing to its player. */
+/** The wide Now Playing tile: large art, a live equalizer, and the loaded album. */
+const HUB_EQ_BARS = 22;
+let hubEqRaf = 0;
+
+/** A row of equalizer bars, driven live by the shared analyser while playing. */
+function hubEqEl(): HTMLElement {
+  const eq = el('div', { class: 'hub-eq', 'aria-hidden': 'true' });
+  for (let i = 0; i < HUB_EQ_BARS; i += 1) eq.append(el('span', { class: 'hub-eq-bar' }));
+  return eq;
+}
+
+/**
+ * Animate the hub equalizer from the audio analyser. Self-managing: the loop
+ * stops once the .hub-eq element leaves the DOM (navigating away from Home).
+ */
+function startHubEq(): void {
+  if (hubEqRaf) return;
+  const tick = (): void => {
+    const eq = document.querySelector('.hub-eq');
+    if (!eq) {
+      hubEqRaf = 0;
+      return;
+    }
+    const levels = player.getLevels(HUB_EQ_BARS);
+    const bars = eq.children;
+    for (let i = 0; i < bars.length; i += 1) {
+      const level = Math.max(0.05, Math.min(1, levels[i] ?? 0));
+      (bars[i] as HTMLElement).style.setProperty('--h', level.toFixed(3));
+    }
+    hubEqRaf = requestAnimationFrame(tick);
+  };
+  hubEqRaf = requestAnimationFrame(tick);
+}
+
 function hubNowPlayingTile(): HTMLElement {
   const np = state.nowPlaying;
   const art = np?.disc.coverDataUri
     ? el('img', { src: np.disc.coverDataUri, alt: '' })
-    : svgIcon('note', 40);
-  const meta: (Node | string)[] = [];
+    : svgIcon('note', 48);
+  const body: (Node | string)[] = [
+    el('span', { class: 'hub-np-eyebrow', text: 'Now Playing' }),
+    el('span', { class: 'hub-np-title', text: np ? np.disc.album : 'Nothing playing yet' }),
+    el('span', { class: 'hub-np-artist', text: np ? np.disc.artist : 'Insert a disc or pick from your catalog' }),
+  ];
   if (np) {
-    meta.push(el('span', { text: `${np.disc.audioCodec} \u00b7 ${np.disc.audioLossless ? 'Lossless' : 'Lossy'}` }));
-    meta.push(el('span', { text: `${np.disc.trackCount} tracks` }));
+    body.push(hubEqEl());
+    body.push(el('span', { class: 'hub-np-meta' }, [el('span', { text: codecLine(np.disc) })]));
   }
-  return el(
+  const tile = el(
     'button',
     {
       class: 'hub-np',
@@ -2588,14 +2646,11 @@ function hubNowPlayingTile(): HTMLElement {
     },
     [
       el('span', { class: 'hub-np-art' }, [art]),
-      el('span', { class: 'hub-np-body' }, [
-        el('span', { class: 'hub-np-eyebrow', text: 'Now Playing' }),
-        el('span', { class: 'hub-np-title', text: np ? np.disc.album : 'Nothing playing yet' }),
-        el('span', { class: 'hub-np-artist', text: np ? np.disc.artist : 'Insert a disc or pick from your catalog' }),
-        meta.length ? el('span', { class: 'hub-np-meta' }, meta) : '',
-      ]),
+      el('span', { class: 'hub-np-body' }, body),
     ],
   );
+  if (np) startHubEq();
+  return tile;
 }
 
 /** The Home hub top bar: brand, catalog search, and now-playing status pills. */
@@ -2631,7 +2686,7 @@ function hubBar(): HTMLElement {
     status.append(
       el('span', { class: 'hub-pill' }, [
         svgIcon('wave', 16),
-        el('span', { text: `${np.disc.audioCodec} \u00b7 ${np.disc.audioLossless ? 'Lossless' : 'Lossy'}` }),
+        el('span', { text: codecLine(np.disc) }),
       ]),
     );
     if (discVerified() === true) {

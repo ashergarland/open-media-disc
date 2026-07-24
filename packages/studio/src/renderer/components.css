@@ -1035,19 +1035,21 @@ body {
 
 .hub-np {
   display: flex;
-  align-items: center;
-  gap: clamp(10px, 1.6vmin, 20px);
-  padding: clamp(12px, 2vmin, 24px);
+  align-items: stretch;
+  gap: clamp(12px, 2vmin, 22px);
+  padding: clamp(12px, 2vmin, 22px);
 }
 .hub-np-art {
   flex: 0 0 auto;
-  width: clamp(52px, 10vmin, 112px);
-  height: clamp(52px, 10vmin, 112px);
+  align-self: stretch;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 44%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: clamp(12px, 2vmin, 20px);
   color: var(--omd-accent);
   background: color-mix(in srgb, var(--omd-accent) 14%, transparent);
 }
@@ -1059,8 +1061,27 @@ body {
 .hub-np-body {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  justify-content: center;
+  gap: clamp(3px, 0.8vmin, 6px);
   min-width: 0;
+}
+/* Live equalizer: each bar's height is set from the analyser via --h (0..1). */
+.hub-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(2px, 0.6vmin, 4px);
+  height: clamp(20px, 5vmin, 46px);
+  margin-top: clamp(2px, 0.8vmin, 6px);
+}
+.hub-eq-bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 999px;
+  transform: scaleY(var(--h, 0.06));
+  transform-origin: bottom;
+  transition: transform 0.06s linear;
+  background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 45%, transparent));
 }
 .hub-np-eyebrow {
   text-transform: uppercase;
