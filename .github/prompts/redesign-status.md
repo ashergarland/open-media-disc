@@ -135,8 +135,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 02 | `redesign-02-editors-to-tokens` | Done df77182 | Import review, mixtape, and album editor markup migrated to tokens; legacy `.edit-*` / `.import-picker` / `.codec-option` CSS removed. |
 | 03 | `redesign-03-token-contract` | Done 3c58280 | Token vocabulary expanded and the app made to render fully from `components.css` alone, so it no longer depends on a full theme stylesheet. |
 | 04 | `redesign-04-new-themes` | Done cb71228 | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
-| 05 | `redesign-05-cleanup` | Next | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
-| 06 | `redesign-06-home-hub` | Not started | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
+| 05 | `redesign-05-cleanup` | Done d5b8365 | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
+| 06 | `redesign-06-home-hub` | Next | Home hub rebuilt toward the premium mockup (`sources/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Not started | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Not started | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
 | 09 | `redesign-09-release` | Not started | Verify green, bump the software version, propose commit and tag (confirm-first). |
@@ -144,19 +144,21 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `cb71228` feat(studio): token-map themes and a live Themes
-  picker; retire old theme CSS.
+- Last commit: `d5b8365` chore(studio): remove dead importThemeFile IPC,
+  themeError, and unused icon.
 - Working tree: clean.
-- Themes: THREE real themes now ship as `--omd-*` token maps in `components.css`
-  (`midnight` = the base `:root` dark default, `daylight` = light, `ember` =
-  amber-accent dark). The Themes view is a live picker (swatch cards, active
-  marked, click applies instantly by setting `data-theme` on the document root);
-  the choice persists in `localStorage` (`omd.themeId`) and is restored on boot.
-  `themes/dark-aero.css`, its `<link>`, and the `themes/` copy step in
-  `build.mjs` are gone; the app renders entirely from `components.css`. Brand
-  imagery is now shared (`assets/brand-disc.png` / `assets/brand-cartridge.png`).
-  The "Legacy token bridge" section still exists (buttons/card/notice/status-pill
-  + dock colors) and is trimmed in step 05.
+- Themes: three token-map themes (`midnight` default, `daylight`, `ember`) with a
+  live picker; no theme stylesheet. The app renders from `shell.css` (layout) +
+  `components.css` (tokens + components). Dead-code sweep (step 05) removed the
+  orphaned CSS and tooling; build, 141 tests, and lint are green.
+- Deliberately KEPT (not dead): the hidden sidebar/nav subsystem (`.app-sidebar`
+  is `display:none` but still built; navigation is via the hub + top-bar Home,
+  so removing it is a structural change left for the hub rework in step 06); the
+  Web Audio analyser + `getLevels()` in `audioController.ts` (plumbing for a real
+  dock visualizer the premium mockup wants; the current `.npd-eq` is decorative);
+  the "Legacy token bridge" in `components.css` (still used by `btn()`, `.card`,
+  `.notice`, `.status-pill`, and the dock, because migrated views use the
+  showcase `.btn`/`.card` helpers rather than pure `.omd-*`).
 
 ## Gotchas and durable facts
 
@@ -179,6 +181,39 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+- 2026-07-23: Prompt 05 done (commits `c5dd85d` CSS/tooling, `d5b8365`
+  IPC/types/code). Dead-code sweep after the migrations and theme retirement.
+  - Removed dead CSS (orphaned when views migrated to `.omd-*` and when
+    `dark-aero.css` went away): from `shell.css`, `.album-summary` /
+    `.album-cover*`, `.album-title` / `.album-artist` / `.album-meta .kv-list`,
+    the burn-console `.bc-options` / `.bc-toggle*` / `.bc-drive-name`,
+    `.drive-select`, `.burn-cartridge*`, the `.now-playing-dock .npd-spectrum*`
+    block, the `.catalog-tile` / `.ct-*` block, `.disc-layout` (+ its 1180px
+    media query), `.disc-actions` / `.album-heading` / `.disc-main .disc-actions`,
+    and `.player-badges`; from `components.css`, the dead
+    `.npd-spectrum .spectrum-fill` rule. Kept `.album-meta`, `.bc-actions`,
+    `.disc-main`, `.view`, `.cartridge*`, `.rip-status*`, `.import-status` /
+    `.import-fail*` (all still emitted).
+  - Removed dead code/IPC/types: the `omd:importThemeFile` handler + preload
+    method + `importThemeFile()` on `OmdStudioApi` (custom theme import went away
+    in step 04); the never-set `AppState.themeError` field; the unused `player`
+    icon (`dom.ts` union + switch case, which fell through to `play`); and the
+    leftover batch-import `StudioImportProgress {index,total,album}` was already
+    removed in the progress-bar work.
+  - Removed throwaway tooling: `git rm packages/studio/sync-themes.mjs` (it
+    concatenated showcase theme CSS into `themes/<id>.css`, which no longer
+    exists under the token-map theme system). No `_preview.mjs` or `styles.css`
+    remained.
+  - DELIBERATELY KEPT (proved referenced or intentionally-unreferenced): the
+    hidden sidebar/nav subsystem (`display:none`, but `buildShell`/`navItemEl`/
+    `setView` still build it; removing it is a structural nav change for step 06);
+    the Web Audio analyser + `getLevels()` in `audioController.ts` (unreferenced
+    now, but it is plumbing for the real dock visualizer the premium mockup calls
+    for; `.npd-eq` is a decorative placeholder); the "Legacy token bridge" (still
+    load-bearing: `btn()` emits `.btn`/`.liquid-rim`/`.button-surface`, and views
+    use `.card`/`.notice`/`.status-pill` + the dock color overrides).
+  - Build, `pnpm test` (141), and `pnpm lint` all green. No visible change.
 
 - 2026-07-23: Prompt 04 done (commit `cb71228`). Shipped a real token-map theme
   system and retired the last full theme stylesheet.
