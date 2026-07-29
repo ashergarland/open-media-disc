@@ -3,7 +3,8 @@
 ## What is Open Media Disc in one sentence?
 
 An open-source physical music format that turns owned FLAC albums into verified,
-self-describing packages meant for cheap, rewritable 8cm DVD-RW media.
+self-describing packages meant for cheap, rewritable optical media (8cm DVD-RW is
+the reference medium).
 
 ## Is this a backup tool?
 
@@ -25,8 +26,17 @@ become an optional export mode later.
 
 ## Why 8cm DVD-RW?
 
-It's a cheap, rewritable, commodity optical medium with a satisfying
-small-disc/cartridge feel (~1.4 GB usable), which fits most FLAC albums.
+It's the **reference medium**: a cheap, rewritable, commodity optical disc with a
+satisfying small-disc/cartridge feel (~1.4 GB usable), which fits most FLAC
+albums, and it is the target for the future cartridge.
+
+## Can OMD use other discs, like a CD or Blu-ray?
+
+Yes. An OMD package is a UDF filesystem of ordinary files, so it is media-agnostic
+and can be written to any standard writable optical disc: mini or standard CD-R/RW,
+DVD±R/RW, or BD-R/RE. What changes per medium is capacity (a media profile). 8cm
+DVD-RW is the default profile the tools use; other media work as data discs. Only
+the future cartridge is tied specifically to 8cm DVD-RW.
 
 ## My album is larger than 1.4 GB. What happens?
 

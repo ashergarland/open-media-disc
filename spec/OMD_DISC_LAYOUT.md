@@ -3,7 +3,8 @@
 **Open Media Disc (OMD)** (Format version `0.1.0`)
 
 This document defines the required and optional paths in an OMD package. The layout is the
-same whether the package lives in a build folder or is later burned to an 8cm DVD-RW.
+same whether the package lives in a build folder or is later burned to a writable optical
+disc (any supported medium; 8cm DVD-RW is the reference).
 
 ## 1. Canonical Tree
 
@@ -40,9 +41,12 @@ same whether the package lives in a build folder or is later burned to an 8cm DV
 
 ## 3. Capacity Target
 
-The target medium is 8cm DVD-RW. OMD Core uses a usable capacity budget of
-**1,400,000,000 bytes (~1.4 GB)** by default. Packages that exceed this budget produce a
-capacity warning (or an error in strict mode). See
+An OMD package is medium-independent; only its capacity budget depends on the target disc.
+Each supported medium is a **media profile** with a usable-capacity budget (see
+[`OMD_FORMAT_SPEC.md`](./OMD_FORMAT_SPEC.md) section 2.1 for the full table). OMD Core
+defaults to the **8cm DVD-RW** profile, a usable capacity budget of
+**1,400,000,000 bytes (~1.4 GB)**. Packages that exceed the active profile's budget produce
+a capacity warning (or an error in strict mode). See
 [`OMD_VALIDATION_RULES.md`](./OMD_VALIDATION_RULES.md).
 
 ## 4. Reserved / Ignored

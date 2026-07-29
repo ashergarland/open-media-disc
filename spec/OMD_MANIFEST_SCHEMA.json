@@ -38,7 +38,7 @@
       "maxLength": 200
     },
     "mediaType": {
-      "description": "Target physical medium.",
+      "description": "Target physical medium (media profile), e.g. \"8cm DVD-RW\", \"CD-RW\", \"DVD-R\", \"BD-R\". Any standard writable optical disc is supported; 8cm DVD-RW is the reference.",
       "type": "string",
       "minLength": 1
     },

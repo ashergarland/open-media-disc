@@ -2,8 +2,10 @@
 
 **Open Media Disc (OMD)** is an open-source **physical music format**. It turns
 an album folder of FLAC files into a verified, self-describing package that can be
-burned to cheap, rewritable 8cm DVD-RW media, a MiniDisc/UMD-style ritual for
-affordable, personal album ownership.
+burned to cheap, rewritable optical discs, a MiniDisc/UMD-style ritual for
+affordable, personal album ownership. Because a package is just files on a UDF
+disc, it is media-agnostic: the reference medium is 8cm DVD-RW, but the same
+package can be written to a CD, a standard DVD, or a Blu-ray.
 
 ## The one-line idea
 
@@ -17,26 +19,29 @@ Streaming is convenient but intangible. Vinyl is satisfying but expensive.
 SD cards store music but have no shelf presence or ritual. OMD aims for the gap:
 
 - **Album-object psychology**: a labelable, collectable, finished object.
-- **Cheap and rewritable**: commodity 8cm DVD-RW media you can erase and reburn.
+- **Cheap and rewritable**: commodity optical media you can erase and reburn; 8cm
+  DVD-RW is the reference, but any standard writable disc works.
 - **Open and recoverable**: plain files (FLAC, JSON, SHA-256) readable with
   ordinary tools, never locked inside a proprietary silo.
 
 ## The layered design
 
-OMD separates the *format* from the *hardware* so the format can be proven first.
+OMD separates the _format_ from the _hardware_ so the format can be proven first.
 
 ```mermaid
 flowchart TB
     A[Owned FLAC album folder] --> B[OMD package<br/>manifest + audio + checksums]
     B --> C[Validate / Inspect / Play locally]
-    B --> D[Burn + verify 8cm DVD-RW<br/>v0.2]
+    B --> D[Burn + verify writable optical disc<br/>8cm DVD-RW reference, v0.2]
     D -. later .-> E[Cartridge shell]
     E -. later .-> F[Dedicated player / writer hardware]
 ```
 
-**The cartridge is the format; the DVD-RW is the storage layer.** There is no
-cartridge yet. v0.1 proved the software package format; v0.2 adds the media loop
-(burning to and verifying an 8cm DVD-RW). The cartridge shell comes later.
+**The cartridge is the format; the disc is the storage layer.** The format is
+media-agnostic; only the cartridge is tied specifically to 8cm DVD-RW, and there
+is no cartridge yet. v0.1 proved the software package format; v0.2 adds the media
+loop (burning to and verifying a writable optical disc, defaulting to 8cm
+DVD-RW). The cartridge shell comes later.
 
 ## Core design principles
 
@@ -51,7 +56,7 @@ cartridge yet. v0.1 proved the software package format; v0.2 adds the media loop
 - **Don't block on the hard part.** Cartridge mechanics come only after the
   software/media loop is proven.
 
-## What OMD is *not*
+## What OMD is _not_
 
 - Not a generic backup or data-disc tool.
 - Not DVD-Audio, DVD-Video, or Blu-ray authoring.

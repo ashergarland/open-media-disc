@@ -8,11 +8,11 @@ consistently.
 
 ## 1. Result Severities
 
-| Severity | Meaning |
-| --- | --- |
-| `error` | The package is **invalid**. A conforming consumer must not treat it as a valid OMD package. |
+| Severity  | Meaning                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| `error`   | The package is **invalid**. A conforming consumer must not treat it as a valid OMD package.        |
 | `warning` | The package is usable but violates a recommendation or risks a downstream problem (e.g. capacity). |
-| `info` | Informational note; does not affect validity. |
+| `info`    | Informational note; does not affect validity.                                                      |
 
 A package is **VALID** when it has zero `error` results. Warnings do not make a package
 invalid, but strict mode (`strict: true`) promotes capacity overflow to an `error`.
@@ -21,31 +21,31 @@ invalid, but strict mode (`strict: true`) promotes capacity overflow to an `erro
 
 Each result carries a stable `code` so other implementations can match behavior.
 
-| Code | Category | Condition |
-| --- | --- | --- |
-| `MISSING_MANIFEST` | structure | `OMD-MANIFEST.json` is absent at the package root. |
-| `MANIFEST_PARSE_ERROR` | manifest | Manifest exists but is not valid JSON. |
-| `MANIFEST_SCHEMA_ERROR` | manifest | Manifest JSON does not satisfy the manifest schema. |
-| `UNSUPPORTED_FORMAT` | manifest | `omdFormat` is not `OMD-FLAC-DATA`. |
-| `MISSING_CHECKSUMS_FILE` | structure | `CHECKSUMS.sha256` is absent. |
-| `MISSING_AUDIO_DIR` | structure | `AUDIO/` directory is absent. |
-| `MISSING_TRACK_FILE` | tracks | A manifest track `filename` does not exist on disk. |
-| `TRACK_CODEC_MISMATCH` | tracks | A listed track's file extension does not match the package `audioCodec` (all tracks must share one codec). |
-| `DUPLICATE_TRACK_NUMBER` | tracks | Two or more tracks share the same `number`. |
-| `TRACK_COUNT_MISMATCH` | tracks | `trackCount` does not equal `tracks.length`. |
-| `CHECKSUM_MISMATCH` | integrity | A file's actual SHA-256 differs from the manifest/`CHECKSUMS.sha256` value. |
-| `CHECKSUM_MISSING_ENTRY` | integrity | A package file has no entry in `CHECKSUMS.sha256`. |
+| Code                     | Category  | Condition                                                                                                  |
+| ------------------------ | --------- | ---------------------------------------------------------------------------------------------------------- |
+| `MISSING_MANIFEST`       | structure | `OMD-MANIFEST.json` is absent at the package root.                                                         |
+| `MANIFEST_PARSE_ERROR`   | manifest  | Manifest exists but is not valid JSON.                                                                     |
+| `MANIFEST_SCHEMA_ERROR`  | manifest  | Manifest JSON does not satisfy the manifest schema.                                                        |
+| `UNSUPPORTED_FORMAT`     | manifest  | `omdFormat` is not `OMD-FLAC-DATA`.                                                                        |
+| `MISSING_CHECKSUMS_FILE` | structure | `CHECKSUMS.sha256` is absent.                                                                              |
+| `MISSING_AUDIO_DIR`      | structure | `AUDIO/` directory is absent.                                                                              |
+| `MISSING_TRACK_FILE`     | tracks    | A manifest track `filename` does not exist on disk.                                                        |
+| `TRACK_CODEC_MISMATCH`   | tracks    | A listed track's file extension does not match the package `audioCodec` (all tracks must share one codec). |
+| `DUPLICATE_TRACK_NUMBER` | tracks    | Two or more tracks share the same `number`.                                                                |
+| `TRACK_COUNT_MISMATCH`   | tracks    | `trackCount` does not equal `tracks.length`.                                                               |
+| `CHECKSUM_MISMATCH`      | integrity | A file's actual SHA-256 differs from the manifest/`CHECKSUMS.sha256` value.                                |
+| `CHECKSUM_MISSING_ENTRY` | integrity | A package file has no entry in `CHECKSUMS.sha256`.                                                         |
 
 ## 3. Warning Categories
 
-| Code | Category | Condition |
-| --- | --- | --- |
-| `MISSING_COVER_ART` | metadata | No cover art present or `coverArt` not set. |
-| `COVER_ART_NOT_FOUND` | metadata | `coverArt` is set in the manifest but the file is missing. |
-| `CAPACITY_WARNING` | capacity | `totalSizeBytes` exceeds the 8cm DVD-RW budget (default 1.4 GB). Becomes an error in strict mode. |
-| `NON_PORTABLE_FILENAME` | portability | A filename is not cross-platform safe. |
-| `OS_JUNK_FILE` | portability | An OS artifact (`.DS_Store`, `Thumbs.db`, `__MACOSX/`) is present. |
-| `UNKNOWN_OMD_VERSION` | compatibility | `omdVersion` is newer than the validator understands. |
+| Code                    | Category      | Condition                                                                                                                  |
+| ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `MISSING_COVER_ART`     | metadata      | No cover art present or `coverArt` not set.                                                                                |
+| `COVER_ART_NOT_FOUND`   | metadata      | `coverArt` is set in the manifest but the file is missing.                                                                 |
+| `CAPACITY_WARNING`      | capacity      | `totalSizeBytes` exceeds the active media profile's budget (default 8cm DVD-RW, ~1.4 GB). Becomes an error in strict mode. |
+| `NON_PORTABLE_FILENAME` | portability   | A filename is not cross-platform safe.                                                                                     |
+| `OS_JUNK_FILE`          | portability   | An OS artifact (`.DS_Store`, `Thumbs.db`, `__MACOSX/`) is present.                                                         |
+| `UNKNOWN_OMD_VERSION`   | compatibility | `omdVersion` is newer than the validator understands.                                                                      |
 
 ## 4. Validation Order
 
@@ -64,13 +64,17 @@ Each result carries a stable `code` so other implementations can match behavior.
 
 ## 5. Capacity Budget
 
-| Constant | Value |
-| --- | --- |
-| `DVD_RW_8CM_USABLE_BYTES` | `1_400_000_000` (~1.4 GB) |
+Capacity is checked against the **active media profile**. Each supported medium has a
+usable-capacity budget (see [`OMD_FORMAT_SPEC.md`](./OMD_FORMAT_SPEC.md) section 2.1). OMD
+Core defaults to the 8cm DVD-RW profile:
 
-`estimateDiscSize()` returns the total package size, the budget, the remaining bytes, and a
-boolean `overBudget`. In non-strict validation, overflow is a `CAPACITY_WARNING`; in strict
-mode it is a `CAPACITY_WARNING`-coded `error`.
+| Constant                  | Value                                      |
+| ------------------------- | ------------------------------------------ |
+| `DVD_RW_8CM_USABLE_BYTES` | `1_400_000_000` (~1.4 GB, default profile) |
+
+`estimateDiscSize()` returns the total package size, the active profile's budget, the
+remaining bytes, and a boolean `overBudget`. In non-strict validation, overflow is a
+`CAPACITY_WARNING`; in strict mode it is a `CAPACITY_WARNING`-coded `error`.
 
 ## 6. Audio Codec Recognition
 
