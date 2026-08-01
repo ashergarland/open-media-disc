@@ -366,6 +366,10 @@ body {
   padding-right: 6px;
 }
 .mixtape-album-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 4px;
 }
 .mixtape-album-title {
@@ -395,6 +399,13 @@ body {
 }
 .mixtape-src-row:hover {
   background: color-mix(in srgb, var(--ink-strong) 6%, transparent);
+}
+/* Already in the mix: dimmed, and its button removes rather than re-adds. */
+.mixtape-src-row.is-added .mixtape-src-title {
+  opacity: 0.55;
+}
+.mixtape-src-row.is-added .link-btn {
+  color: var(--omd-success);
 }
 .mixtape-src-title {
   min-width: 0;
@@ -538,6 +549,9 @@ body {
   inset: 0 auto 0 0;
   border-radius: inherit;
   background: var(--pal-cyan);
+}
+.disc-usage .meter-fill.is-over {
+  background: var(--omd-danger);
 }
 .disc-usage .meter-caption {
   margin-top: 8px;

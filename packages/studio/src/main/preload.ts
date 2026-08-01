@@ -33,6 +33,7 @@ function readBootConfig(): StudioBootConfig {
 const api: OmdStudioApi = {
   getInfo: () => ipcRenderer.invoke('omd:info'),
   listDrives: () => ipcRenderer.invoke('omd:listDrives'),
+  probeMedia: (driveMountPath: string) => ipcRenderer.invoke('omd:probeMedia', driveMountPath),
   labelTemplates: () => ipcRenderer.invoke('omd:labelTemplates'),
   buildLabelSheet: (request) => ipcRenderer.invoke('omd:buildLabelSheet', request),
   saveLabelSheet: (request) => ipcRenderer.invoke('omd:saveLabelSheet', request),

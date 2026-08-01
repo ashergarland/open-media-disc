@@ -590,6 +590,13 @@ body {
   border-bottom: 1px solid var(--omd-border);
   font: 700 14px / 1 var(--omd-font);
 }
+/* The burn track list adds a remove/restore control per row. */
+.omd-track {
+  grid-template-columns: 34px 1fr auto;
+}
+.omd-track:has(> .mini-btn) {
+  grid-template-columns: 34px 1fr auto auto;
+}
 .omd-track {
   display: grid;
   grid-template-columns: 34px 1fr auto;
@@ -613,6 +620,13 @@ body {
 }
 .omd-track.selected {
   background: color-mix(in srgb, var(--omd-accent) 16%, transparent);
+}
+/* A track held back from this burn: still listed, clearly not going on. */
+.omd-track.is-excluded .omd-track-num,
+.omd-track.is-excluded .omd-track-name,
+.omd-track.is-excluded .omd-track-time {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 .omd-track-num {
   color: var(--omd-text-dim);

@@ -19,6 +19,24 @@ export interface StudioDrive {
   description?: string;
 }
 
+/** The disc currently loaded in a drive, as probed before a burn. */
+export interface StudioMedia {
+  /** False when the tray is empty, or when the drive could not be probed. */
+  present: boolean;
+  /** Whether the disc can be erased, is write-once, or could not be classified. */
+  kind: 'rewritable' | 'write-once' | 'unknown';
+  /** Whether the disc currently holds no data. */
+  blank: boolean;
+  /** Friendly media name, for example `DVD-RW`. */
+  typeName?: string;
+  /** Total writable capacity in bytes, when known. */
+  capacityBytes?: number;
+  /** Display label, for example `8cm mini DVD-RW`. */
+  label?: string;
+  /** Set when probing failed outright (no backend, or a hardware error). */
+  error?: string;
+}
+
 /** A validation finding surfaced to the renderer. */
 export interface StudioValidationFinding {
   severity: 'error' | 'warning' | 'info';
@@ -111,6 +129,12 @@ export interface StudioBurnRequest {
   blank?: boolean;
   verify?: boolean;
   eject?: boolean;
+  /**
+   * Track numbers to burn. Omit to burn the whole package. When this selects a
+   * subset, a trimmed package is compiled to a temp folder and burned from
+   * there, leaving the source package untouched.
+   */
+  tracks?: number[];
 }
 
 /** The outcome of a burn. */
@@ -129,6 +153,8 @@ export interface StudioDiscTrack {
   number: number;
   title: string;
   durationSeconds?: number;
+  /** On-disc size, used to budget a burn against the disc's capacity. */
+  sizeBytes: number;
   /** An `omd-audio://` URL the renderer can feed to an `<audio>` element. */
   src: string;
 }
@@ -237,6 +263,8 @@ export interface StudioMixtapeSourceTrack {
   number: number;
   title: string;
   durationSeconds?: number;
+  /** On-disc size, used to budget a mixtape against a disc's capacity. */
+  sizeBytes: number;
 }
 
 /** A catalog album exposed as a source of tracks for the mixtape builder. */
@@ -359,6 +387,8 @@ export interface StudioImportResult {
 export interface OmdStudioApi {
   getInfo(): Promise<StudioInfo>;
   listDrives(): Promise<StudioDrive[]>;
+  /** Probe the disc in a drive so the UI can show real media before burning. */
+  probeMedia(driveMountPath: string): Promise<StudioMedia>;
   labelTemplates(): Promise<StudioLabelTemplate[]>;
   buildLabelSheet(request: StudioLabelSheetRequest): Promise<StudioLabelSheetResult>;
   saveLabelSheet(request: StudioLabelSheetRequest): Promise<string | null>;

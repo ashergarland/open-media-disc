@@ -61,6 +61,7 @@ import type {
   StudioLabelSheetRequest,
   StudioLabelSheetResult,
   StudioLabelTemplate,
+  StudioMedia,
   StudioMixtapeAlbum,
   StudioMixtapeRequest,
   StudioRipRequest,
@@ -211,6 +212,34 @@ ipcMain.handle('omd:listDrives', async (): Promise<StudioDrive[]> => {
   }
 });
 
+ipcMain.handle('omd:probeMedia', async (_event, driveMountPath: string): Promise<StudioMedia> => {
+  const absent = (error: string): StudioMedia => ({
+    present: false,
+    kind: 'unknown',
+    blank: false,
+    error,
+  });
+  const backend = resolveBurnBackend();
+  if (!(await backend.isAvailable())) return absent('Burning requires Windows with a writer attached.');
+  if (!backend.probeMedia) return absent('This drive cannot report what disc is loaded.');
+  try {
+    const drives = await backend.listDrives();
+    const drive = drives.find((candidate) => candidate.mountPath === driveMountPath);
+    if (!drive) return absent(`Drive ${driveMountPath} is no longer available.`);
+    const media = await backend.probeMedia(drive);
+    return {
+      present: media.present,
+      kind: media.kind,
+      blank: media.blank,
+      ...(media.typeName ? { typeName: media.typeName } : {}),
+      ...(media.capacityBytes ? { capacityBytes: media.capacityBytes } : {}),
+      ...(media.present ? { label: describeDisc(media) } : {}),
+    };
+  } catch (err) {
+    return absent(err instanceof Error ? err.message : String(err));
+  }
+});
+
 function toFinding(issue: {
   severity: string;
   code: string;
@@ -310,6 +339,7 @@ async function buildDiscInfo(source: string, quick = false): Promise<StudioDiscI
     tracks: inspection.tracks.map((track) => ({
       number: track.number,
       title: track.title,
+      sizeBytes: track.sizeBytes,
       ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
       src: audioUrl(path.resolve(source, ...track.filename.split('/'))),
     })),
@@ -616,10 +646,55 @@ ipcMain.handle(
   },
 );
 
+/**
+ * Compile a package containing only the requested track numbers into a temp
+ * folder, so a partial burn never mutates the source package. Returns null when
+ * the selection is the whole package and the source can be burned directly.
+ */
+async function buildPartialBurnPackage(
+  packageDir: string,
+  trackNumbers: number[],
+): Promise<{ dir: string; cleanup: string } | null> {
+  const inspection = await inspectPackage(packageDir);
+  const wanted = new Set(trackNumbers);
+  const chosen = inspection.tracks.filter((track) => wanted.has(track.number));
+  if (chosen.length === 0) throw new Error('Select at least one track to burn.');
+  if (chosen.length === inspection.tracks.length) return null;
+
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'omd-burn-'));
+  const outDir = path.join(tempRoot, slugifyForPath(inspection.discId));
+  await createMixtape({
+    tracks: chosen.map((track) => ({
+      sourcePath: path.resolve(packageDir, ...track.filename.split('/')),
+      title: track.title,
+    })),
+    discId: inspection.discId,
+    artist: inspection.artist,
+    album: inspection.album,
+    outDir,
+    ...(inspection.releaseYear !== undefined ? { releaseYear: inspection.releaseYear } : {}),
+    ...(inspection.coverArt
+      ? { coverSourcePath: path.resolve(packageDir, inspection.coverArt) }
+      : {}),
+    ...(FFMPEG_PATH ? { convert: { ffmpegPath: FFMPEG_PATH } } : {}),
+    generator: { name: 'OMD Studio', version: STUDIO_VERSION },
+  });
+  return { dir: outDir, cleanup: tempRoot };
+}
+
 ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<StudioBurnResult> => {
+  let cleanup: string | undefined;
   try {
+    let source = request.packageDir;
+    if (request.tracks && request.tracks.length > 0) {
+      const partial = await buildPartialBurnPackage(request.packageDir, request.tracks);
+      if (partial) {
+        source = partial.dir;
+        cleanup = partial.cleanup;
+      }
+    }
     const result = await burnPackage({
-      source: request.packageDir,
+      source,
       drive: { mountPath: request.driveMountPath },
       ...(request.blank !== undefined ? { blank: request.blank } : {}),
       ...(request.verify !== undefined ? { verify: request.verify } : {}),
@@ -644,6 +719,8 @@ ipcMain.handle('omd:burn', async (event, request: StudioBurnRequest): Promise<St
       drive: request.driveMountPath,
       error: (err as Error).message,
     };
+  } finally {
+    if (cleanup) await rm(cleanup, { recursive: true, force: true });
   }
 });
 
@@ -742,6 +819,7 @@ ipcMain.handle('omd:mixtapeSources', async (_event, dir: string): Promise<Studio
         path: path.resolve(source, ...track.filename.split('/')),
         number: track.number,
         title: track.title,
+        sizeBytes: track.sizeBytes,
         ...(track.durationSeconds !== undefined ? { durationSeconds: track.durationSeconds } : {}),
       })),
     });
