@@ -15,6 +15,49 @@ Step 08 of the OMD Studio redesign series. Run in order, one per fresh chat.
    [`docs-pass`](./docs-pass.prompt.md) prompt for the house doc process.
 2. Clean tree, green build.
 
+## Current context (snapshot as of step 07)
+
+This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
+authoritative log; read it for the full history and any newer entries.
+
+- Last commit at hand-off: `bcf3355` (step 07, small-screen and kiosk tuning).
+  Working tree clean; `pnpm --filter @open-media-disc/studio build`, `pnpm test`
+  (155), and `pnpm lint` are green.
+- Styling model: the app renders from `shell.css` (layout only) plus
+  `components.css` (the `--omd-*` token contract, the component kit, and a
+  shrinking "Legacy token bridge"). There is **no theme stylesheet**. The three
+  themes are token maps applied via `data-theme` on `document.documentElement`:
+  `midnight` (dark default), `daylight` (light), `ember` (amber dark), with a
+  live picker on the Themes view and `localStorage` persistence. Any doc text
+  mentioning Frutiger Aero, DORFic, Technozen, Dark Aero, or importable JSON
+  themes is stale.
+- Navigation is hub-and-spoke: `homeView()` renders the Home hub (brand +
+  catalog search + tiles for Play a Disc, Create a Disc, Catalog, plus Now
+  Playing, Themes, Settings), every other view is `screenFrame()` with a sticky
+  top bar whose only nav control is a Home button, and the transport dock is
+  persistent on every view. The `.app-sidebar` is still built but `display:none`;
+  do not document it. Labels is not a hub tile; it is reached from the "Label
+  sheets" button in the Catalog actions row.
+- Layout contract (step 07, now documented in `packages/studio/README.md` and in
+  a "Screen sizes and kiosk mode" section of `documentation/omd-studio.md`): one
+  fit-to-viewport surface, the page never scrolls, only bounded regions do,
+  layouts reflow by width rather than by device, supported range is a 7 inch
+  landscape panel (800x480) through a desktop window down to a phone width,
+  landscape is the design target and portrait is verified.
+- Kiosk mode is opt-in via `--omd-kiosk` / `OMD_STUDIO_KIOSK` (full-screen, no
+  chrome); the desktop launches as a normal maximized window with no menu bar.
+- The app also has a fixtures data mode and a headless screenshot harness
+  (`--omd-data=fixtures`, `--omd-screenshots`, and the `omd-studio-shots` bin).
+  Both are already documented in the studio README and in `omd-studio.md`; check
+  those sections for accuracy rather than rewriting them.
+- Codec language is already honest in the app: it shows the real codec plus
+  factual facts (sample rate, plus bit depth for lossless or bitrate for lossy).
+  `omdFormat` is still the legacy string `OMD-FLAC-DATA` and `omdVersion` is
+  still `0.1.0`; both are deliberate, so do not "fix" them.
+- Known doc drift to expect: `documentation/omd-studio.md` still describes a
+  left sidebar, a six-step Create wizard, the old theme names, and a VS Code
+  style importable-JSON theme contract that the app no longer implements.
+
 ## Goal
 
 Update the docs so they describe the app as it is now, not the old sidebar
@@ -59,6 +102,23 @@ describes a left sidebar (Create Disc / Player / Catalog / Themes / Settings), a
 2. Update [`./redesign-status.md`](./redesign-status.md): tick row 08, set row 09
    to `Next`, refresh Current state, and Log which docs changed and any
    app-versus-docs mismatch discovered.
+
+## Hand off to the next step
+
+Keep the series self-contained and self-propagating. Before you finish, prepare
+the next prompt so whoever runs it in a fresh chat has current context:
+
+1. Open the next prompt, [`./redesign-09-release.prompt.md`](./redesign-09-release.prompt.md).
+2. Refresh its "## Current context (snapshot ...)" section to reflect the repo
+   after your work: the last commit, what the app and docs look like now, the
+   files and patterns step 09 will touch, and anything you deferred. If that
+   section is missing, add it right after the "## Before you start" section
+   (use this prompt's "Current context" section as the shape to follow).
+3. Make sure that prompt still contains a "## Hand off to the next step" section
+   like this one, pointing at the step after it
+   (`redesign-10-hardware-test.prompt.md`). If it is missing, copy this section
+   into it and update the two file names. This is how every step keeps the next
+   one current, so do not drop it.
 
 ## Guardrails
 

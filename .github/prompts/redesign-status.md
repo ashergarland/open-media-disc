@@ -62,10 +62,9 @@ Renderer (browser context, `packages/studio/src/renderer/`):
   new token component kit and a "Legacy token bridge" section that restyles
   not-yet-migrated showcase classes.
 - `shell.css` - layout only.
-- `themes/dark-aero.css` - the single remaining full theme stylesheet (the other
-  three were removed).
-- `index.html` - loads `shell.css`, `themes/dark-aero.css` (media="all"), then
-  `components.css` last (so token overrides win by source order).
+- `index.html` - loads `shell.css` then `components.css` (last, so token rules win
+  by source order). There is no theme stylesheet: themes are `--omd-*` token
+  maps applied via `data-theme` on `document.documentElement`.
 
 Main / shared:
 - `src/main/main.ts` - Electron main, all `ipcMain.handle` handlers, the
@@ -75,7 +74,15 @@ Main / shared:
 
 Build config: `packages/studio/build.mjs` (esbuild) + `tsconfig.json` (tsc
 typecheck). `build.mjs` `copyStatic` copies `index.html`, `shell.css`,
-`components.css`, `themes/`, and `assets/`.
+`components.css`, and `assets/`.
+
+Main / runtime config:
+- `src/main/config.ts` - pure parser for the `--omd-*` flags (`OMD_STUDIO_*`
+  env fallbacks): data mode, headless, screenshot views, out dir, theme, initial
+  view, window size, kiosk, reset-fixtures. Unit-tested in
+  `packages/studio/tests/config.test.ts`.
+- `src/main/fixtureLibrary.ts`, `fixtures.ts`, `harness.ts` - the fixtures data
+  mode and the headless screenshot harness.
 
 ## Commands
 
@@ -100,6 +107,18 @@ normal, not errors.
 
 - The real app can only be exercised by the **user** in Electron on Windows.
   Do not claim UI behavior is verified unless the user confirms.
+- The **screenshot harness is the way to audit layout**. It runs the real app
+  headlessly on generated fixture data and captures every view at any size, so
+  it is far better than the browser preview for layout work:
+
+  ```powershell
+  pnpm --filter @open-media-disc/studio build
+  node packages/studio/bin/omd-studio-shots.mjs --size 1024x600 --out ./tmp-audit
+  # --views home,disc  --theme daylight  --data real  --reset-fixtures
+  ```
+
+  `--size` is the CSS viewport (the window uses `useContentSize`). Delete any
+  throwaway output folder before committing; only `screenshots/` is gitignored.
 - The browser preview at `http://localhost:5599` is **stale and unreliable**:
   `window.omd` is undefined there so init throws and app logic does not run. Use
   it only for pure CSS/DOM probes, never to verify features.
@@ -142,51 +161,80 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 04 | `redesign-04-new-themes` | Done cb71228 | Two to three original theme token maps authored; Themes view rebuilt as a real live picker with persistence; the old `dark-aero.css` retired. |
 | 05 | `redesign-05-cleanup` | Done d5b8365 | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
 | 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`design/images/example4_touchScreenUi.png`). |
-| 07 | `redesign-07-pi-tuning` | Next | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
-| 08 | `redesign-08-docs-pass` | Not started | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
+| 07 | `redesign-07-pi-tuning` | Done bcf3355 | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
+| 08 | `redesign-08-docs-pass` | Next | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
 | 09 | `redesign-09-release` | Not started | Verify green, bump the software version, propose commit and tag (confirm-first). |
 | 10 | `redesign-10-hardware-test` | Not started | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
 
 ## Current state
 
-- Last commit: `a2b8641` feat(studio): premium touch Home hub.
-- Working tree: clean. Build and lint are green; user has not yet visually
-  confirmed the hub in Electron (only the user can exercise the real UI).
-- Home hub (rebuilt in step 06): `homeView()` in `renderer.ts` returns `.hub`,
-  laid out as a fit-to-viewport surface: a `.hub-bar` top row (brand + centered
-  catalog `.hub-search` form + now-playing `.hub-pill` status), then a `.hub-body`
-  two-row grid: `.hub-primary` (three `hubPrimaryTile()` glass tiles for Play a
-  Disc -> `disc`, Create a Disc -> `burn`, Catalog -> `catalog`) and
-  `.hub-secondary` (wide `hubNowPlayingTile()` + two `hubMiniTile()` for Themes
-  and Settings). All hub classes live in `components.css` and read `--omd-*`
-  tokens only. The old `.hub-head`/`.hub-grid`/`.hub-tile--primary` markup and CSS
-  were removed. Search: submitting `.hub-search` sets `state.catalogQuery` and
-  routes to Catalog, which filters by artist/album/discId and shows an
-  `.omd-searchsummary` bar with Clear. A new `search` icon was added to `dom.ts`.
-  Labels is no longer a hub tile (not in the mockup); it is reached from a new
-  "Label sheets" button in the Catalog actions row.
+- Last commit: `bcf3355` feat(studio): small-screen and kiosk tuning for the Pi.
+- Working tree: clean. Build, 155 tests, and lint are green. Layout was verified
+  with the screenshot harness at 800x480, 1024x600, 1280x800, 600x1024, and
+  420x840; the user has not yet confirmed the app on real hardware.
+- Sizing decisions (step 07, from the user): orientation-agnostic with landscape
+  as the design target (portrait and phone width are verified, not just tolerated);
+  navigation stays hub tiles plus the top-bar Home button, no persistent nav;
+  kiosk is opt-in, desktop keeps a normal maximized window.
+- Kiosk: `--omd-kiosk` / `OMD_STUDIO_KIOSK` launches full-screen with no window
+  chrome (parsed in `src/main/config.ts`, applied in `createWindow`). It is
+  ignored headlessly so the harness never loses its window. The window also has
+  `useContentSize: true` and a 420x380 minimum.
+- Layout model: every screen is `.omd-screen` (sticky `.omd-topbar` +
+  `.omd-screen-body`) with `.omd-stack` / `.omd-fill` / `.omd-scroll` bounding
+  the scroll regions, over the persistent `.now-playing-dock`. Album detail
+  (`.omd-album`) is a grid: head beside the track list when wide and landscape,
+  stacked otherwise, with the head acting as its own bounded scroller (it holds
+  the art, metadata, actions, and the disc usage strip). The dock is a symmetric
+  wrapping flex row. Vertical sizing uses `vmin`, not `vw`, so a short-but-wide
+  panel shrinks; touch targets hold at `--omd-tap` (44px).
+- Home hub (step 06): `.hub-bar` (brand + centered `.hub-search` + `.hub-pill`
+  status) over a `.hub-body` two-row grid of `.hub-primary` (Play a Disc, Create
+  a Disc, Catalog) and `.hub-secondary` (Now Playing + Themes + Settings). The
+  bar wraps and the secondary row reflows below 620px. Search sets
+  `state.catalogQuery` and routes to Catalog. Labels is not a hub tile; it is
+  reached from the "Label sheets" button in the Catalog actions row.
 - Themes: three token-map themes (`midnight` default, `daylight`, `ember`) with a
   live picker; no theme stylesheet. The app renders from `shell.css` (layout) +
   `components.css` (tokens + components).
 - Deliberately KEPT (not dead): the hidden sidebar/nav subsystem (`.app-sidebar`
   is `display:none` but still built; navigation is via the hub + top-bar Home);
-  the Web Audio analyser + `getLevels()` in `audioController.ts` (plumbing for a
-  real dock visualizer the premium mockup wants; the current `.npd-eq` is
-  decorative); the "Legacy token bridge" in `components.css` (still used by
-  `btn()`, `.card`, `.notice`, `.status-pill`, and the dock, because migrated
-  views use the showcase `.btn`/`.card` helpers rather than pure `.omd-*`).
+  the Web Audio analyser + `getLevels()` in `audioController.ts` (it drives the
+  hub equalizer; the dock `.npd-eq` is decorative); the "Legacy token bridge" in
+  `components.css` (still used by `btn()`, `.card`, `.notice`, `.status-pill`,
+  and the dock, because migrated views use the showcase `.btn`/`.card` helpers
+  rather than pure `.omd-*`).
 
 ## Gotchas and durable facts
 
-- `index.html` load order is `shell.css` then `themes/dark-aero.css` then
-  `components.css`. The theme file uses unscoped, low-specificity class
-  selectors (`.btn`, `.card`), so equal-specificity token rules in
-  `components.css` win by coming last. This is how the "Legacy token bridge"
-  restyles legacy views without touching their markup. Bridge rules should be
-  deleted as each view is properly migrated.
+- `index.html` load order is `shell.css` then `components.css`. `shell.css` and
+  the legacy showcase classes it styles use unscoped, low-specificity selectors
+  (`.btn`, `.card`), so equal-specificity token rules in `components.css` win by
+  coming last. This is how the "Legacy token bridge" restyles legacy views
+  without touching their markup. Bridge rules should be deleted as each view is
+  properly migrated.
+- The app is **border-box** (`.app-shell, .app-shell *` in `components.css`).
+  Before that reset, every `height: 100%` element with padding overflowed its
+  parent by exactly the padding. Do not reintroduce content-box assumptions.
+- Use **`vmin`, not `vw`, for vertical sizing**. A short-but-wide panel (the
+  800x480 Pi case) keeps a large `vw`, so `vw`-based padding and type overflow
+  vertically while looking fine on a desktop window.
+- A flex item shrinks below its content height by default, which **clips text
+  mid-line**. Give text lines `flex: 0 0 auto` and let a decorative sibling (the
+  hub equalizer) take `flex: 1 1 auto` so it collapses first.
+- `min-width: 0` on a grid item removes its min-content floor, so its track can
+  collapse under its content and the content overflows into the neighbour. That
+  is what made the dock overlap itself; it is now a flex row where both side
+  groups share a basis and grow factor (which keeps the transport centered) and
+  the row wraps rather than overlapping.
+- `aspect-ratio` loses to an explicit `height: 100%`, so a stretched flex item
+  with `max-width` becomes a tall bar rather than a square. Size such boxes from
+  width and cap with `max-height`.
+- Layout is audited with the screenshot harness, not by eye. See "Verification
+  limits" for the command; it captures the real app at any CSS viewport size.
 - Runtime style must go through CSSOM `setProperty` (CSP blocks inline
-  `style=`). Theme swatches, slider fill (`--slider-value`), and VU rotation all
-  use this.
+  `style=`). Theme swatches, slider fill (`--slider-value`), and the hub
+  equalizer heights (`--h`) all use this.
 - `classList.toggle(...)` returns a boolean; an arrow like `() => el.classList.toggle(x)`
   trips TS2322 under the strict config. Wrap the body in braces: `() => { ...; }`.
 - The dock spectrum is the real Web Audio analyser; the small `.npd-eq` bars on
@@ -197,6 +245,52 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+### 07 - Pi and small-screen tuning (`bcf3355`)
+
+Decisions taken with the user before starting:
+- Orientation-agnostic, landscape-first. Because reflow is content-driven, a
+  layout that survives phone width has already solved narrow width; portrait
+  costs only vertical budgeting and verification, so it is verified rather than
+  merely tolerated.
+- Navigation stays hub tiles plus the top-bar Home button. No persistent nav.
+- Kiosk is opt-in. The desktop keeps a normal maximized window so width testing
+  and side-by-side work stay practical; the Pi build passes the flag.
+
+Audited every view at 800x480, 1024x600, 1280x800, 600x1024, and 420x840 with
+the screenshot harness. Views that needed fixing:
+- **Disc / album detail** was the worst: the hero art was `vw`-sized, the head
+  could not shrink, the disc usage card overlapped the actions, and the track
+  list collapsed to nothing while the whole body scrolled. `.omd-album` is now a
+  grid (head beside the list when wide and landscape, stacked otherwise, with a
+  `min(200px, 34vh)` floor under the list); the usage strip moved inside the
+  head, which became its own bounded scroller.
+- **Transport dock** overlapped itself, because `min-width: 0` let the side grid
+  tracks collapse under the 76px thumb. Rebuilt as a wrapping flex row with a
+  `vmin`-sized thumb and transport buttons.
+- **Home hub** clipped the Now Playing title mid-glyph (flex shrink on the text
+  lines) and overflowed the bar at phone width. Fixed both; the secondary row
+  reflows below 620px.
+- **Catalog** hid every card body below the fold; covers are now capped by
+  `vmin` and titles clamp to two lines.
+- **Labels** was the only view still scrolling the page at 420px; below 700px it
+  collapses its two bounded scrollers into one.
+- **Settings** key/value rows overlapped on a long value; they now wrap and
+  stack below 560px.
+
+Root cause behind most of it: there was no `box-sizing: border-box` reset, only
+a local one on `.hub`. Added it for the whole app shell.
+
+Main process: `--omd-kiosk` / `OMD_STUDIO_KIOSK` (opt-in, ignored headlessly),
+`useContentSize: true` so `--omd-size` is the CSS viewport, a 420x380 minimum
+window, menu bar already hidden. Two config tests added (155 total).
+
+Docs: `packages/studio/README.md` and `documentation/omd-studio.md` both gained
+a "Screen sizes and kiosk mode" section and the new flag.
+
+Still open for the user to confirm: the real app on the Pi panel, and whether
+the Disc view's action buttons being inside the head scroller feels right at
+480px height (they are reachable, just below the fold on the shortest panel).
 
 - 2026-07-24: Prompt 06 done (commit `a2b8641`). Rebuilt the Home hub toward the
   premium touch mockup, entirely on `--omd-*` tokens so it renders in every theme.
