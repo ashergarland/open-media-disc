@@ -35,6 +35,8 @@ export type DiscMediaKind = 'rewritable' | 'write-once' | 'unknown';
 
 /** The disc currently in a drive, as probed by a {@link BurnBackend}. */
 export interface MediaInfo {
+  /** Whether a disc is loaded at all. An empty tray reports `false`. */
+  present: boolean;
   /** Whether the disc can be erased (`rewritable`) or is `write-once`. */
   kind: DiscMediaKind;
   /** Whether the disc currently holds no data. */
@@ -179,6 +181,10 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
   emit('probing');
   const media =
     options.media ?? (backend.probeMedia ? await backend.probeMedia(drive) : undefined);
+
+  if (media && !media.present) {
+    throw new Error(`No disc in ${drive.mountPath}. Insert a writable disc and try again.`);
+  }
 
   // Determine the image size for the capacity check and progress reporting.
   let imageSize: number | undefined;

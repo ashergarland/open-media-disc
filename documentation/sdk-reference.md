@@ -152,7 +152,7 @@ const result = await burnImage({
   onProgress: (p) => console.log(p.phase), // optional live phase reporting
 });
 // result: { imagePath, drive, blanked, verified, verification?, ejected, media?, backend }
-// media: { kind: 'rewritable' | 'write-once' | 'unknown', blank, typeName?, capacityBytes? }
+// media: { present, kind: 'rewritable' | 'write-once' | 'unknown', blank, typeName?, capacityBytes? }
 ```
 
 ### `verifyDisc(mountPath, options?): Promise<PackageValidationResult>`
@@ -182,7 +182,8 @@ const result = await burnPackage({
 
 `BurnBackend` is the injectable seam: `{ name, isAvailable(), listDrives(),
 isBlank(drive), blank(drive), writeImage(request) }`, plus optional
-`probeMedia(drive)` (report media kind, blank state, name, and capacity),
+`probeMedia(drive)` (report whether a disc is present, its media kind, blank
+state, name, and capacity),
 `remount(drive)` (re-read the burned disc in place before verifying), and
 `eject(drive)` (the completion eject). `resolveBurnBackend()` returns the platform
 backend, and a `BurnDrive` carries the `mountPath` where the disc is read for

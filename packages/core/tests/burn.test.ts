@@ -46,6 +46,7 @@ function makeFakeBurnBackend(opts?: {
   kind?: DiscMediaKind;
   typeName?: string;
   capacityBytes?: number;
+  present?: boolean;
 }): {
   backend: BurnBackend;
   calls: { blank: number; write: BurnImageRequest[]; remount: number; eject: number };
@@ -53,6 +54,7 @@ function makeFakeBurnBackend(opts?: {
   const available = opts?.available ?? true;
   const blank = opts?.blank ?? false;
   const kind = opts?.kind ?? 'rewritable';
+  const present = opts?.present ?? true;
   const calls = { blank: 0, write: [] as BurnImageRequest[], remount: 0, eject: 0 };
   const backend: BurnBackend = {
     name: 'FakeBurner',
@@ -60,6 +62,7 @@ function makeFakeBurnBackend(opts?: {
     listDrives: async () => [{ mountPath: 'X:\\', id: 'fake' }],
     isBlank: async () => blank,
     probeMedia: async () => ({
+      present,
       kind,
       blank,
       ...(opts?.typeName ? { typeName: opts.typeName } : {}),
@@ -190,6 +193,21 @@ describe('burnImage', () => {
     expect(result.ejected).toBe(false);
     expect(calls.eject).toBe(0);
     expect(calls.remount).toBe(1);
+  });
+
+  it('refuses to burn when the drive is empty', async () => {
+    const pkg = await buildTestPackage(tmp.path());
+    const { backend, calls } = makeFakeBurnBackend({ present: false, blank: true });
+
+    await expect(
+      burnImage({
+        imagePath: path.join(tmp.path(), 'disc.img'),
+        drive: { mountPath: pkg },
+        backend,
+      }),
+    ).rejects.toThrow(/no disc/i);
+    expect(calls.blank).toBe(0);
+    expect(calls.write).toHaveLength(0);
   });
 
   it('throws on a non-blank write-once disc instead of erasing it', async () => {

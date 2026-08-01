@@ -162,6 +162,11 @@ export async function burnCommand(args: ParsedArgs): Promise<number> {
     }
   }
 
+  if (media && !media.present) {
+    console.error(`No disc in ${drive.mountPath}. Insert a writable disc and try again.`);
+    return 1;
+  }
+
   if (media && media.kind === 'write-once' && !media.blank) {
     console.error(
       `This ${media.typeName ?? 'write-once'} disc already contains data and cannot be ` +

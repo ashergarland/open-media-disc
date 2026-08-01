@@ -83,17 +83,25 @@ try {
 /** Probe the media type, blank state, and capacity of the disc in the recorder. */
 const PROBE_SCRIPT = String.raw`
 $ErrorActionPreference = 'Stop'
+$absent = '{"present":false,"type":0,"blank":false,"sectors":0}'
 try {
   $rec = New-Object -ComObject IMAPI2.MsftDiscRecorder2
   $rec.InitializeDiscRecorder($env:OMD_REC_ID)
   $data = New-Object -ComObject IMAPI2.MsftDiscFormat2Data
-  $data.Recorder = $rec
-  $data.ClientName = 'Open Media Disc'
-  $type = [int]$data.CurrentPhysicalMediaType
-  $blank = [bool]$data.MediaHeuristicallyBlank
+  # With an empty tray IMAPI may refuse the recorder outright rather than
+  # reporting a media type, so treat any failure here as "no disc loaded".
+  try {
+    $data.Recorder = $rec
+    $data.ClientName = 'Open Media Disc'
+  } catch { $absent; exit 0 }
+  $type = 0
+  try { $type = [int]$data.CurrentPhysicalMediaType } catch { $type = 0 }
+  if ($type -eq 0) { $absent; exit 0 }
+  $blank = $false
   $sectors = 0
+  try { $blank = [bool]$data.MediaHeuristicallyBlank } catch { $blank = $false }
   try { $sectors = [long]$data.TotalSectorsOnMedia } catch { $sectors = 0 }
-  [pscustomobject]@{ type = $type; blank = $blank; sectors = $sectors } | ConvertTo-Json -Compress
+  [pscustomobject]@{ present = $true; type = $type; blank = $blank; sectors = $sectors } | ConvertTo-Json -Compress
 } catch {
   [Console]::Error.WriteLine($_.Exception.Message); exit 1
 }
@@ -261,12 +269,14 @@ export class WindowsImapiBurnBackend implements BurnBackend {
       OMD_REC_ID: this.recorderId(drive),
     });
     const raw = JSON.parse(out.trim() || '{}') as {
+      present?: boolean;
       type?: number;
       blank?: boolean;
       sectors?: number;
     };
     const mapped = raw.type !== undefined ? MEDIA_TYPES[raw.type] : undefined;
     return {
+      present: raw.present === true,
       kind: mapped?.kind ?? 'unknown',
       blank: raw.blank === true,
       ...(mapped?.name ? { typeName: mapped.name } : {}),
