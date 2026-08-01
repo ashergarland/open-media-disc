@@ -162,16 +162,19 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 05 | `redesign-05-cleanup` | Done d5b8365 | Dead code and assets swept: unused CSS, throwaway scripts, stale classes, unreferenced files. |
 | 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`design/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Done bcf3355 | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
-| 08 | `redesign-08-docs-pass` | Next | `documentation/omd-studio.md` and related docs brought in line with the redesigned app. |
-| 09 | `redesign-09-release` | Not started | Verify green, bump the software version, propose commit and tag (confirm-first). |
+| 08 | `redesign-08-docs-pass` | Done c54240f | `documentation/omd-studio.md` rewritten for the shipped app; roadmap, project status, and the doc indexes brought in line. |
+| 09 | `redesign-09-release` | Next | Verify green, bump the software version, propose commit and tag (confirm-first). |
 | 10 | `redesign-10-hardware-test` | Not started | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
 
 ## Current state
 
-- Last commit: `6d4bc20` feat(studio): burn track list, media-aware warnings,
-  mixtape add-album. Five commits ahead of `origin/main`, nothing pushed.
+- Last commit: `c54240f` docs: update OMD Studio docs for the redesigned app.
+  Seven commits ahead of `origin/main`, nothing pushed.
 - Working tree: clean. Build, 157 tests, and lint are green. The user has
   confirmed step 07 and the Create a Disc rework in Electron on the desktop.
+- Docs now match the app: `documentation/omd-studio.md` describes the hub-and-spoke
+  navigation, the seven screens, honest codec language, and the three token-map
+  themes. There is no code change outstanding from step 08.
 - Create a Disc now probes the drive (`omd:probeMedia`) and shows the real disc:
   the shared cartridge visual plus a used/free meter, the media type, capacity,
   blank state, and rewritable vs write-once. Burn is blocked with no disc, on a
@@ -252,6 +255,57 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+### 08 - Documentation pass (`c54240f`)
+
+Docs only; no code changed, and build, 157 tests, and lint stayed green.
+
+Rewrote `documentation/omd-studio.md`. It had drifted badly: it described a left
+sidebar (Create Disc / Player / Catalog / Themes / Settings), a Frutiger Aero
+default theme, a six-step Create wizard, four full-CSS built-in themes synced by
+a `sync-themes.mjs` that no longer exists, and a locked "v1" JSON token contract
+the app never shipped. The rewrite covers:
+- Hub-and-spoke navigation, the sticky top bar with only a Home button, and the
+  persistent transport dock.
+- A table of the seven screens plus prose for Disc, Catalog, Create a Disc, and
+  Labels, describing what actually ships (auto disc detection with background
+  verify, Rip to Catalog, the folder-based catalog with import review and
+  mixtapes, the source chooser plus a burn screen that probes the real disc and
+  supports per-burn track removal, and label templates, sessions, and PDF export).
+- A "Honest codec language" section stating the rule and why: lossless is a
+  container property, so the UI shows codec plus sample rate, bit depth only for
+  lossless, and bitrate only for lossy.
+- Theming as `--omd-*` token maps over one shared `components.css`, the three
+  built-ins (Midnight, Daylight, Ember), the live picker, and a "Renderer
+  constraints" section (CSP, tokens, `--omd-tap`, `vmin`). Importable themes are
+  now described as a future milestone rather than a shipped contract.
+- `omd rip` updated for multi-codec packages and for Studio's Rip to Catalog
+  button, and the architecture section rewritten away from the sidebar and the
+  "separate Pi player app" framing.
+
+Also updated: `documentation/roadmap.md` (the Studio milestone in-scope, non-goal,
+and exit-criteria bullets), `documentation/project-status.md` (it still claimed
+"No GUI yet" and listed the Studio app as not started), `documentation/README.md`
+(intro blockquote, the Studio row, the package table), the root `README.md`
+(Studio section and package table), and `packages/studio/README.md` (a stale
+"currently scaffolds the app" note, a `themes/` folder that no longer exists, and
+one em dash).
+
+App-versus-docs mismatches found and deliberately NOT fixed here (they are real
+findings, not redesign drift):
+- **The public docs are still FLAC-only while the core is multi-codec.**
+  `documentation/package-format.md` says "Audio codec: FLAC", "Always `FLAC` in
+  v0.1", and "every track filename is `AUDIO/<name>.flac`", and
+  `what-is-omd.md` frames a package as "an album folder of FLAC files".
+  `spec/OMD_FORMAT_SPEC.md` and `OMD_MANIFEST_SCHEMA.json` were already updated
+  for one-codec-per-package (FLAC, MP3, AAC, Vorbis, Opus, WAV), so the spec and
+  the friendly docs disagree and the spec wins. Fixing it properly is a sweep of
+  `package-format.md`, `what-is-omd.md`, `getting-started.md`, `validation.md`
+  (the `TRACK_CODEC_MISMATCH` code), and the root README, which is a docs pass of
+  its own rather than a redesign step.
+- **`@open-media-disc/ui` is described as the "shared theme engine and player
+  model"**, but Studio stopped using its theme engine in step 04 and now only
+  uses the player state model. The theme exports are unreferenced.
 
 ### Out of series - real disc detection and partial burns (`369bd96`, `3d2e75f`, `6d4bc20`)
 
