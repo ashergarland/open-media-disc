@@ -419,6 +419,14 @@ body {
 .omd-album-head > .card {
   flex: 1 1 100%;
 }
+/* A panel dropped straight into the album grid (the burn screen) is its own
+   bounded scroller too, so its trailing text and actions never spill past the
+   card when the row is short. */
+.omd-album > .omd-panel {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .omd-album-hero-art {
   flex: 0 0 auto;
   width: clamp(96px, 22vmin, 300px);
