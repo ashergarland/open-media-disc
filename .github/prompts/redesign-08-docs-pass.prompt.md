@@ -20,9 +20,9 @@ Step 08 of the OMD Studio redesign series. Run in order, one per fresh chat.
 This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
 authoritative log; read it for the full history and any newer entries.
 
-- Last commit at hand-off: `bcf3355` (step 07, small-screen and kiosk tuning).
-  Working tree clean; `pnpm --filter @open-media-disc/studio build`, `pnpm test`
-  (155), and `pnpm lint` are green.
+- Last commit at hand-off: `6d4bc20`. Working tree clean; `pnpm -r build`,
+  `pnpm test` (157), and `pnpm lint` are green. Five commits ahead of
+  `origin/main`; nothing has been pushed.
 - Styling model: the app renders from `shell.css` (layout only) plus
   `components.css` (the `--omd-*` token contract, the component kit, and a
   shrinking "Legacy token bridge"). There is **no theme stylesheet**. The three
@@ -54,6 +54,14 @@ authoritative log; read it for the full history and any newer entries.
   factual facts (sample rate, plus bit depth for lossless or bitrate for lossy).
   `omdFormat` is still the legacy string `OMD-FLAC-DATA` and `omdVersion` is
   still `0.1.0`; both are deliberate, so do not "fix" them.
+- Create a Disc (reworked after step 07) is a source chooser, then a burn screen
+  that probes the drive and reports the real disc: media type, capacity, blank
+  state, rewritable vs write-once, with the cartridge visual and a used/free
+  meter. It blocks burning with no disc, on a used write-once disc, or when the
+  selection will not fit. Its track list allows per-track removal for that burn
+  only; a trimmed package is compiled to a temp folder and deleted afterwards,
+  leaving the catalog package untouched. Document that, not the old "blanks a
+  rewritable disc, writes this album, then verifies it" wording.
 - Known doc drift to expect: `documentation/omd-studio.md` still describes a
   left sidebar, a six-step Create wizard, the old theme names, and a VS Code
   style importable-JSON theme contract that the app no longer implements.

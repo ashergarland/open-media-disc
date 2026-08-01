@@ -168,10 +168,17 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `bcf3355` feat(studio): small-screen and kiosk tuning for the Pi.
-- Working tree: clean. Build, 155 tests, and lint are green. Layout was verified
-  with the screenshot harness at 800x480, 1024x600, 1280x800, 600x1024, and
-  420x840; the user has not yet confirmed the app on real hardware.
+- Last commit: `6d4bc20` feat(studio): burn track list, media-aware warnings,
+  mixtape add-album. Five commits ahead of `origin/main`, nothing pushed.
+- Working tree: clean. Build, 157 tests, and lint are green. The user has
+  confirmed step 07 and the Create a Disc rework in Electron on the desktop.
+- Create a Disc now probes the drive (`omd:probeMedia`) and shows the real disc:
+  the shared cartridge visual plus a used/free meter, the media type, capacity,
+  blank state, and rewritable vs write-once. Burn is blocked with no disc, on a
+  used write-once disc, or when the selection will not fit, and the confirmation
+  describes what will actually happen. The burn screen lists the tracks with
+  per-track removal; removals apply to that burn only, compiled into a temp
+  package by the main process and deleted afterwards.
 - Sizing decisions (step 07, from the user): orientation-agnostic with landscape
   as the design target (portrait and phone width are verified, not just tolerated);
   navigation stays hub tiles plus the top-bar Home button, no persistent nav;
@@ -245,6 +252,37 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+### Out of series - real disc detection and partial burns (`369bd96`, `3d2e75f`, `6d4bc20`)
+
+Run after step 07, at the user's request, while verifying the app on the desktop.
+
+The user hit a genuine correctness bug: with an empty tray, Create a Disc still
+offered to burn and warned that "a rewritable disc will be erased first". The
+panel was hardcoded (`DVD-RW 1.4 GB` was a literal string) and only ever checked
+that a *drive* existed, never that a *disc* was loaded.
+
+- Core: `MediaInfo` gained `present`. An empty tray reported `kind: 'unknown'`
+  with no capacity, which is indistinguishable from an unrecognised disc. The
+  IMAPI probe treats both a recorder that refuses to attach and media type `0`
+  as no disc. `burnImage` refuses an empty drive before doing anything.
+- Studio: new `omd:probeMedia` IPC; Create a Disc shows the real media using the
+  same cartridge visual and used/free meter as the Disc view (`cartridgeVisual`
+  and `discUsageCard` now take a small `DiscMediaView`, fed from either a
+  package's disc facts or a live probe).
+- Partial burns: `StudioBurnRequest.tracks` selects a subset; the main process
+  compiles a trimmed package into an `os.mkdtemp` folder, burns it, and removes
+  it in a `finally`. The source package is never modified.
+- Mixtape builder: add a whole album at once; tracks already in the mix show as
+  added and remove on click rather than stacking duplicates.
+
+Decision worth carrying: the fit check compares the **package** size against
+capacity. The real UDF image is slightly larger, so an album that fits by a few
+MB can still be rejected by `burnImage`, which checks the actual image size
+before anything destructive. No overhead fudge factor was invented.
+
+Not verified: the partial-burn path and any disc-present path need real media.
+`probeMedia` reporting `present: false` was confirmed against the real drive.
 
 ### 07 - Pi and small-screen tuning (`bcf3355`)
 
