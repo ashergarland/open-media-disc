@@ -37,7 +37,12 @@ function metadataBlockHeader(isLast: boolean, type: number, length: number): Buf
   return header;
 }
 
-function buildStreamInfo(sampleRate: number, channels: number, bps: number, totalSamples: number): Buffer {
+function buildStreamInfo(
+  sampleRate: number,
+  channels: number,
+  bps: number,
+  totalSamples: number,
+): Buffer {
   const block = Buffer.alloc(34);
   block.writeUInt16BE(4096, 0);
   block.writeUInt16BE(4096, 2);
@@ -52,7 +57,9 @@ function buildStreamInfo(sampleRate: number, channels: number, bps: number, tota
 
 function buildVorbisComment(tags: Record<string, string>): Buffer {
   const vendor = Buffer.from('OMD Studio fixture', 'utf8');
-  const entries = Object.entries(tags).map(([k, v]) => Buffer.from(`${k.toUpperCase()}=${v}`, 'utf8'));
+  const entries = Object.entries(tags).map(([k, v]) =>
+    Buffer.from(`${k.toUpperCase()}=${v}`, 'utf8'),
+  );
   const size = 4 + vendor.length + 4 + entries.reduce((sum, e) => sum + 4 + e.length, 0);
   const block = Buffer.alloc(size);
   let p = 0;
@@ -76,7 +83,11 @@ function buildVorbisComment(tags: Record<string, string>): Buffer {
  * duration can be derived), and Vorbis tags. It has no audio frames, so it is a
  * safe non-copyrighted fixture, not real music.
  */
-function buildFlac(opts: { seconds: number; tags: Record<string, string>; filler: number }): Buffer {
+function buildFlac(opts: {
+  seconds: number;
+  tags: Record<string, string>;
+  filler: number;
+}): Buffer {
   const sampleRate = 44100;
   const streamInfo = buildStreamInfo(sampleRate, 2, 16, sampleRate * opts.seconds);
   const vorbis = buildVorbisComment(opts.tags);
@@ -110,22 +121,56 @@ function pngChunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([length, typeBuf, data, crc]);
 }
 
-/** A solid-color PNG (placeholder cover art). Deterministic and non-copyrighted. */
-function solidPng(size: number, [r, g, b]: [number, number, number]): Buffer {
+/** Clamp a number to a single byte. */
+function clampByte(n: number): number {
+  return n < 0 ? 0 : n > 255 ? 255 : Math.round(n);
+}
+
+/** Linearly mix two RGB colors by `t` in [0, 1]. */
+function mixRgb(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+): [number, number, number] {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+/**
+ * A deterministic, abstract cover: a diagonal gradient in the album's color plus
+ * two soft tinted spots. No text and no libraries, so it stays a safe,
+ * non-copyrighted fixture while reading as real album art rather than a flat swatch.
+ */
+function coverPng(size: number, [r, g, b]: [number, number, number]): Buffer {
+  const base: [number, number, number] = [r, g, b];
+  const dark = mixRgb(base, [10, 12, 20], 0.58);
+  const light = mixRgb(base, [255, 255, 255], 0.42);
+  const spots: { x: number; y: number; rad: number; color: [number, number, number] }[] = [
+    { x: size * 0.72, y: size * 0.26, rad: size * 0.42, color: mixRgb(base, [255, 255, 255], 0.7) },
+    { x: size * 0.22, y: size * 0.8, rad: size * 0.36, color: mixRgb(base, [6, 8, 14], 0.55) },
+  ];
+  const row = Buffer.alloc(1 + size * 3);
+  const rows: Buffer[] = [];
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      let color = mixRgb(dark, light, (x + y) / (2 * (size - 1)));
+      for (const spot of spots) {
+        const d = Math.hypot(x - spot.x, y - spot.y) / spot.rad;
+        if (d < 1) color = mixRgb(color, spot.color, (1 - d) * (1 - d) * 0.6);
+      }
+      const o = 1 + x * 3;
+      row[o] = clampByte(color[0]);
+      row[o + 1] = clampByte(color[1]);
+      row[o + 2] = clampByte(color[2]);
+    }
+    rows.push(Buffer.from(row));
+  }
+  const idat = zlib.deflateSync(Buffer.concat(rows));
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(size, 0);
   ihdr.writeUInt32BE(size, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 2; // color type: truecolor RGB
-  const row = Buffer.alloc(1 + size * 3);
-  for (let x = 0; x < size; x += 1) {
-    row[1 + x * 3] = r;
-    row[1 + x * 3 + 1] = g;
-    row[1 + x * 3 + 2] = b;
-  }
-  const raw = Buffer.concat(Array.from({ length: size }, () => row));
-  const idat = zlib.deflateSync(raw);
   return Buffer.concat([
     signature,
     pngChunk('IHDR', ihdr),
@@ -237,7 +282,7 @@ async function writeSourceAlbum(dir: string, album: FixtureAlbum): Promise<void>
       }),
     );
   }
-  await writeFile(path.join(dir, 'cover.png'), solidPng(480, album.cover));
+  await writeFile(path.join(dir, 'cover.png'), coverPng(480, album.cover));
 }
 
 /**
@@ -330,7 +375,13 @@ export class FixtureBurnBackend implements BurnBackend {
   }
 
   async probeMedia(): Promise<MediaInfo> {
-    return { kind: 'rewritable', blank: true, typeName: 'DVD-RW', capacityBytes: 1_400_000_000 };
+    return {
+      present: true,
+      kind: 'rewritable',
+      blank: true,
+      typeName: 'DVD-RW',
+      capacityBytes: 1_400_000_000,
+    };
   }
 
   async remount(): Promise<void> {

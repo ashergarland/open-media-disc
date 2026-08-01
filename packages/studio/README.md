@@ -53,20 +53,23 @@ node packages/studio/bin/omd-studio-shots.mjs --views home,disc --out ./images
 The pnpm scripts and the bin are thin wrappers over `electron .` with `--omd-*`
 flags (env vars in parentheses):
 
-| Flag | Purpose |
-| --- | --- |
-| `--omd-data=fixtures\|real` (`OMD_STUDIO_DATA`) | Data source. Default `real`. |
-| `--omd-headless` (`OMD_STUDIO_HEADLESS`) | Run without a visible window. |
-| `--omd-screenshots[=all\|a,b,c]` (`OMD_STUDIO_SCREENSHOTS`) | Capture the listed views (implies headless). |
-| `--omd-out=<dir>` (`OMD_STUDIO_OUT`) | Screenshot output folder. Default `./screenshots`. |
-| `--omd-view=<id>` (`OMD_STUDIO_VIEW`) | Open a specific view on boot. |
-| `--omd-theme=<id>` (`OMD_STUDIO_THEME`) | Apply a theme on boot. |
-| `--omd-size=<WxH>` (`OMD_STUDIO_SIZE`) | Window content size (the CSS viewport). Default `1440x900`. |
-| `--omd-kiosk` (`OMD_STUDIO_KIOSK`) | Appliance mode: launch full-screen with no window chrome. Ignored headlessly. |
-| `--omd-reset-fixtures` (`OMD_STUDIO_RESET_FIXTURES`) | Regenerate the fixture library. |
+| Flag                                                        | Purpose                                                                       |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `--omd-data=fixtures\|real` (`OMD_STUDIO_DATA`)             | Data source. Default `real`.                                                  |
+| `--omd-headless` (`OMD_STUDIO_HEADLESS`)                    | Run without a visible window.                                                 |
+| `--omd-screenshots[=all\|a,b,c]` (`OMD_STUDIO_SCREENSHOTS`) | Capture the listed views (implies headless).                                  |
+| `--omd-out=<dir>` (`OMD_STUDIO_OUT`)                        | Screenshot output folder. Default `./screenshots`.                            |
+| `--omd-view=<id>` (`OMD_STUDIO_VIEW`)                       | Open a specific view on boot.                                                 |
+| `--omd-theme=<id>` (`OMD_STUDIO_THEME`)                     | Apply a theme on boot.                                                        |
+| `--omd-size=<WxH>` (`OMD_STUDIO_SIZE`)                      | Window content size (the CSS viewport). Default `1440x900`.                   |
+| `--omd-kiosk` (`OMD_STUDIO_KIOSK`)                          | Appliance mode: launch full-screen with no window chrome. Ignored headlessly. |
+| `--omd-reset-fixtures` (`OMD_STUDIO_RESET_FIXTURES`)        | Regenerate the fixture library.                                               |
 
-Views: `home`, `disc`, `catalog`, `burn`, `labels`, `themes`, `settings`. The
-fixture library is generated once under the app's user-data folder.
+Views: `home`, `disc`, `catalog`, `burn`, `labels`, `themes`, `settings`.
+Composed scenes that drive a multi-step flow before the shot: `mixtape` (the
+mixtape builder, pre-filled) and `burn-ready` (a catalog package staged on the
+burn screen). Scenes are opt-in — `all` never includes them. The fixture library
+is generated once under the app's user-data folder.
 
 ## Screen sizes and kiosk mode
 

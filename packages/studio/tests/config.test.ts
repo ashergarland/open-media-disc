@@ -35,12 +35,20 @@ describe('parseRuntimeConfig', () => {
   });
 
   it('expands `all` to every view', () => {
-    expect(parseRuntimeConfig(['--omd-screenshots=all'], {}).screenshotViews).toEqual([...ALL_VIEWS]);
+    expect(parseRuntimeConfig(['--omd-screenshots=all'], {}).screenshotViews).toEqual([
+      ...ALL_VIEWS,
+    ]);
   });
 
   it('parses a comma-separated view list and drops unknown views', () => {
     const config = parseRuntimeConfig(['--omd-screenshots=home, catalog , nope'], {});
     expect(config.screenshotViews).toEqual(['home', 'catalog']);
+    expect(config.headless).toBe(true);
+  });
+
+  it('accepts composed capture scenes alongside views', () => {
+    const config = parseRuntimeConfig(['--omd-screenshots=mixtape,burn-ready,home'], {});
+    expect(config.screenshotViews).toEqual(['mixtape', 'burn-ready', 'home']);
     expect(config.headless).toBe(true);
   });
 
@@ -66,7 +74,10 @@ describe('parseRuntimeConfig', () => {
   });
 
   it('ignores a malformed window size', () => {
-    expect(parseRuntimeConfig(['--omd-size=huge'], {}).windowSize).toEqual({ width: 1440, height: 900 });
+    expect(parseRuntimeConfig(['--omd-size=huge'], {}).windowSize).toEqual({
+      width: 1440,
+      height: 900,
+    });
   });
 
   it('parses the reset-fixtures flag', () => {

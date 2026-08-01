@@ -15,10 +15,12 @@ import type {
   StudioBootConfig,
   StudioBurnResult,
   StudioDiscInfo,
+  StudioDiscTrack,
   StudioDrive,
   StudioImportProgress,
   StudioImportResult,
   StudioInfo,
+  StudioMedia,
   StudioMixtapeAlbum,
   StudioRipProgress,
   StudioSourceDraft,
@@ -94,7 +96,13 @@ interface AppState {
   reverifying?: boolean;
   /** True while a background integrity verify of the opened catalog album runs. */
   albumVerifying?: boolean;
-  ripStatus?: { busy: boolean; text: string; ok?: boolean; outDir?: string; progress?: StudioRipProgress };
+  ripStatus?: {
+    busy: boolean;
+    text: string;
+    ok?: boolean;
+    outDir?: string;
+    progress?: StudioRipProgress;
+  };
   /** The Create a Disc flow: choose a source package, then burn it. */
   createDisc?: {
     /** The package loaded to burn (a StudioDiscInfo). */
@@ -105,6 +113,11 @@ interface AppState {
     picking?: boolean;
     drives: StudioDrive[];
     selectedDrive?: string;
+    /** The disc probed in the selected drive, or undefined until probed. */
+    media?: StudioMedia;
+    mediaLoading?: boolean;
+    /** Track numbers held back from this burn only; the package is untouched. */
+    excluded: number[];
     burning: boolean;
     phase?: string;
     result?: StudioBurnResult;
@@ -155,7 +168,7 @@ interface AppState {
     artist: string;
     coverSourcePath?: string;
     coverPreview?: string;
-    tracks: { sourcePath: string; title: string; from: string }[];
+    tracks: { sourcePath: string; title: string; from: string; sizeBytes: number }[];
     sources?: StudioMixtapeAlbum[];
     loading?: boolean;
     saving?: boolean;
@@ -176,9 +189,24 @@ interface ThemeOption {
 
 /** The available themes. Each is a token map applied by setting data-theme. */
 const THEME_OPTIONS: ThemeOption[] = [
-  { id: 'midnight', name: 'Midnight', type: 'Dark', swatches: ['#35c0e0', '#4a7dff', '#1d2836', '#0d131e', '#35d17a'] },
-  { id: 'daylight', name: 'Daylight', type: 'Light', swatches: ['#0e9fc4', '#3a6ff0', '#ffffff', '#15212e', '#1f9d57'] },
-  { id: 'ember', name: 'Ember', type: 'Dark', swatches: ['#ff8a3d', '#ffb765', '#271f17', '#15110d', '#4cc27a'] },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    type: 'Dark',
+    swatches: ['#35c0e0', '#4a7dff', '#1d2836', '#0d131e', '#35d17a'],
+  },
+  {
+    id: 'daylight',
+    name: 'Daylight',
+    type: 'Light',
+    swatches: ['#0e9fc4', '#3a6ff0', '#ffffff', '#15212e', '#1f9d57'],
+  },
+  {
+    id: 'ember',
+    name: 'Ember',
+    type: 'Dark',
+    swatches: ['#ff8a3d', '#ffb765', '#271f17', '#15110d', '#4cc27a'],
+  },
 ];
 
 const DEFAULT_THEME_ID = 'midnight';
@@ -202,9 +230,10 @@ function logoFor(): string {
 /** The cartridge image (a light translucent one on light themes). */
 function cartridgeFor(): string {
   const theme = THEME_OPTIONS.find((entry) => entry.id === state.themeId);
-  return theme?.type === 'Light' ? 'assets/brand-cartridge-light.png' : 'assets/brand-cartridge.png';
+  return theme?.type === 'Light'
+    ? 'assets/brand-cartridge-light.png'
+    : 'assets/brand-cartridge.png';
 }
-
 
 const CATALOG_STORAGE_KEY = 'omd.catalogDir';
 
@@ -282,7 +311,8 @@ function setView(view: ViewId): void {
   }
   // Entering the Catalog or Labels re-scans the library folder so newly
   // ripped/burned/imported packages appear without a manual refresh.
-  if ((view === 'catalog' || view === 'labels') && state.libraryDir && !state.album) void rescanLibrary();
+  if ((view === 'catalog' || view === 'labels') && state.libraryDir && !state.album)
+    void rescanLibrary();
   // Entering the Disc view auto-detects an already-inserted disc (no manual scan).
   if (view === 'disc' && !state.disc) void detectDisc(true);
   // The Home hub is full-bleed (no sidebar); every other view keeps the sidebar.
@@ -323,14 +353,23 @@ function screenTitle(view: ViewId): string {
 function screenFrame(view: ViewId, content: HTMLElement): HTMLElement {
   const home = el(
     'button',
-    { class: 'omd-icon-btn', type: 'button', title: 'Home', 'aria-label': 'Home', onclick: () => setView('home') },
+    {
+      class: 'omd-icon-btn',
+      type: 'button',
+      title: 'Home',
+      'aria-label': 'Home',
+      onclick: () => setView('home'),
+    },
     [svgIcon('home', 22)],
   );
   const topbar = el('div', { class: 'omd-topbar' }, [
     home,
     el('div', { class: 'omd-topbar-title', text: screenTitle(view) }),
   ]);
-  return el('div', { class: 'omd-screen' }, [topbar, el('div', { class: 'omd-screen-body' }, [content])]);
+  return el('div', { class: 'omd-screen' }, [
+    topbar,
+    el('div', { class: 'omd-screen-body' }, [content]),
+  ]);
 }
 
 /** Whether the album loaded in the transport passed verification (undefined when none). */
@@ -529,7 +568,12 @@ function settingsView(): HTMLElement {
     drives === undefined
       ? [el('p', { class: 'omd-muted', text: 'Scanning\u2026' })]
       : drives.length === 0
-        ? [el('p', { class: 'omd-muted', text: 'No optical drives detected (burning is Windows-only).' })]
+        ? [
+            el('p', {
+              class: 'omd-muted',
+              text: 'No optical drives detected (burning is Windows-only).',
+            }),
+          ]
         : [
             el(
               'div',
@@ -542,7 +586,9 @@ function settingsView(): HTMLElement {
     about,
     omdPanel('Optical drives', [
       ...driveBody,
-      el('div', { class: 'omd-actions' }, [omdBtn('Rescan drives', undefined, () => void rescanDrives())]),
+      el('div', { class: 'omd-actions' }, [
+        omdBtn('Rescan drives', undefined, () => void rescanDrives()),
+      ]),
     ]),
   ]);
 }
@@ -609,7 +655,8 @@ async function detectDisc(auto = false): Promise<void> {
   try {
     const disc = await window.omd.detectDisc();
     if (disc) setDisc(disc);
-    else if (!auto) state.discError = 'No OMD disc detected. Insert a burned OMD disc to play it here.';
+    else if (!auto)
+      state.discError = 'No OMD disc detected. Insert a burned OMD disc to play it here.';
   } catch (err) {
     if (!auto) state.discError = (err as Error).message;
   }
@@ -758,7 +805,9 @@ async function ripToCatalog(): Promise<void> {
 
 async function runRip(destDir: string, overwrite: boolean): Promise<void> {
   if (!state.disc) return;
-  const rip = { busy: true, text: 'Ripping and verifying...' } as NonNullable<AppState['ripStatus']>;
+  const rip = { busy: true, text: 'Ripping and verifying...' } as NonNullable<
+    AppState['ripStatus']
+  >;
   state.ripStatus = rip;
   if (state.view === 'disc') renderMain();
   try {
@@ -776,7 +825,9 @@ async function runRip(destDir: string, overwrite: boolean): Promise<void> {
       },
     );
     if (result.exists) {
-      const proceed = window.confirm(`A copy already exists at:\n${result.outDir}\n\nOverwrite it?`);
+      const proceed = window.confirm(
+        `A copy already exists at:\n${result.outDir}\n\nOverwrite it?`,
+      );
       if (proceed) {
         await runRip(destDir, true);
         return;
@@ -819,7 +870,11 @@ function ripStatusEl(status: NonNullable<AppState['ripStatus']>): HTMLElement {
     children.push(
       el(
         'button',
-        { class: 'link-btn', type: 'button', onclick: () => void window.omd.revealInFolder(outDir) },
+        {
+          class: 'link-btn',
+          type: 'button',
+          onclick: () => void window.omd.revealInFolder(outDir),
+        },
         ['Show in folder'],
       ),
     );
@@ -849,14 +904,14 @@ function burnPhaseLabel(phase: string): string {
 }
 
 async function openCreateDisc(disc?: StudioDiscInfo): Promise<void> {
-  state.createDisc = { drives: [], burning: false, ...(disc ? { disc } : {}) };
+  state.createDisc = { drives: [], burning: false, excluded: [], ...(disc ? { disc } : {}) };
   setView('burn');
   await loadCreateDiscDrives();
 }
 
 /** Ensure the Create a Disc state exists, returning it. */
 function ensureCreateDisc(): NonNullable<AppState['createDisc']> {
-  if (!state.createDisc) state.createDisc = { drives: [], burning: false };
+  if (!state.createDisc) state.createDisc = { drives: [], burning: false, excluded: [] };
   return state.createDisc;
 }
 
@@ -869,6 +924,36 @@ async function loadCreateDiscDrives(): Promise<void> {
     cd.drives = [];
   }
   if (!cd.selectedDrive && cd.drives[0]) cd.selectedDrive = cd.drives[0].mountPath;
+  if (state.view === 'burn') renderMain();
+  if (cd.selectedDrive) void probeCreateDiscMedia();
+}
+
+/**
+ * Probe the disc in the selected drive. Nothing about the media is assumed
+ * before this runs: the panel reports what is actually loaded, or that the
+ * tray is empty, rather than guessing at a disc type.
+ */
+async function probeCreateDiscMedia(): Promise<void> {
+  const cd = state.createDisc;
+  const drive = cd?.selectedDrive;
+  if (!cd || !drive || cd.mediaLoading) return;
+  cd.mediaLoading = true;
+  cd.media = undefined;
+  if (state.view === 'burn') renderMain();
+  let media: StudioMedia;
+  try {
+    media = await window.omd.probeMedia(drive);
+  } catch (err) {
+    media = { present: false, kind: 'unknown', blank: false, error: (err as Error).message };
+  }
+  // The user may have switched drives or left while the probe was running.
+  if (state.createDisc !== cd) return;
+  cd.mediaLoading = false;
+  if (cd.selectedDrive !== drive) {
+    void probeCreateDiscMedia();
+    return;
+  }
+  cd.media = media;
   if (state.view === 'burn') renderMain();
 }
 
@@ -941,8 +1026,14 @@ async function runCreateDiscBurn(): Promise<void> {
   if (!cd || !cd.disc || !cd.selectedDrive) return;
   const disc = cd.disc;
   const drive = cd.selectedDrive;
+  const readiness = burnReadiness(cd, disc);
+  if (!readiness.canBurn) return;
+  const selection = burnSelection(cd, disc);
+  const dropped = selection.isSubset
+    ? `\n\n${disc.tracks.length - selection.included.length} track(s) will be left off. Your saved album is not changed.`
+    : '';
   const confirmed = window.confirm(
-    `Burn "${disc.discId}" to ${drive}?\n\nA rewritable disc will be erased first.`,
+    `Burn "${disc.discId}" to ${drive}?\n\n${readiness.consequence}${dropped}`,
   );
   if (!confirmed) return;
   cd.burning = true;
@@ -950,7 +1041,14 @@ async function runCreateDiscBurn(): Promise<void> {
   renderMain();
   try {
     const result = await window.omd.burn(
-      { packageDir: disc.source, driveMountPath: drive, blank: true, verify: true, eject: true },
+      {
+        packageDir: disc.source,
+        driveMountPath: drive,
+        blank: true,
+        verify: true,
+        eject: true,
+        ...(selection.isSubset ? { tracks: selection.included.map((t) => t.number) } : {}),
+      },
       (progress) => {
         if (state.createDisc) {
           state.createDisc.phase = burnPhaseLabel(progress.phase);
@@ -993,7 +1091,9 @@ function driveSelect(
     select.append(
       el('option', {
         value: drive.mountPath,
-        text: drive.description ? `${drive.mountPath} - ${drive.description}` : drive.mountPath,
+        // Show the friendly drive name; the mount path can be a long local folder
+        // (fixtures) and stays as the option value rather than on screen.
+        text: drive.description ?? drive.mountPath,
       }),
     );
   }
@@ -1015,8 +1115,11 @@ function createDiscChooser(): HTMLElement {
     choice('catalog', 'From catalog', 'Burn an album already in your library', () =>
       pickFromCatalogForBurn(),
     ),
-    choice('folder', 'Import a package', 'Burn an existing OMD package folder', () =>
-      void importPackageForBurn(),
+    choice(
+      'folder',
+      'Import a package',
+      'Burn an existing OMD package folder',
+      () => void importPackageForBurn(),
     ),
     choice('note', 'Import music', 'Package a folder of audio, then burn it', () => {
       void runImport('burn');
@@ -1035,14 +1138,22 @@ function createDiscChooser(): HTMLElement {
 function burnPickCard(entry: CatalogEntry): HTMLElement {
   const load = (): void => void loadPackageForBurn(entry.source);
   const cover = entry.coverDataUri
-    ? el('img', { class: 'omd-album-cover', src: entry.coverDataUri, alt: 'Cover art', onclick: load })
+    ? el('img', {
+        class: 'omd-album-cover',
+        src: entry.coverDataUri,
+        alt: 'Cover art',
+        onclick: load,
+      })
     : el('span', { class: 'omd-album-cover-empty', onclick: load }, [svgIcon('note', 40)]);
   const body = el('div', { class: 'omd-album-body', onclick: load }, [
     el('div', { class: 'omd-album-title', text: entry.discId }),
     el('div', { class: 'omd-album-sub', text: `${entry.artist} - ${entry.album}` }),
   ]);
   const actions = el('div', { class: 'omd-album-actions' }, [
-    el('button', { class: 'omd-chip-btn', type: 'button', onclick: load }, [svgIcon('create', 15), 'Select']),
+    el('button', { class: 'omd-chip-btn', type: 'button', onclick: load }, [
+      svgIcon('create', 15),
+      'Select',
+    ]),
   ]);
   return el('div', { class: 'omd-album-card' }, [cover, body, actions]);
 }
@@ -1080,13 +1191,90 @@ function createDiscCatalogPicker(): HTMLElement {
   return el('div', { class: 'omd-stack omd-fill' }, [back, results]);
 }
 
+/**
+ * Decide whether this package can be burned to whatever disc is actually in the
+ * drive, and describe what burning would do. Every blocker is derived from the
+ * probed media, so nothing is assumed about the disc before it is read.
+ */
+function burnReadiness(
+  cd: NonNullable<AppState['createDisc']>,
+  disc: StudioDiscInfo,
+): { canBurn: boolean; blocker?: string; tooLarge: boolean; consequence: string } {
+  const media = cd.media;
+  const deny = (blocker: string, tooLarge = false): ReturnType<typeof burnReadiness> => ({
+    canBurn: false,
+    blocker,
+    tooLarge,
+    consequence: '',
+  });
+
+  if (!cd.drives.length) {
+    return deny('No optical drive detected. Burning requires Windows with a writer attached.');
+  }
+  if (!cd.selectedDrive) return deny('Choose a drive to burn to.');
+  if (cd.mediaLoading || !media) return deny('Checking the disc\u2026');
+  if (media.error) return deny(media.error);
+  if (!media.present) {
+    return deny(`No disc in ${cd.selectedDrive}. Insert a writable disc, then check again.`);
+  }
+  if (media.kind === 'write-once' && !media.blank) {
+    return deny(
+      `This ${media.typeName ?? 'write-once'} disc already contains data and cannot be erased. ` +
+        `Insert a blank disc.`,
+    );
+  }
+  const selection = burnSelection(cd, disc);
+  if (selection.included.length === 0) return deny('Keep at least one track to burn.');
+  if (media.capacityBytes && selection.sizeBytes > media.capacityBytes) {
+    const over = selection.sizeBytes - media.capacityBytes;
+    return deny(
+      `This is ${formatBytes(selection.sizeBytes)} but the disc holds ` +
+        `${formatBytes(media.capacityBytes)}. Remove ${formatBytes(over)} of tracks to fit.`,
+      true,
+    );
+  }
+  if (!disc.valid) return deny('Fix the validation issues before burning.');
+
+  const what = selection.isSubset ? `${selection.included.length} tracks are` : 'This album is';
+  const consequence =
+    media.kind === 'write-once'
+      ? 'This writes permanently to a write-once disc and cannot be undone.'
+      : media.blank
+        ? `${what} written to the blank disc, then verified.`
+        : `The rewritable disc will be erased first, then ${what.toLowerCase()} written and verified.`;
+  return { canBurn: true, tooLarge: false, consequence };
+}
+
+/** The tracks actually going on the disc, and what they add up to. */
+function burnSelection(
+  cd: NonNullable<AppState['createDisc']>,
+  disc: StudioDiscInfo,
+): {
+  included: StudioDiscTrack[];
+  sizeBytes: number;
+  durationSeconds: number;
+  isSubset: boolean;
+} {
+  const excluded = new Set(cd.excluded);
+  const included = disc.tracks.filter((track) => !excluded.has(track.number));
+  const allAudio = disc.tracks.reduce((sum, track) => sum + track.sizeBytes, 0);
+  // Whatever the package weighs beyond its audio (manifest, checksums, cover).
+  const overhead = Math.max(0, disc.totalSizeBytes - allAudio);
+  return {
+    included,
+    sizeBytes: overhead + included.reduce((sum, track) => sum + track.sizeBytes, 0),
+    durationSeconds: included.reduce((sum, track) => sum + (track.durationSeconds ?? 0), 0),
+    isSubset: included.length !== disc.tracks.length,
+  };
+}
+
 function createDiscBurnPanel(): HTMLElement {
   const cd = state.createDisc!;
   if (cd.result) {
     const good = cd.result.ok;
     const detail = good
       ? `Burned and verified${cd.result.ejected ? ' and ejected' : ''}.`
-      : cd.result.error ?? 'The burn failed and the disc was left in the drive.';
+      : (cd.result.error ?? 'The burn failed and the disc was left in the drive.');
     return omdPanel('Burn to disc', [
       notice(good ? 'info' : 'error', detail),
       el('div', { class: 'omd-actions' }, [
@@ -1097,6 +1285,7 @@ function createDiscBurnPanel(): HTMLElement {
             cd.result = undefined;
             cd.burning = false;
             renderMain();
+            void probeCreateDiscMedia();
           },
           { primary: true },
         ),
@@ -1115,30 +1304,136 @@ function createDiscBurnPanel(): HTMLElement {
       ]),
     ]);
   }
+
+  const disc = cd.disc;
   const noDrive = cd.drives.length === 0;
-  return omdPanel('Burn to disc', [
+  const readiness = disc
+    ? burnReadiness(cd, disc)
+    : { canBurn: false, tooLarge: false, consequence: '', blocker: undefined };
+
+  const body: HTMLElement[] = [
     el('div', { class: 'omd-drive-row' }, [
       svgIcon('drive', 22),
       noDrive
         ? el('span', { class: 'omd-muted', text: 'No optical drive detected' })
         : driveSelect(cd.drives, cd.selectedDrive, (value) => {
             cd.selectedDrive = value;
+            void probeCreateDiscMedia();
           }),
-      el('span', { class: 'omd-muted', text: 'DVD-RW \u00b7 1.4 GB' }),
     ]),
-    el('p', {
-      class: 'omd-muted',
-      text: noDrive
-        ? 'Insert a rewritable disc in an optical drive. Burning is Windows-only.'
-        : 'Blanks a rewritable disc, writes this album, then verifies it.',
+  ];
+
+  // What is actually in the drive, never a placeholder. Once probed, the disc
+  // gets the same cartridge visual the Disc view uses.
+  if (!noDrive) {
+    if (cd.mediaLoading) {
+      body.push(spinnerRow('Checking the disc\u2026'));
+    } else if (cd.media?.present) {
+      const selected = disc ? burnSelection(cd, disc).sizeBytes : 0;
+      body.push(
+        discUsageCard(mediaViewOfProbe(cd.media), selected, {
+          used: 'This burn',
+          free: 'Left over',
+        }),
+      );
+      body.push(
+        el('p', {
+          class: 'omd-muted',
+          text: cd.media.blank ? 'The disc is blank.' : 'The disc already has data on it.',
+        }),
+      );
+    }
+  }
+
+  if (readiness.blocker) {
+    body.push(notice(readiness.tooLarge ? 'warning' : 'info', readiness.blocker));
+  } else if (readiness.consequence) {
+    body.push(el('p', { class: 'omd-muted', text: readiness.consequence }));
+  }
+
+  const actions: HTMLElement[] = [
+    omdBtn('Burn to Disc', 'create', () => void runCreateDiscBurn(), {
+      primary: true,
+      disabled: !readiness.canBurn,
     }),
-    el('div', { class: 'omd-actions' }, [
-      omdBtn('Burn to Disc', 'create', () => void runCreateDiscBurn(), {
-        primary: true,
-        disabled: noDrive || !cd.selectedDrive,
+  ];
+  if (!noDrive) {
+    actions.push(
+      omdBtn('Check again', undefined, () => void probeCreateDiscMedia(), {
+        disabled: cd.mediaLoading === true,
       }),
-    ]),
+    );
+  }
+  body.push(el('div', { class: 'omd-actions' }, actions));
+
+  return omdPanel('Burn to disc', body);
+}
+
+/**
+ * The track list for the burn, with per-track removal. Removals apply to this
+ * burn only: the source package is never modified, and a trimmed copy is
+ * compiled to a temp folder at burn time.
+ */
+function burnTrackList(disc: StudioDiscInfo): HTMLElement {
+  const cd = state.createDisc!;
+  const excluded = new Set(cd.excluded);
+  const selection = burnSelection(cd, disc);
+  const rows = el('div', { class: 'omd-tracklist-rows' });
+
+  const head = el('div', { class: 'omd-tracklist-head' }, [
+    el('span', { text: selection.isSubset ? 'Tracks on this disc' : 'Tracks' }),
+    el('span', {
+      class: 'omd-muted',
+      text:
+        `${selection.included.length} of ${disc.tracks.length} \u00b7 ` +
+        `${formatClock(selection.durationSeconds)} \u00b7 ${formatBytes(selection.sizeBytes)}`,
+    }),
   ]);
+  if (selection.isSubset) {
+    head.append(
+      el(
+        'button',
+        {
+          class: 'link-btn',
+          type: 'button',
+          onclick: () => {
+            cd.excluded = [];
+            renderMain();
+          },
+        },
+        ['Restore all'],
+      ),
+    );
+  }
+
+  disc.tracks.forEach((track) => {
+    const off = excluded.has(track.number);
+    rows.append(
+      el('div', { class: `omd-track${off ? ' is-excluded' : ''}` }, [
+        el('span', { class: 'omd-track-num', text: String(track.number) }),
+        el('span', { class: 'omd-track-name', text: track.title }),
+        el('span', { class: 'omd-track-time', text: formatBytes(track.sizeBytes) }),
+        el(
+          'button',
+          {
+            class: `mini-btn${off ? '' : ' danger'}`,
+            type: 'button',
+            title: off ? 'Put this track back' : 'Leave this track off the disc',
+            'aria-label': off ? `Add ${track.title} back` : `Remove ${track.title}`,
+            onclick: () => {
+              cd.excluded = off
+                ? cd.excluded.filter((number) => number !== track.number)
+                : [...cd.excluded, track.number];
+              renderMain();
+            },
+          },
+          [off ? '\u21ba' : '\u2715'],
+        ),
+      ]),
+    );
+  });
+
+  return el('div', { class: 'omd-tracklist' }, [head, rows]);
 }
 
 /** The burn screen for a loaded package: summary + burn controls. */
@@ -1146,10 +1441,13 @@ function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
   const cd = state.createDisc!;
   const change = el('div', { class: 'omd-actions' }, [
     omdBtn('Change source', 'chevron-left', () => {
+      // The drive and its disc have not changed, so keep the probe result.
       state.createDisc = {
         drives: cd.drives,
         burning: false,
+        excluded: [],
         ...(cd.selectedDrive ? { selectedDrive: cd.selectedDrive } : {}),
+        ...(cd.media ? { media: cd.media } : {}),
       };
       renderMain();
     }),
@@ -1170,7 +1468,11 @@ function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
     el('div', { class: 'omd-album-info' }, [
       el('div', { class: 'omd-album-name', text: disc.album }),
       el('div', { class: 'omd-album-by', text: disc.artist }),
-      el('div', { class: 'omd-facts' }, facts.map((f) => el('span', { class: 'omd-fact', text: f }))),
+      el(
+        'div',
+        { class: 'omd-facts' },
+        facts.map((f) => el('span', { class: 'omd-fact', text: f })),
+      ),
       el('div', { class: 'omd-badges' }, [
         el('span', { class: `omd-badge${disc.valid ? ' ok' : ''}` }, [
           svgIcon('check', 16),
@@ -1180,7 +1482,11 @@ function createDiscBurn(disc: StudioDiscInfo): HTMLElement {
     ]),
   ]);
 
-  return el('div', { class: 'omd-stack' }, [change, summary, createDiscBurnPanel()]);
+  return el('div', { class: 'omd-stack omd-fill' }, [
+    change,
+    summary,
+    el('div', { class: 'omd-album' }, [createDiscBurnPanel(), burnTrackList(disc)]),
+  ]);
 }
 
 /** The Create a Disc view: source chooser, then a populated burn screen. */
@@ -1319,7 +1625,11 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
   const info = el('div', { class: 'omd-album-info' }, [
     el('div', { class: 'omd-album-name', text: disc.album }),
     el('div', { class: 'omd-album-by', text: disc.artist }),
-    el('div', { class: 'omd-facts' }, facts.map((f) => el('span', { class: 'omd-fact', text: f }))),
+    el(
+      'div',
+      { class: 'omd-facts' },
+      facts.map((f) => el('span', { class: 'omd-fact', text: f })),
+    ),
     el('div', { class: 'omd-badges' }, [badge]),
     el('div', { class: 'omd-actions' }, actions),
     ...(source === 'disc' && state.ripStatus ? [ripStatusEl(state.ripStatus)] : []),
@@ -1329,7 +1639,9 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
     el('div', { class: 'omd-album-head' }, [
       heroArt,
       info,
-      ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
+      ...(disc.discCapacityBytes
+        ? [discUsageCard(mediaViewOfDisc(disc), disc.totalSizeBytes)]
+        : []),
     ]),
     trackPanel(disc, currentIndex, (index) => playFrom(disc, source, index)),
   ]);
@@ -1350,7 +1662,9 @@ function playerView(): HTMLElement {
         text: 'Insert a burned OMD disc and it will load here automatically.',
       }),
       state.discLoading ? spinnerRow('Reading disc\u2026') : spinnerRow('Watching the drive\u2026'),
-      el('div', { class: 'omd-actions' }, [omdBtn('Scan again', undefined, () => void detectDisc())]),
+      el('div', { class: 'omd-actions' }, [
+        omdBtn('Scan again', undefined, () => void detectDisc()),
+      ]),
     ];
     if (state.discError) hero.push(el('p', { class: 'omd-muted', text: state.discError }));
     return el('div', { class: 'omd-stack' }, [el('div', { class: 'omd-empty' }, hero)]);
@@ -1398,70 +1712,118 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit]}`;
 }
 
+/** The disc in a drive, as far as the cartridge visual and usage meter care. */
+interface DiscMediaView {
+  /** Media name or format string, for example `DVD-RW` or `8cm mini DVD-RW`. */
+  typeName?: string;
+  rewritable?: boolean;
+  capacityBytes?: number;
+  /** Display label under the meter; defaults to the type name. */
+  label?: string;
+}
+
+/** Describe a loaded disc for the cartridge visual, from a package's disc facts. */
+function mediaViewOfDisc(disc: StudioDiscInfo): DiscMediaView {
+  return {
+    ...(disc.discMediaType ?? disc.discFormat
+      ? { typeName: disc.discMediaType ?? disc.discFormat }
+      : {}),
+    ...(disc.discRewritable !== undefined ? { rewritable: disc.discRewritable } : {}),
+    ...(disc.discCapacityBytes ? { capacityBytes: disc.discCapacityBytes } : {}),
+    ...(disc.discFormat ? { label: disc.discFormat } : {}),
+  };
+}
+
+/** Describe a probed disc for the cartridge visual, from a burn-time media probe. */
+function mediaViewOfProbe(media: StudioMedia): DiscMediaView {
+  return {
+    ...(media.typeName ? { typeName: media.typeName } : {}),
+    ...(media.kind !== 'unknown' ? { rewritable: media.kind === 'rewritable' } : {}),
+    ...(media.capacityBytes ? { capacityBytes: media.capacityBytes } : {}),
+    ...(media.label ?? media.typeName ? { label: media.label ?? media.typeName } : {}),
+  };
+}
+
 /** Derive the media family (CD/DVD/BD) and writability (R/RW/RE) for the badge. */
-function mediaBadge(disc: StudioDiscInfo): { family: string; write: string } | null {
-  const type = (disc.discMediaType ?? disc.discFormat ?? '').toUpperCase();
-  const family = type.includes('BD') || type.includes('BLU')
-    ? 'BD'
-    : type.includes('DVD')
-      ? 'DVD'
-      : type.includes('CD')
-        ? 'CD'
-        : '';
+function mediaBadge(media: DiscMediaView): { family: string; write: string } | null {
+  const type = (media.typeName ?? '').toUpperCase();
+  const family =
+    type.includes('BD') || type.includes('BLU')
+      ? 'BD'
+      : type.includes('DVD')
+        ? 'DVD'
+        : type.includes('CD')
+          ? 'CD'
+          : '';
   if (!family) return null;
   const write = type.includes('RE')
     ? 'RE'
     : type.includes('RW')
       ? 'RW'
-      : disc.discRewritable === true
+      : media.rewritable === true
         ? 'RW'
         : 'R';
   return { family, write };
 }
 
-function cartridgeVisual(disc: StudioDiscInfo): HTMLElement {
-  const badge = mediaBadge(disc);
+function cartridgeVisual(media: DiscMediaView): HTMLElement {
+  const badge = mediaBadge(media);
   const children: (Node | string)[] = [
     el('img', { class: 'cartridge-img', src: cartridgeFor(), alt: 'OMD cartridge' }),
   ];
-  if (badge || disc.discCapacityBytes) {
+  if (badge || media.capacityBytes) {
     const rows: HTMLElement[] = [];
     if (badge) {
-      rows.push(el('span', { class: 'cartridge-type', text: `${badge.family}\u2011${badge.write}` }));
+      rows.push(
+        el('span', { class: 'cartridge-type', text: `${badge.family}\u2011${badge.write}` }),
+      );
     }
-    if (disc.discCapacityBytes) {
-      rows.push(el('span', { class: 'cartridge-size', text: formatBytes(disc.discCapacityBytes) }));
+    if (media.capacityBytes) {
+      rows.push(el('span', { class: 'cartridge-size', text: formatBytes(media.capacityBytes) }));
     }
     children.push(el('span', { class: 'cartridge-badge' }, rows));
   }
   return el('div', { class: 'cartridge' }, children);
 }
 
-function discUsageCard(disc: StudioDiscInfo): HTMLElement {
-  const capacity = disc.discCapacityBytes ?? 0;
-  const used = disc.totalSizeBytes;
-  const free = Math.max(0, capacity - used);
-  const pct = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0;
-  const fill = el('div', { class: 'meter-fill' });
+/**
+ * The cartridge visual next to a used/free meter. Shared by the Disc view (what
+ * is on the disc now) and Create a Disc (what burning this album would use).
+ */
+function discUsageCard(
+  media: DiscMediaView,
+  usedBytes: number,
+  labels?: { used?: string; free?: string },
+): HTMLElement {
+  const capacity = media.capacityBytes ?? 0;
+  const free = Math.max(0, capacity - usedBytes);
+  const pct = capacity > 0 ? Math.min(100, (usedBytes / capacity) * 100) : 0;
+  const over = capacity > 0 && usedBytes > capacity;
+  const fill = el('div', { class: `meter-fill${over ? ' is-over' : ''}` });
   fill.style.width = `${pct.toFixed(1)}%`;
   return el('section', { class: 'card' }, [
     el('div', { class: 'disc-media' }, [
-      cartridgeVisual(disc),
+      cartridgeVisual(media),
       el('div', { class: 'disc-usage' }, [
         el('div', { class: 'storage-stat' }, [
-          el('div', { class: 'label', text: 'Used' }),
-          el('div', { class: 'value', text: formatBytes(used) }),
+          el('div', { class: 'label', text: labels?.used ?? 'Used' }),
+          el('div', { class: 'value', text: formatBytes(usedBytes) }),
         ]),
         el('div', { class: 'meter-wrap' }, [
           el('div', { class: 'meter', role: 'progressbar', 'aria-label': 'Disc usage' }, [fill]),
           el('div', {
             class: 'meter-caption',
-            text: `${disc.discFormat ?? 'Disc'} \u00b7 ${formatBytes(capacity)} capacity`,
+            text: over
+              ? `${formatBytes(usedBytes - capacity)} over the ${formatBytes(capacity)} on this ${media.label ?? 'disc'}`
+              : `${media.label ?? 'Disc'} \u00b7 ${formatBytes(capacity)} capacity`,
           }),
         ]),
         el('div', { class: 'storage-stat' }, [
-          el('div', { class: 'label', text: 'Free' }),
-          el('div', { class: 'value', text: formatBytes(free) }),
+          el('div', { class: 'label', text: over ? 'Over by' : (labels?.free ?? 'Free') }),
+          el('div', {
+            class: 'value',
+            text: formatBytes(over ? usedBytes - capacity : free),
+          }),
         ]),
       ]),
     ]),
@@ -1499,7 +1861,10 @@ function importProgressInfo(p: StudioImportProgress | undefined): {
   if (!p || p.phase === 'reading') return { fraction: null, label: 'Reading the album\u2026' };
   if (p.phase === 'finalizing') return { fraction: 1, label: 'Writing the package\u2026' };
   const total = p.total || 1;
-  return { fraction: p.done / total, label: `Importing track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026` };
+  return {
+    fraction: p.done / total,
+    label: `Importing track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026`,
+  };
 }
 
 /** Map a rip progress update to a bar fraction (null = indeterminate) + label. */
@@ -1507,10 +1872,14 @@ function ripProgressInfo(p: StudioRipProgress | undefined): {
   fraction: number | null;
   label: string;
 } {
-  if (!p || p.phase === 'validating') return { fraction: null, label: 'Verifying the source disc\u2026' };
+  if (!p || p.phase === 'validating')
+    return { fraction: null, label: 'Verifying the source disc\u2026' };
   if (p.phase === 'finalizing') return { fraction: 1, label: 'Finishing the copy\u2026' };
   const total = p.total || 1;
-  return { fraction: p.done / total, label: `Copying track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026` };
+  return {
+    fraction: p.done / total,
+    label: `Copying track ${Math.min(p.done + 1, p.total)} of ${p.total}\u2026`,
+  };
 }
 
 /** A reusable "in progress" badge: a spinner inside a neutral status pill. */
@@ -1764,8 +2133,41 @@ async function startMixtape(origin: 'catalog' | 'burn' = 'catalog'): Promise<voi
   renderMain();
 }
 
-function addMixtapeTrack(album: StudioMixtapeAlbum, track: StudioMixtapeAlbum['tracks'][number]): void {
-  state.mixtape?.tracks.push({ sourcePath: track.path, title: track.title, from: album.album });
+function addMixtapeTrack(
+  album: StudioMixtapeAlbum,
+  track: StudioMixtapeAlbum['tracks'][number],
+): void {
+  state.mixtape?.tracks.push({
+    sourcePath: track.path,
+    title: track.title,
+    from: album.album,
+    sizeBytes: track.sizeBytes,
+  });
+  renderMain();
+}
+
+/** Add every track of an album that is not already in the mix, in order. */
+function addMixtapeAlbum(album: StudioMixtapeAlbum): void {
+  const m = state.mixtape;
+  if (!m) return;
+  const already = new Set(m.tracks.map((track) => track.sourcePath));
+  for (const track of album.tracks) {
+    if (already.has(track.path)) continue;
+    m.tracks.push({
+      sourcePath: track.path,
+      title: track.title,
+      from: album.album,
+      sizeBytes: track.sizeBytes,
+    });
+  }
+  renderMain();
+}
+
+/** Remove a track from the mix by its source path (used by the library list). */
+function removeMixtapeTrackBySource(sourcePath: string): void {
+  const m = state.mixtape;
+  if (!m) return;
+  m.tracks = m.tracks.filter((track) => track.sourcePath !== sourcePath);
   renderMain();
 }
 
@@ -1859,7 +2261,9 @@ function importCodecField(review: NonNullable<AppState['importReview']>): HTMLEl
         },
         [
           el('span', { text: codec }),
-          ...(present.has(codec) ? [el('span', { class: 'omd-segment-tag', text: 'in source' })] : []),
+          ...(present.has(codec)
+            ? [el('span', { class: 'omd-segment-tag', text: 'in source' })]
+            : []),
         ],
       ),
     ),
@@ -2021,7 +2425,9 @@ function importReviewView(): HTMLElement {
     ]),
   ]);
 
-  return frame([el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])])]);
+  return frame([
+    el('section', { class: 'card' }, [el('div', { class: 'disc-main' }, [art, form])]),
+  ]);
 }
 
 function importStatusEl(status: NonNullable<AppState['importStatus']>): HTMLElement {
@@ -2107,7 +2513,12 @@ async function deleteCatalogEntry(entry: CatalogEntry): Promise<void> {
 function catalogCard(entry: CatalogEntry): HTMLElement {
   const open = (): void => void openAlbum(entry.source);
   const cover = entry.coverDataUri
-    ? el('img', { class: 'omd-album-cover', src: entry.coverDataUri, alt: 'Cover art', onclick: open })
+    ? el('img', {
+        class: 'omd-album-cover',
+        src: entry.coverDataUri,
+        alt: 'Cover art',
+        onclick: open,
+      })
     : el('span', { class: 'omd-album-cover-empty', onclick: open }, [svgIcon('note', 40)]);
   const body = el('div', { class: 'omd-album-body', onclick: open }, [
     el('div', { class: 'omd-album-title', text: entry.discId }),
@@ -2150,12 +2561,17 @@ function catalogCard(entry: CatalogEntry): HTMLElement {
 function updateCatalogPlayButtons(): void {
   const status = player.getState().status;
   const current = state.nowPlaying?.disc.source;
-  document.querySelectorAll<HTMLButtonElement>('.omd-album-card [data-play-src]').forEach((button) => {
-    const src = button.getAttribute('data-play-src');
-    const playing = src === current && status === 'playing';
-    clearChildren(button);
-    button.append(svgIcon(playing ? 'pause' : 'play', 15), document.createTextNode(playing ? 'Pause' : 'Play'));
-  });
+  document
+    .querySelectorAll<HTMLButtonElement>('.omd-album-card [data-play-src]')
+    .forEach((button) => {
+      const src = button.getAttribute('data-play-src');
+      const playing = src === current && status === 'playing';
+      clearChildren(button);
+      button.append(
+        svgIcon(playing ? 'pause' : 'play', 15),
+        document.createTextNode(playing ? 'Pause' : 'Play'),
+      );
+    });
 }
 
 /** A reusable inline notice banner (error/warning/info). */
@@ -2178,7 +2594,10 @@ interface EditableMeta {
 }
 
 /** Validate one metadata field against the manifest schema; returns a message or undefined. */
-function fieldError(key: 'discId' | 'artist' | 'album' | 'year', value: string): string | undefined {
+function fieldError(
+  key: 'discId' | 'artist' | 'album' | 'year',
+  value: string,
+): string | undefined {
   const v = value.trim();
   if (key === 'discId') {
     if (!v) return 'Required.';
@@ -2196,7 +2615,11 @@ function fieldError(key: 'discId' | 'artist' | 'album' | 'year', value: string):
   return undefined;
 }
 
-function editField(edit: EditableMeta, label: string, key: 'discId' | 'artist' | 'album' | 'year'): HTMLElement {
+function editField(
+  edit: EditableMeta,
+  label: string,
+  key: 'discId' | 'artist' | 'album' | 'year',
+): HTMLElement {
   const extra: Record<string, string> =
     key === 'year'
       ? { inputmode: 'numeric', placeholder: 'e.g. 2009', maxlength: '4' }
@@ -2334,25 +2757,55 @@ function mixtapeView(): HTMLElement {
       el('p', { class: 'select-lead', text: 'No catalog albums to pull tracks from yet.' }),
     );
   } else {
+    const inMix = new Set(m.tracks.map((track) => track.sourcePath));
     for (const album of m.sources) {
       const list = el('ol', { class: 'mixtape-src-list' });
       album.tracks.forEach((track) => {
+        const added = inMix.has(track.path);
         list.append(
-          el('li', { class: 'mixtape-src-row' }, [
+          el('li', { class: `mixtape-src-row${added ? ' is-added' : ''}` }, [
             el('span', { class: 'mixtape-src-title', text: `${track.number}. ${track.title}` }),
-            el(
-              'button',
-              { class: 'link-btn', type: 'button', onclick: () => addMixtapeTrack(album, track) },
-              ['+ Add'],
-            ),
+            added
+              ? el(
+                  'button',
+                  {
+                    class: 'link-btn',
+                    type: 'button',
+                    title: 'Remove from your mixtape',
+                    onclick: () => removeMixtapeTrackBySource(track.path),
+                  },
+                  ['\u2713 Added'],
+                )
+              : el(
+                  'button',
+                  {
+                    class: 'link-btn',
+                    type: 'button',
+                    onclick: () => addMixtapeTrack(album, track),
+                  },
+                  ['+ Add'],
+                ),
           ]),
         );
       });
+      const remaining = album.tracks.filter((track) => !inMix.has(track.path)).length;
       sourcesCol.append(
         el('div', { class: 'mixtape-album' }, [
           el('div', { class: 'mixtape-album-head' }, [
-            el('div', { class: 'mixtape-album-title', text: album.album }),
-            el('div', { class: 'mixtape-album-sub', text: album.artist }),
+            el('div', {}, [
+              el('div', { class: 'mixtape-album-title', text: album.album }),
+              el('div', { class: 'mixtape-album-sub', text: album.artist }),
+            ]),
+            el(
+              'button',
+              {
+                class: 'link-btn',
+                type: 'button',
+                disabled: remaining === 0 ? true : null,
+                onclick: () => addMixtapeAlbum(album),
+              },
+              [remaining === 0 ? 'All added' : `+ Add all ${remaining}`],
+            ),
           ]),
           list,
         ]),
@@ -2392,6 +2845,7 @@ function mixtapeView(): HTMLElement {
       el('li', { class: 'mixtape-sel-empty', text: 'Add tracks from the left to build your mix.' }),
     );
   }
+  const mixSize = m.tracks.reduce((sum, t) => sum + t.sizeBytes, 0);
   m.tracks.forEach((t, i) => {
     selList.append(
       el('li', { class: 'mixtape-sel-row' }, [
@@ -2449,11 +2903,17 @@ function mixtapeView(): HTMLElement {
           artistInput,
         ]),
         el('div', { class: 'bc-actions' }, [
-          btn('Replace cover\u2026', () => void chooseMixtapeCover(), { icon: 'note', small: true }),
+          btn('Replace cover\u2026', () => void chooseMixtapeCover(), {
+            icon: 'note',
+            small: true,
+          }),
         ]),
       ]),
     ]),
-    el('div', { class: 'omd-field-label', text: `Tracks (${m.tracks.length})` }),
+    el('div', {
+      class: 'omd-field-label',
+      text: `Tracks (${m.tracks.length}${mixSize ? ` \u00b7 ${formatBytes(mixSize)}` : ''})`,
+    }),
     selList,
   ]);
 
@@ -2463,7 +2923,10 @@ function mixtapeView(): HTMLElement {
     el('div', { class: 'omd-scroll' }, [
       el('section', { class: 'card' }, [
         el('div', { class: 'mixtape-layout' }, [
-          el('div', { class: 'mixtape-col' }, [el('p', { class: 'eyebrow', text: 'Library' }), sourcesCol]),
+          el('div', { class: 'mixtape-col' }, [
+            el('p', { class: 'eyebrow', text: 'Library' }),
+            sourcesCol,
+          ]),
           el('div', { class: 'mixtape-col' }, [
             el('p', { class: 'eyebrow', text: 'Your mixtape' }),
             detail,
@@ -2541,7 +3004,9 @@ function catalogView(): HTMLElement {
   if (state.catalogLoading) {
     results = el('div', { class: 'omd-scroll' }, [spinnerRow('Scanning...')]);
   } else if (state.catalogError) {
-    results = el('div', { class: 'omd-scroll' }, [el('p', { class: 'omd-muted', text: state.catalogError })]);
+    results = el('div', { class: 'omd-scroll' }, [
+      el('p', { class: 'omd-muted', text: state.catalogError }),
+    ]);
   } else if (state.catalog && state.catalog.length > 0) {
     const matches = query
       ? state.catalog.filter((entry) =>
@@ -2595,7 +3060,12 @@ function hubPrimaryTile(opts: {
 }
 
 /** A compact secondary tile on the Home hub (Themes, Settings). */
-function hubMiniTile(opts: { icon: IconName; title: string; sub: string; onClick: () => void }): HTMLElement {
+function hubMiniTile(opts: {
+  icon: IconName;
+  title: string;
+  sub: string;
+  onClick: () => void;
+}): HTMLElement {
   return el('button', { class: 'hub-mini', type: 'button', onclick: opts.onClick }, [
     el('span', { class: 'hub-tile-art', 'aria-hidden': 'true' }, [svgIcon(opts.icon, 108)]),
     el('span', { class: 'hub-mini-icon' }, [svgIcon(opts.icon, 26)]),
@@ -2648,7 +3118,10 @@ function hubNowPlayingTile(): HTMLElement {
   const body: (Node | string)[] = [
     el('span', { class: 'hub-np-eyebrow', text: 'Now Playing' }),
     el('span', { class: 'hub-np-title', text: np ? np.disc.album : 'Nothing playing yet' }),
-    el('span', { class: 'hub-np-artist', text: np ? np.disc.artist : 'Insert a disc or pick from your catalog' }),
+    el('span', {
+      class: 'hub-np-artist',
+      text: np ? np.disc.artist : 'Insert a disc or pick from your catalog',
+    }),
   ];
   if (np) {
     body.push(hubEqEl());
@@ -2665,10 +3138,7 @@ function hubNowPlayingTile(): HTMLElement {
         else setView('disc');
       },
     },
-    [
-      el('span', { class: 'hub-np-art' }, [art]),
-      el('span', { class: 'hub-np-body' }, body),
-    ],
+    [el('span', { class: 'hub-np-art' }, [art]), el('span', { class: 'hub-np-body' }, body)],
   );
   if (np) startHubEq();
   return tile;
@@ -2764,7 +3234,12 @@ function homeView(): HTMLElement {
       ]),
       el('div', { class: 'hub-secondary' }, [
         hubNowPlayingTile(),
-        hubMiniTile({ icon: 'themes', title: 'Themes', sub: 'Customize the look.', onClick: () => setView('themes') }),
+        hubMiniTile({
+          icon: 'themes',
+          title: 'Themes',
+          sub: 'Customize the look.',
+          onClick: () => setView('themes'),
+        }),
         hubMiniTile({
           icon: 'settings',
           title: 'Settings',
@@ -2857,21 +3332,31 @@ function buildShell(): void {
     ),
   ]);
 
-  const brand = el('div', { class: 'app-brand', role: 'button', tabindex: '0', title: 'Home', onclick: () => setView('home') }, [
-    el('div', { class: 'brand-word' }, [
-      el('div', { class: 'omd', text: 'OMD' }),
-      el('div', { class: 'studio', text: 'STUDIO' }),
-    ]),
-    el('img', {
-      class: 'app-brand-disc',
-      src: logoFor(),
-      alt: '',
-    }),
-    el('div', {
-      class: 'app-brand-tag',
-      text: 'Turn audio albums into real, playable 8cm mini DVD-RW discs.',
-    }),
-  ]);
+  const brand = el(
+    'div',
+    {
+      class: 'app-brand',
+      role: 'button',
+      tabindex: '0',
+      title: 'Home',
+      onclick: () => setView('home'),
+    },
+    [
+      el('div', { class: 'brand-word' }, [
+        el('div', { class: 'omd', text: 'OMD' }),
+        el('div', { class: 'studio', text: 'STUDIO' }),
+      ]),
+      el('img', {
+        class: 'app-brand-disc',
+        src: logoFor(),
+        alt: '',
+      }),
+      el('div', {
+        class: 'app-brand-tag',
+        text: 'Turn audio albums into real, playable 8cm mini DVD-RW discs.',
+      }),
+    ],
+  );
 
   const nav = el('nav', { class: 'nav-list', 'aria-label': 'Main navigation' });
   for (const item of NAV) {
@@ -2901,6 +3386,50 @@ function settleFrames(ms: number): Promise<void> {
 }
 
 /**
+ * Harness scene: open the mixtape builder and populate it with a few fixture
+ * tracks and a name, so the captured frame shows a real mix in progress rather
+ * than an empty builder.
+ */
+async function harnessMixtapeScene(): Promise<void> {
+  state.createDisc = undefined;
+  state.importReview = undefined;
+  setView('catalog');
+  await startMixtape('catalog');
+  const mix = state.mixtape;
+  if (!mix?.sources?.length) return;
+  let added = 0;
+  for (const album of mix.sources) {
+    for (const track of album.tracks) {
+      addMixtapeTrack(album, track);
+      added += 1;
+      if (added >= 6) break;
+    }
+    if (added >= 6) break;
+  }
+  mix.name = 'Late Night Aqua';
+  renderMain();
+}
+
+/**
+ * Harness scene: pull the first catalog package into the burn flow, landing on
+ * the "ready to burn" screen (album summary plus burn controls).
+ */
+async function harnessBurnReadyScene(): Promise<void> {
+  state.mixtape = undefined;
+  state.importReview = undefined;
+  ensureCreateDisc();
+  setView('burn');
+  if (!state.libraryDir) {
+    const dir = await window.omd.chooseLibraryFolder();
+    if (dir) setCatalogDir(dir);
+  }
+  if (state.libraryDir && !state.catalog?.length) await rescanLibrary();
+  const entry = state.catalog?.[0];
+  if (entry) await loadPackageForBurn(entry.source);
+  else await importPackageForBurn();
+}
+
+/**
  * Install the screenshot-harness surface on `window.__omdHarness`. The main
  * process drives it (via executeJavaScript) to switch views and populate the
  * transport before capturing a frame. Only wired up in headless/harness mode.
@@ -2909,7 +3438,9 @@ function installHarness(): void {
   const harness: OmdHarness = {
     ready: () => Promise.resolve(),
     goto: async (view, settleMs = 900) => {
-      if (NAV.some((item) => item.id === view)) setView(view as ViewId);
+      if (view === 'mixtape') await harnessMixtapeScene();
+      else if (view === 'burn-ready') await harnessBurnReadyScene();
+      else if (NAV.some((item) => item.id === view)) setView(view as ViewId);
       await settleFrames(settleMs);
     },
     loadFixtureDisc: async () => {

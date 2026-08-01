@@ -13,8 +13,24 @@
 import type { StudioDataMode } from '../shared/types';
 
 /** Every navigable view, in the order screenshots are captured for `all`. */
-export const ALL_VIEWS = ['home', 'disc', 'catalog', 'burn', 'labels', 'themes', 'settings'] as const;
+export const ALL_VIEWS = [
+  'home',
+  'disc',
+  'catalog',
+  'burn',
+  'labels',
+  'themes',
+  'settings',
+] as const;
 export type StudioView = (typeof ALL_VIEWS)[number];
+
+/**
+ * Composed capture scenes: harness ids that drive a multi-step flow (not a plain
+ * nav view) before the shot. Opt-in only; `all` never expands to include them.
+ */
+export const CAPTURE_SCENES = ['mixtape', 'burn-ready'] as const;
+export type CaptureScene = (typeof CAPTURE_SCENES)[number];
+export type CaptureTarget = StudioView | CaptureScene;
 
 /** Fully-resolved runtime configuration for the main process. */
 export interface StudioRuntimeConfig {
@@ -22,8 +38,8 @@ export interface StudioRuntimeConfig {
   dataMode: StudioDataMode;
   /** Run without showing an interactive window (implied by screenshots). */
   headless: boolean;
-  /** Views to screenshot; empty means "don't capture, just run". */
-  screenshotViews: StudioView[];
+  /** Views/scenes to screenshot; empty means "don't capture, just run". */
+  screenshotViews: CaptureTarget[];
   /** Folder screenshots are written to. */
   outDir: string;
   /** Theme id to apply on boot, if any. */
@@ -40,6 +56,10 @@ export interface StudioRuntimeConfig {
 
 function isView(value: string): value is StudioView {
   return (ALL_VIEWS as readonly string[]).includes(value);
+}
+
+function isCaptureTarget(value: string): value is CaptureTarget {
+  return isView(value) || (CAPTURE_SCENES as readonly string[]).includes(value);
 }
 
 /** Read `--omd-<name>` (with optional `=value`) from argv; `null` when absent. */
@@ -74,16 +94,19 @@ function parseSize(value: string | null): { width: number; height: number } | nu
   return { width: Number(match[1]), height: Number(match[2]) };
 }
 
-/** Expand a screenshots value (`all`, a CSV list, or empty) into concrete views. */
-function parseScreenshotViews(value: string | null): StudioView[] {
+/**
+ * Expand a screenshots value (`all`, a CSV list, or empty) into concrete capture
+ * targets. `all`/bare expands to every nav view; composed scenes are opt-in and
+ * only ever come from an explicit list.
+ */
+function parseScreenshotViews(value: string | null): CaptureTarget[] {
   if (value === null) return [];
   if (value === '' || value.toLowerCase() === 'all') return [...ALL_VIEWS];
-  const views = value
+  return value
     .split(',')
     .map((part) => part.trim().toLowerCase())
     .filter((part) => part.length > 0)
-    .filter(isView);
-  return views;
+    .filter(isCaptureTarget);
 }
 
 /**
@@ -97,10 +120,13 @@ export function parseRuntimeConfig(
   const dataRaw = (pick(argv, 'data', env.OMD_STUDIO_DATA) ?? 'real').toLowerCase();
   const dataMode: StudioDataMode = dataRaw === 'fixtures' ? 'fixtures' : 'real';
 
-  const screenshotViews = parseScreenshotViews(pick(argv, 'screenshots', env.OMD_STUDIO_SCREENSHOTS));
+  const screenshotViews = parseScreenshotViews(
+    pick(argv, 'screenshots', env.OMD_STUDIO_SCREENSHOTS),
+  );
 
   // Screenshots require a headless capture surface, so they imply headless.
-  const headless = screenshotViews.length > 0 || truthy(pick(argv, 'headless', env.OMD_STUDIO_HEADLESS));
+  const headless =
+    screenshotViews.length > 0 || truthy(pick(argv, 'headless', env.OMD_STUDIO_HEADLESS));
 
   const outDir = pick(argv, 'out', env.OMD_STUDIO_OUT) || 'screenshots';
   const themeId = pick(argv, 'theme', env.OMD_STUDIO_THEME) || undefined;
@@ -108,7 +134,10 @@ export function parseRuntimeConfig(
   const viewRaw = (pick(argv, 'view', env.OMD_STUDIO_VIEW) ?? '').toLowerCase();
   const initialView = isView(viewRaw) ? viewRaw : undefined;
 
-  const windowSize = parseSize(pick(argv, 'size', env.OMD_STUDIO_SIZE)) ?? { width: 1440, height: 900 };
+  const windowSize = parseSize(pick(argv, 'size', env.OMD_STUDIO_SIZE)) ?? {
+    width: 1440,
+    height: 900,
+  };
   // Kiosk is never implied: a desktop session must not lose its window chrome.
   const kiosk = !headless && truthy(pick(argv, 'kiosk', env.OMD_STUDIO_KIOSK));
   const resetFixtures = truthy(pick(argv, 'reset-fixtures', env.OMD_STUDIO_RESET_FIXTURES));

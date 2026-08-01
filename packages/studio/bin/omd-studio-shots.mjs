@@ -29,8 +29,9 @@ Usage:
   omd-studio-shots [options]
 
 Options:
-  --views <all|list>   Views to capture (comma-separated), or "all". Default: all.
+  --views <all|list>   Views/scenes to capture (comma-separated), or "all". Default: all.
                        Views: home, disc, catalog, burn, labels, themes, settings.
+                       Scenes (composed flows): mixtape, burn-ready.
   --out <dir>          Output folder for PNGs (relative to cwd). Default: screenshots.
   --data <mode>        Data source: fixtures (default, copyright-safe) or real.
   --theme <id>         Theme to apply (for example midnight, daylight, ember).
