@@ -188,6 +188,11 @@ isBlank(drive), blank(drive), writeImage(request) }`, plus optional
 backend, and a `BurnDrive` carries the `mountPath` where the disc is read for
 verification.
 
+For per-call injection, pass `backend` / `imageBackend`. To swap the backend
+process-wide (for example a fake drive in tests or a headless tool), call
+`setBurnBackendOverride(backend)` and `setDiscImageBackendOverride(backend)`; pass
+`undefined` to restore the platform default.
+
 Types: `BurnImageOptions`, `BurnImageResult`, `BurnPackageOptions`, `BurnBackend`,
 `BurnDrive`, `BurnImageRequest`, `MediaInfo`, `DiscMediaKind`, `BurnProgress`,
 `BurnPhase`.

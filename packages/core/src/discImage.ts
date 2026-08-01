@@ -53,16 +53,30 @@ export interface BuildDiscImageResult {
   backend: string;
 }
 
+/** Optional process-wide backend override (used by tests and Studio fixtures). */
+let discImageBackendOverride: DiscImageBackend | undefined;
+
+/**
+ * Override the disc-image backend returned by {@link resolveDiscImageBackend}
+ * process-wide, so the imaging orchestration can run without optical tooling
+ * (for example OMD Studio's fixtures/headless mode). Pass `undefined` to restore
+ * the platform default.
+ */
+export function setDiscImageBackendOverride(backend: DiscImageBackend | undefined): void {
+  discImageBackendOverride = backend;
+}
+
 /**
  * Resolve the disc-image backend for the current platform.
  *
  * v0.2 ships a Windows (IMAPI2) backend only. Linux and macOS backends are
  * planned follow-ups; see the roadmap. On unsupported platforms this returns the
  * Windows backend, whose {@link DiscImageBackend.isAvailable} reports `false` so
- * {@link buildDiscImage} fails with a clear message.
+ * {@link buildDiscImage} fails with a clear message. A backend installed with
+ * {@link setDiscImageBackendOverride} takes precedence when present.
  */
 export function resolveDiscImageBackend(): DiscImageBackend {
-  return new WindowsImapiImageBackend();
+  return discImageBackendOverride ?? new WindowsImapiImageBackend();
 }
 
 /**

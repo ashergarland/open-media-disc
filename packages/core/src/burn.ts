@@ -257,15 +257,30 @@ export async function burnImage(options: BurnImageOptions): Promise<BurnImageRes
   return { imagePath, drive, blanked, verified, verification, ejected, media, backend: backend.name };
 }
 
+/** Optional process-wide backend override (used by tests and Studio fixtures). */
+let burnBackendOverride: BurnBackend | undefined;
+
+/**
+ * Override the burn backend returned by {@link resolveBurnBackend} process-wide.
+ *
+ * This lets tooling run the real burn orchestration against a fake drive with no
+ * optical hardware (for example OMD Studio's fixtures/headless mode). Pass
+ * `undefined` to restore the platform default.
+ */
+export function setBurnBackendOverride(backend: BurnBackend | undefined): void {
+  burnBackendOverride = backend;
+}
+
 /**
  * Resolve the burn backend for the current platform.
  *
  * v0.2 ships a Windows (IMAPI2) backend only. Linux and macOS backends are
  * planned follow-ups; see the roadmap. On unsupported platforms the returned
- * backend's {@link BurnBackend.isAvailable} reports `false`.
+ * backend's {@link BurnBackend.isAvailable} reports `false`. A backend installed
+ * with {@link setBurnBackendOverride} takes precedence when present.
  */
 export function resolveBurnBackend(): BurnBackend {
-  return new WindowsImapiBurnBackend();
+  return burnBackendOverride ?? new WindowsImapiBurnBackend();
 }
 
 /** Options for {@link burnPackage}. */
