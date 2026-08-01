@@ -135,6 +135,15 @@ body {
   color: var(--omd-text);
 }
 
+/* Border-box everywhere: the fit-to-viewport layouts combine height:100%/vh
+   with padding, which overflows under the default content-box sizing. */
+.app-shell,
+.app-shell *,
+.app-shell *::before,
+.app-shell *::after {
+  box-sizing: border-box;
+}
+
 /* Full-screen touch shell: no sidebar; content scrolls, transport docked. */
 .app-shell {
   grid-template-columns: minmax(0, 1fr);
@@ -170,27 +179,27 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: clamp(10px, 1.6vw, 16px) clamp(14px, 2.4vw, 28px);
+  padding: clamp(8px, 1.6vmin, 16px) clamp(14px, 2.4vw, 28px);
   background: color-mix(in srgb, var(--omd-bg) 84%, transparent);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--omd-border);
 }
 .omd-topbar-title {
-  font: 700 clamp(18px, 2.4vw, 26px) / 1 var(--omd-font);
+  font: 700 clamp(17px, 2.6vmin, 26px) / 1 var(--omd-font);
 }
 .omd-screen-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: clamp(16px, 2.4vw, 32px);
+  padding: clamp(12px, 2.2vmin, 32px) clamp(14px, 2.4vw, 32px);
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 2vw, 22px);
+  gap: clamp(10px, 1.8vmin, 22px);
 }
 .omd-stack {
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 2vw, 22px);
+  gap: clamp(10px, 1.8vmin, 22px);
 }
 /* Fill the screen body exactly so only inner scroll regions scroll. */
 .omd-fill {
@@ -202,6 +211,29 @@ body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+/* Touch scrolling: a fling inside a bounded region must not chain to the page,
+   and the scrollbar is wide enough to grab without being the only affordance. */
+.omd-screen-body,
+.omd-scroll,
+.omd-tracklist-rows,
+.omd-picker {
+  overscroll-behavior: contain;
+}
+.app-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.app-shell ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--omd-border-strong);
+}
+.app-shell ::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--omd-accent) 60%, var(--omd-border-strong));
+}
+.app-shell ::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Buttons. */
@@ -279,10 +311,13 @@ body {
   border-color: color-mix(in srgb, var(--omd-accent) 55%, transparent);
   transform: translateY(-2px);
 }
+/* The cover is capped by viewport height as well as column width, so a short
+   panel still shows the card's title and actions without scrolling. */
 .omd-album-cover,
 .omd-album-cover-empty {
   aspect-ratio: 1 / 1;
   width: 100%;
+  max-height: clamp(72px, 20vmin, 220px);
   object-fit: cover;
   background: var(--omd-surface);
   cursor: pointer;
@@ -302,12 +337,21 @@ body {
   cursor: pointer;
   flex: 1 1 auto;
 }
+/* Bounded to a fixed number of lines so every card is the same height and the
+   actions stay near the top of a short scroll region. */
 .omd-album-title {
   font: 700 15px / 1.25 var(--omd-font);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .omd-album-sub {
   font: 400 13px / 1.3 var(--omd-font);
   color: var(--omd-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .omd-album-actions {
   display: flex;
@@ -316,7 +360,7 @@ body {
 }
 .omd-chip-btn {
   flex: 1;
-  min-height: 40px;
+  min-height: var(--omd-tap);
   border-radius: 10px;
   border: 1px solid var(--omd-border);
   background: var(--omd-surface);
@@ -340,23 +384,44 @@ body {
   color: var(--omd-danger);
 }
 
-/* Album detail: hero art + info, then a track scroll-view. */
+/* Album detail: hero art + info, then a track scroll-view.
+   Stacked by default, with a guaranteed floor for the track list. */
 .omd-album {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(16px, 2.4vw, 28px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, auto) minmax(min(200px, 34vh), 1fr);
+  gap: clamp(12px, 2vmin, 28px);
   flex: 1;
   min-height: 0;
 }
+/* Wide and landscape (the Pi panel, and any desktop window): the head sits
+   beside the track list so a short screen still shows several tracks. */
+@media (min-width: 720px) and (min-aspect-ratio: 5 / 4) {
+  .omd-album {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+/* The head is the album's own bounded scroller: art, metadata, actions, and
+   the disc usage strip scroll here rather than pushing the page. */
 .omd-album-head {
+  align-self: stretch;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(16px, 3vw, 32px);
+  gap: clamp(14px, 3vw, 32px);
   align-items: flex-start;
+  align-content: flex-start;
+}
+/* The disc usage strip always takes its own line under the metadata. */
+.omd-album-head > .card {
+  flex: 1 1 100%;
 }
 .omd-album-hero-art {
   flex: 0 0 auto;
-  width: clamp(160px, 30vw, 300px);
+  width: clamp(96px, 22vmin, 300px);
   aspect-ratio: 1 / 1;
   border-radius: var(--omd-radius-lg);
   overflow: hidden;
@@ -378,19 +443,19 @@ body {
   color: var(--omd-text-dim);
 }
 .omd-album-info {
-  flex: 1 1 320px;
+  flex: 1 1 260px;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: clamp(8px, 1.4vmin, 14px);
 }
 .omd-album-name {
-  font: 800 clamp(24px, 3.4vw, 40px) / 1.05 var(--omd-font);
+  font: 800 clamp(20px, 3.4vmin, 40px) / 1.05 var(--omd-font);
   letter-spacing: -0.01em;
 }
 .omd-album-by {
   color: var(--omd-text-dim);
-  font-size: clamp(16px, 2vw, 20px);
+  font-size: clamp(14px, 2.2vmin, 20px);
 }
 .omd-facts {
   display: flex;
@@ -588,15 +653,24 @@ body {
 }
 .omd-kv-row {
   display: grid;
-  grid-template-columns: minmax(120px, 240px) 1fr;
+  grid-template-columns: minmax(120px, 240px) minmax(0, 1fr);
   gap: 12px;
   padding: 10px 0;
+}
+/* Stack the pair when there is no room for two columns. */
+@media (max-width: 560px) {
+  .omd-kv-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
 }
 .omd-kv-row + .omd-kv-row {
   border-top: 1px solid var(--omd-border);
 }
 .omd-kv-label {
   color: var(--omd-text-dim);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .omd-kv-value {
   color: var(--omd-text);
@@ -694,7 +768,7 @@ body {
   align-items: center;
   gap: 16px;
   text-align: left;
-  padding: clamp(16px, 2vw, 24px);
+  padding: clamp(12px, 2vmin, 24px);
   border-radius: var(--omd-radius);
   border: 1px solid var(--omd-border);
   background: var(--omd-surface-2);
@@ -711,8 +785,8 @@ body {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
+  width: clamp(44px, 7vmin, 56px);
+  height: clamp(44px, 7vmin, 56px);
   border-radius: 14px;
   color: var(--omd-accent);
   background: color-mix(in srgb, var(--omd-accent) 14%, transparent);
@@ -774,10 +848,6 @@ body {
 /* The Home hub: a full-bleed, fit-to-viewport surface (brand + search, then
    the core-job tiles, then secondary access). Everything reads --omd-* tokens
    so it renders correctly in every theme. */
-.hub,
-.hub * {
-  box-sizing: border-box;
-}
 .hub {
   height: 100%;
   display: flex;
@@ -793,12 +863,14 @@ body {
     linear-gradient(180deg, var(--omd-surface), var(--omd-bg));
 }
 
-/* Top bar: brand, a centered catalog search, and now-playing status pills. */
+/* Top bar: brand, a centered catalog search, and now-playing status pills.
+   It wraps rather than overflowing once the three groups no longer fit. */
 .hub-bar {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: clamp(12px, 2vw, 28px);
+  gap: clamp(10px, 2vw, 28px);
 }
 .hub-brand {
   flex: 0 0 auto;
@@ -829,7 +901,7 @@ body {
 }
 
 .hub-search {
-  flex: 1 1 auto;
+  flex: 1 1 220px;
   min-width: 0;
   max-width: 640px;
   margin: 0 auto;
@@ -869,8 +941,11 @@ body {
 }
 
 .hub-bar-status {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
 }
@@ -878,6 +953,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   height: 38px;
   padding: 0 14px;
   border-radius: 999px;
@@ -886,6 +962,9 @@ body {
   color: var(--omd-text-dim);
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hub-pill--verified {
   color: var(--omd-success);
@@ -1023,7 +1102,8 @@ body {
   font-size: clamp(12px, 1.9vmin, 14px);
 }
 
-/* Secondary row: a wide Now Playing tile plus two compact tiles. */
+/* Secondary row: a wide Now Playing tile plus two compact tiles. Below the
+   width where three tiles stop being readable, Now Playing takes its own row. */
 .hub-secondary {
   min-height: 0;
   display: grid;
@@ -1031,6 +1111,18 @@ body {
   grid-auto-rows: minmax(0, 1fr);
   gap: clamp(10px, 1.6vmin, 20px);
   overflow: hidden;
+}
+@media (max-width: 620px) {
+  .hub-secondary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .hub-np {
+    grid-column: 1 / -1;
+  }
+  /* The tile is half as tall here; the codec line is already in the top bar. */
+  .hub-np-meta {
+    display: none;
+  }
 }
 
 .hub-np {
@@ -1041,10 +1133,10 @@ body {
 }
 .hub-np-art {
   flex: 0 0 auto;
-  align-self: stretch;
-  height: 100%;
+  align-self: center;
+  width: clamp(56px, 34%, 200px);
+  max-height: 100%;
   aspect-ratio: 1 / 1;
-  max-width: 44%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1064,13 +1156,19 @@ body {
   justify-content: center;
   gap: clamp(3px, 0.8vmin, 6px);
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
-/* Live equalizer: each bar's height is set from the analyser via --h (0..1). */
+/* Live equalizer: each bar's height is set from the analyser via --h (0..1).
+   It absorbs the tile's spare height and collapses first when space runs out,
+   so the title and artist are never the thing that gets clipped. */
 .hub-eq {
   display: flex;
   align-items: flex-end;
   gap: clamp(2px, 0.6vmin, 4px);
-  height: clamp(20px, 5vmin, 46px);
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: clamp(18px, 5vmin, 46px);
   margin-top: clamp(2px, 0.8vmin, 6px);
 }
 .hub-eq-bar {
@@ -1082,6 +1180,14 @@ body {
   transform-origin: bottom;
   transition: transform 0.06s linear;
   background: linear-gradient(180deg, var(--omd-accent), color-mix(in srgb, var(--omd-accent) 45%, transparent));
+}
+/* The text lines keep their full line height; the equalizer below absorbs the
+   spare space and collapses first, so a line is never squeezed and clipped. */
+.hub-np-eyebrow,
+.hub-np-title,
+.hub-np-artist,
+.hub-np-meta {
+  flex: 0 0 auto;
 }
 .hub-np-eyebrow {
   text-transform: uppercase;
@@ -1176,6 +1282,23 @@ body {
   gap: 12px;
   min-height: 0;
 }
+/* Too narrow for two columns: collapse the two bounded scrollers into one so
+   the picker and the sheet options share a single scroll region. */
+@media (max-width: 700px) {
+  .omd-labels {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .omd-labels-col {
+    flex: 0 0 auto;
+  }
+  .omd-labels-col > .omd-scroll {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+}
 .omd-labels-head {
   display: flex;
   align-items: center;
@@ -1264,7 +1387,7 @@ body {
 }
 .omd-stepper-btn {
   width: var(--omd-tap);
-  height: 40px;
+  height: var(--omd-tap);
   display: grid;
   place-items: center;
   border: 0;
@@ -1581,7 +1704,7 @@ body {
   border-radius: var(--omd-radius) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
-  padding: clamp(16px, 2vw, 24px);
+  padding: clamp(12px, 2vmin, 24px);
   color: var(--omd-text);
 }
 .card::before,
@@ -1669,12 +1792,15 @@ body {
   color: var(--omd-text) !important;
 }
 
-/* Stable, centered dock: equal left/right columns keep the transport in the
-   true middle; the meta truncates so the layout does not resize per album. */
+/* Stable, centered dock: the two side groups share a flex basis and grow
+   factor so the transport stays centered whatever the album is called, and
+   the whole row wraps instead of overlapping once it runs out of width. */
 .now-playing-dock {
-  grid-template-columns: 1fr minmax(300px, 540px) 1fr !important;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .npd-now {
+  flex: 1 1 190px;
   min-width: 0;
 }
 .npd-meta {
@@ -1683,7 +1809,13 @@ body {
   overflow: hidden !important;
 }
 .npd-center {
+  flex: 2 1 280px;
   width: 100%;
+  max-width: 540px;
+}
+.npd-side {
+  flex: 1 1 190px;
+  min-width: 0;
 }
 
 /* Small decorative "now playing" bars (the real analyzer lives on Now Playing). */
@@ -1803,10 +1935,10 @@ body {
  * own the layout so the dock no longer needs the theme stylesheet's structure.
  */
 .now-playing-dock {
-  display: grid;
+  display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 14px 18px;
+  gap: clamp(10px, 1.6vw, 20px);
+  padding: clamp(8px, 1.4vmin, 14px) clamp(10px, 1.6vw, 18px);
   border-radius: 18px;
 }
 .npd-now {
@@ -1837,14 +1969,14 @@ body {
 }
 .npd-center {
   display: grid;
-  gap: 10px;
+  gap: clamp(4px, 1vmin, 10px);
   justify-items: center;
   min-width: 0;
 }
 .npd-transport {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(6px, 1.4vw, 12px);
 }
 .npd-scrubber {
   display: flex;
@@ -1864,7 +1996,7 @@ body {
 }
 .npd-side {
   display: grid;
-  gap: 9px;
+  gap: clamp(5px, 1vmin, 9px);
   justify-items: end;
   align-content: center;
 }
@@ -1898,9 +2030,10 @@ body {
   height: 14px;
 }
 
-/* Player-control buttons (the dock transport). */
+/* Player-control buttons (the dock transport). They shrink with the viewport
+   but never below the 44px minimum touch target. */
 .pc-button {
-  --pc-size: 48px;
+  --pc-size: clamp(var(--omd-tap), 8vmin, 48px);
   position: relative;
   isolation: isolate;
   width: var(--pc-size);
@@ -1911,10 +2044,10 @@ body {
   cursor: pointer;
 }
 .pc-button.pc-sm {
-  --pc-size: 48px;
+  --pc-size: clamp(var(--omd-tap), 8vmin, 48px);
 }
 .pc-button.primary {
-  --pc-size: 56px;
+  --pc-size: clamp(var(--omd-tap), 9.4vmin, 56px);
 }
 .pc-content {
   position: relative;

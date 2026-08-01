@@ -2,8 +2,9 @@
  * OMD Studio runtime configuration.
  *
  * Parses app-specific flags (and matching environment variables) that select the
- * data source and drive the headless screenshot harness. Flags are prefixed
- * `--omd-` so they never collide with Chromium/Electron's own switches.
+ * data source, drive the headless screenshot harness, and enable appliance
+ * (kiosk) mode. Flags are prefixed `--omd-` so they never collide with
+ * Chromium/Electron's own switches.
  *
  * This module is intentionally free of any Electron or Node filesystem imports
  * so it can be unit-tested as pure logic.
@@ -31,6 +32,8 @@ export interface StudioRuntimeConfig {
   initialView?: StudioView;
   /** Window size used for the (hidden) capture surface. */
   windowSize: { width: number; height: number };
+  /** Appliance mode: launch full-screen with no window chrome (opt-in). */
+  kiosk: boolean;
   /** Regenerate the fixture library even if it already exists. */
   resetFixtures: boolean;
 }
@@ -106,6 +109,8 @@ export function parseRuntimeConfig(
   const initialView = isView(viewRaw) ? viewRaw : undefined;
 
   const windowSize = parseSize(pick(argv, 'size', env.OMD_STUDIO_SIZE)) ?? { width: 1440, height: 900 };
+  // Kiosk is never implied: a desktop session must not lose its window chrome.
+  const kiosk = !headless && truthy(pick(argv, 'kiosk', env.OMD_STUDIO_KIOSK));
   const resetFixtures = truthy(pick(argv, 'reset-fixtures', env.OMD_STUDIO_RESET_FIXTURES));
 
   return {
@@ -116,6 +121,7 @@ export function parseRuntimeConfig(
     ...(themeId ? { themeId } : {}),
     ...(initialView ? { initialView } : {}),
     windowSize,
+    kiosk,
     resetFixtures,
   };
 }

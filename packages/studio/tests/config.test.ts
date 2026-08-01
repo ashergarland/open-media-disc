@@ -9,6 +9,7 @@ describe('parseRuntimeConfig', () => {
     expect(config.screenshotViews).toEqual([]);
     expect(config.outDir).toBe('screenshots');
     expect(config.windowSize).toEqual({ width: 1440, height: 900 });
+    expect(config.kiosk).toBe(false);
     expect(config.resetFixtures).toBe(false);
     expect(config.themeId).toBeUndefined();
     expect(config.initialView).toBeUndefined();
@@ -70,5 +71,15 @@ describe('parseRuntimeConfig', () => {
 
   it('parses the reset-fixtures flag', () => {
     expect(parseRuntimeConfig(['--omd-reset-fixtures'], {}).resetFixtures).toBe(true);
+  });
+
+  it('enables kiosk mode from a flag or the environment', () => {
+    expect(parseRuntimeConfig(['--omd-kiosk'], {}).kiosk).toBe(true);
+    expect(parseRuntimeConfig([], { OMD_STUDIO_KIOSK: '1' }).kiosk).toBe(true);
+  });
+
+  it('never enters kiosk mode headlessly', () => {
+    expect(parseRuntimeConfig(['--omd-kiosk', '--omd-headless'], {}).kiosk).toBe(false);
+    expect(parseRuntimeConfig(['--omd-kiosk', '--omd-screenshots=home'], {}).kiosk).toBe(false);
   });
 });

@@ -119,12 +119,26 @@ function encodeBootConfig(boot: StudioBootConfig): string {
   return `--omd-studio-config=${Buffer.from(JSON.stringify(boot), 'utf8').toString('base64')}`;
 }
 
-function createWindow(boot: StudioBootConfig, headless: boolean, size: { width: number; height: number }): BrowserWindow {
+function createWindow(
+  boot: StudioBootConfig,
+  headless: boolean,
+  size: { width: number; height: number },
+  kiosk: boolean,
+): BrowserWindow {
   const window = new BrowserWindow({
+    // Content size, so --omd-size is the CSS viewport the layout actually sees.
+    useContentSize: true,
     width: size.width,
     height: size.height,
+    // Below this the fit-to-viewport layouts stop being usable; it is under the
+    // 7 inch Pi panel (800x480) and a portrait phone width, which both work.
+    minWidth: 420,
+    minHeight: 380,
     backgroundColor: '#0d131e',
     show: false,
+    // Appliance mode: no chrome, no menu, full screen, not casually exitable.
+    kiosk,
+    fullscreen: kiosk,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -135,11 +149,12 @@ function createWindow(boot: StudioBootConfig, headless: boolean, size: { width: 
   });
 
   window.removeMenu();
-  // A visible, maximized window is only shown for a normal interactive session;
-  // the headless screenshot harness captures the hidden window off-screen.
+  // A visible window is only shown for a normal interactive session; the
+  // headless screenshot harness captures the hidden window off-screen. Kiosk
+  // is already full-screen, so only a desktop window is maximized.
   if (!headless) {
     window.once('ready-to-show', () => {
-      window.maximize();
+      if (!kiosk) window.maximize();
       window.show();
     });
   }
@@ -1019,7 +1034,7 @@ void app.whenReady().then(async () => {
     boot.libraryDir = library.libraryDir;
   }
 
-  const window = createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize);
+  const window = createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize, runtimeConfig.kiosk);
 
   // In screenshot mode, drive the app through each view, capture, then quit.
   if (runtimeConfig.screenshotViews.length > 0) {
@@ -1041,7 +1056,7 @@ void app.whenReady().then(async () => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize);
+      createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize, runtimeConfig.kiosk);
     }
   });
 });

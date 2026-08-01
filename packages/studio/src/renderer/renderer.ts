@@ -1326,14 +1326,15 @@ function albumDetail(disc: StudioDiscInfo, source: 'disc' | 'album'): HTMLElemen
   ]);
 
   const albumBlock = el('div', { class: 'omd-album' }, [
-    el('div', { class: 'omd-album-head' }, [heroArt, info]),
+    el('div', { class: 'omd-album-head' }, [
+      heroArt,
+      info,
+      ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
+    ]),
     trackPanel(disc, currentIndex, (index) => playFrom(disc, source, index)),
   ]);
 
-  return [
-    albumBlock,
-    ...(disc.discCapacityBytes ? [discUsageCard(disc)] : []),
-  ];
+  return [albumBlock];
 }
 
 function playerView(): HTMLElement {

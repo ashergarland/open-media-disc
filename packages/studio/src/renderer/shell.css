@@ -504,7 +504,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 20px;
+  gap: clamp(12px, 2vmin, 20px);
 }
 .disc-usage .meter-wrap {
   flex: 1;
@@ -546,10 +546,11 @@ body {
   text-align: center;
 }
 
-/* Dock cover thumbnail (larger than the showcase default). */
+/* Dock cover thumbnail (larger than the showcase default, but it gives up
+   space first on a short panel so the transport keeps its size). */
 .now-playing-dock .npd-thumb {
-  width: 76px;
-  height: 76px;
+  width: clamp(44px, 11vmin, 76px);
+  height: clamp(44px, 11vmin, 76px);
   border-radius: 15px;
 }
 img.npd-thumb {
@@ -568,7 +569,7 @@ img.npd-thumb {
 .cartridge {
   position: relative;
   flex: 0 0 auto;
-  width: clamp(150px, 32%, 210px);
+  width: clamp(84px, 20vmin, 210px);
 }
 .cartridge-img {
   display: block;

@@ -61,11 +61,27 @@ flags (env vars in parentheses):
 | `--omd-out=<dir>` (`OMD_STUDIO_OUT`) | Screenshot output folder. Default `./screenshots`. |
 | `--omd-view=<id>` (`OMD_STUDIO_VIEW`) | Open a specific view on boot. |
 | `--omd-theme=<id>` (`OMD_STUDIO_THEME`) | Apply a theme on boot. |
-| `--omd-size=<WxH>` (`OMD_STUDIO_SIZE`) | Capture window size. Default `1440x900`. |
+| `--omd-size=<WxH>` (`OMD_STUDIO_SIZE`) | Window content size (the CSS viewport). Default `1440x900`. |
+| `--omd-kiosk` (`OMD_STUDIO_KIOSK`) | Appliance mode: launch full-screen with no window chrome. Ignored headlessly. |
 | `--omd-reset-fixtures` (`OMD_STUDIO_RESET_FIXTURES`) | Regenerate the fixture library. |
 
 Views: `home`, `disc`, `catalog`, `burn`, `labels`, `themes`, `settings`. The
 fixture library is generated once under the app's user-data folder.
+
+## Screen sizes and kiosk mode
+
+The UI is one fit-to-viewport surface: the page itself never scrolls, only
+bounded regions do, and layouts reflow by available width rather than by
+device. It targets a 7 to 10 inch touch panel (landscape is the design target,
+portrait works) up to a desktop window, and down to a phone width.
+
+By default the app opens as a normal maximized window with no menu bar. Pass
+`--omd-kiosk` (or set `OMD_STUDIO_KIOSK=1`) on the Raspberry Pi build to launch
+full-screen with no window chrome. To check a layout at a panel size:
+
+```bash
+node packages/studio/bin/omd-studio-shots.mjs --size 1024x600 --out ./shots
+```
 
 ## Layout
 

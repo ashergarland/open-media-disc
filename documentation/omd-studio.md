@@ -332,6 +332,23 @@ has the full table. Views are home, disc, catalog, burn, labels, themes, and
 settings; the fixtures library is generated once under the app's user-data
 folder.
 
+## Screen sizes and kiosk mode
+
+OMD Studio is one touch-first surface for both the desktop and the Raspberry Pi
+panel. Every screen fits the viewport: the page itself never scrolls, only
+bounded regions such as a track list or a catalog grid do, and fixed chrome (the
+top bar and the transport dock) stays put while those regions scroll. Layouts
+reflow by available width rather than assuming a device, so the supported range
+runs from a 7 inch landscape panel (800 by 480) through a desktop window and
+down to a phone width. Landscape is the design target; portrait works and is
+verified.
+
+On the desktop the app launches as a normal maximized window with the menu bar
+hidden. Appliance behavior is opt-in: pass `--omd-kiosk` (or set
+`OMD_STUDIO_KIOSK=1`) on the Pi build to launch full-screen with no window
+chrome. To review a layout at a given panel size, the screenshot harness takes a
+`--size` in CSS pixels, for example `--size 1024x600`.
+
 ## Version checkpoint
 
 These features land incrementally under the OMD Studio (alpha) milestone. Each
