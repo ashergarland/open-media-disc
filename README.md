@@ -86,6 +86,21 @@ if (!result.valid) {
 
 See the [SDK Reference](./documentation/sdk-reference.md) for the full API.
 
+## OMD Studio (desktop app)
+
+OMD Studio is the Electron desktop app for the same workflows with a GUI: browse a
+catalog, package and label albums, burn and verify discs, and play them. It can
+run on a **fixtures** library of generated, non-copyrighted demo albums and
+capture screenshots headlessly, which is handy for documentation and blog posts:
+
+```bash
+pnpm --filter @open-media-disc/studio build
+node packages/studio/bin/omd-studio-shots.mjs --out ./screenshots
+```
+
+See the [studio README](./packages/studio/README.md) for all data-mode, headless,
+and screenshot options.
+
 ## Documentation
 
 | Guide                                                 | For                              |

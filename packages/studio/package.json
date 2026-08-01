@@ -5,11 +5,16 @@
   "description": "OMD Studio: a desktop app for packaging, labeling, burning, and playing Open Media Discs.",
   "license": "MIT",
   "main": "./dist/main/main.cjs",
+  "bin": {
+    "omd-studio-shots": "./bin/omd-studio-shots.mjs"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && node build.mjs",
     "start": "electron .",
     "watch": "node build.mjs --watch",
     "dev": "node build.mjs && electron .",
+    "dev:fixtures": "node build.mjs && electron . --omd-data=fixtures",
+    "screenshots": "node build.mjs && electron . --omd-data=fixtures --omd-screenshots=all --omd-out=./screenshots",
     "clean": "rimraf dist"
   },
   "dependencies": {

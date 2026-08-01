@@ -413,3 +413,41 @@ export interface OmdStudioApi {
   /** Permanently delete an OMD package folder from disk. */
   deletePackage(source: string): Promise<void>;
 }
+
+/** Where the app sources its albums, discs, and drives from. */
+export type StudioDataMode = 'real' | 'fixtures';
+
+/**
+ * Boot configuration passed from the main process to the renderer (through the
+ * preload bridge on `window.omdConfig`). It selects the data source and, for
+ * automated screenshots/tests, seeds the initial view and theme.
+ */
+export interface StudioBootConfig {
+  /** `real` = live core + optical drives; `fixtures` = deterministic demo data. */
+  dataMode: StudioDataMode;
+  /** True when running without a normal interactive window (screenshot harness). */
+  headless: boolean;
+  /** True when the screenshot harness should be wired up on `window.__omdHarness`. */
+  harness: boolean;
+  /** View to open on boot (else the Home hub). */
+  initialView?: string;
+  /** Theme id to apply on boot (overrides the persisted choice). */
+  themeId?: string;
+  /** Catalog/library folder to use (fixtures mode seeds this). */
+  libraryDir?: string;
+}
+
+/**
+ * The automation surface exposed on `window.__omdHarness` when
+ * {@link StudioBootConfig.harness} is set. The main process drives it with
+ * `webContents.executeJavaScript` to switch views and load demo content before
+ * capturing a screenshot.
+ */
+export interface OmdHarness {
+  /** Resolves once the app shell has booted and rendered its first view. */
+  ready(): Promise<void>;
+  /** Switch to a view and resolve after it has settled (painted). */
+  goto(view: string, settleMs?: number): Promise<void>;
+  /** Load the fixture disc into the transport (paused) so the dock is populated. */
+  loadFixtureDisc(): Promise<void>;
+}

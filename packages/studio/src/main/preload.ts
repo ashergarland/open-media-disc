@@ -1,11 +1,30 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   OmdStudioApi,
+  StudioBootConfig,
   StudioBurnProgress,
   StudioDiscInfo,
   StudioImportProgress,
   StudioRipProgress,
 } from '../shared/types';
+
+const BOOT_CONFIG_FLAG = '--omd-studio-config=';
+
+/**
+ * Read the boot config the main process passed through `additionalArguments`
+ * (base64 JSON). Falls back to live/real data with no headless surface.
+ */
+function readBootConfig(): StudioBootConfig {
+  const fallback: StudioBootConfig = { dataMode: 'real', headless: false, harness: false };
+  const arg = process.argv.find((value) => value.startsWith(BOOT_CONFIG_FLAG));
+  if (!arg) return fallback;
+  try {
+    const json = Buffer.from(arg.slice(BOOT_CONFIG_FLAG.length), 'base64').toString('utf8');
+    return { ...fallback, ...(JSON.parse(json) as Partial<StudioBootConfig>) };
+  } catch {
+    return fallback;
+  }
+}
 
 /**
  * The preload bridge. It exposes a small, explicit API on `window.omd` so the
@@ -75,3 +94,4 @@ const api: OmdStudioApi = {
 };
 
 contextBridge.exposeInMainWorld('omd', api);
+contextBridge.exposeInMainWorld('omdConfig', Object.freeze(readBootConfig()));

@@ -302,6 +302,36 @@ the disc (ripped, verified, output path), the same way burn and verify are.
 - `omd rip` is a core function plus a CLI command. Studio calls the same
   function, so no logic is duplicated in the UI.
 
+## Headless mode, fixtures, and screenshots
+
+OMD Studio can run against **live data** (the real core and optical drives, the
+default) or a **fixtures** library of generated, non-copyrighted demo albums.
+Fixtures mode swaps in fake burn and disc-image backends, so it needs no optical
+hardware and never touches copyrighted audio or artwork. That makes it the safe
+default for tests and for documentation or blog screenshots.
+
+A headless harness drives the app through each view and captures a PNG with no
+visible window, so an agent or a build step can generate images unattended.
+
+```bash
+# Interactive window on fixtures data
+pnpm studio:fixtures
+
+# Capture a PNG of every view into ./screenshots (fixtures data, no window)
+pnpm studio:screenshots
+
+# Path-independent launcher (writes PNGs relative to the current directory)
+node packages/studio/bin/omd-studio-shots.mjs --views home,disc --out ./images
+```
+
+Selection is controlled by `--omd-*` flags (or `OMD_STUDIO_*` environment
+variables): data mode, the views to capture, output folder, theme, and window
+size. The `omd-studio-shots` bin exposes the same options under friendlier names
+(`--views`, `--out`, `--data`, `--theme`, `--size`). The studio package README
+has the full table. Views are home, disc, catalog, burn, labels, themes, and
+settings; the fixtures library is generated once under the app's user-data
+folder.
+
 ## Version checkpoint
 
 These features land incrementally under the OMD Studio (alpha) milestone. Each

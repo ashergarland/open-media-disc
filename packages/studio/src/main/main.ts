@@ -31,6 +31,10 @@ import {
   getLabelTemplate,
 } from '@open-media-disc/label';
 import ffmpegStatic from 'ffmpeg-static';
+import { parseRuntimeConfig } from './config';
+import { ensureFixtureLibrary } from './fixtureLibrary';
+import { installFixtures } from './fixtures';
+import { runScreenshotHarness } from './harness';
 
 /**
  * Absolute path to the bundled ffmpeg binary (from `ffmpeg-static`), used to
@@ -42,6 +46,7 @@ const FFMPEG_PATH: string | null = (ffmpegStatic as unknown as string | null) ??
 const DEFAULT_MIXTAPE_COVER = path.join(__dirname, '..', 'renderer', 'assets', 'mixtape-default-cover.png');
 import type {
   CatalogEntry,
+  StudioBootConfig,
   StudioBurnRequest,
   StudioBurnResult,
   StudioCoverPick,
@@ -67,6 +72,9 @@ import type {
 
 /** OMD Studio app version (independent of the disc format version). */
 const STUDIO_VERSION = '0.1.0';
+
+/** Runtime configuration (data mode, headless capture) from flags and env. */
+const runtimeConfig = parseRuntimeConfig(process.argv, process.env);
 
 // A privileged custom scheme lets the renderer stream local FLAC files through
 // the strict CSP (media-src 'self' omd-audio:), with range support for seeking.
@@ -106,10 +114,15 @@ function audioUrl(absPath: string): string {
   return `omd-audio://media/?p=${encodeURIComponent(absPath)}`;
 }
 
-function createWindow(): void {
+/** Serialize the renderer boot config for delivery through the preload bridge. */
+function encodeBootConfig(boot: StudioBootConfig): string {
+  return `--omd-studio-config=${Buffer.from(JSON.stringify(boot), 'utf8').toString('base64')}`;
+}
+
+function createWindow(boot: StudioBootConfig, headless: boolean, size: { width: number; height: number }): BrowserWindow {
   const window = new BrowserWindow({
-    width: 1024,
-    height: 720,
+    width: size.width,
+    height: size.height,
     backgroundColor: '#0d131e',
     show: false,
     webPreferences: {
@@ -117,14 +130,19 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      additionalArguments: [encodeBootConfig(boot)],
     },
   });
 
   window.removeMenu();
-  window.once('ready-to-show', () => {
-    window.maximize();
-    window.show();
-  });
+  // A visible, maximized window is only shown for a normal interactive session;
+  // the headless screenshot harness captures the hidden window off-screen.
+  if (!headless) {
+    window.once('ready-to-show', () => {
+      window.maximize();
+      window.show();
+    });
+  }
   void window.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
   // Watch the optical drives so the Disc view reflects inserts/ejects live.
@@ -132,7 +150,8 @@ function createWindow(): void {
 
   // Dev-only live reload: when the built renderer files change (run the `watch`
   // script alongside `start`), reload the window so edits appear immediately.
-  if (!app.isPackaged) {
+  // Disabled headless so a reload never races a screenshot capture.
+  if (!app.isPackaged && !headless) {
     const rendererDir = path.join(__dirname, '..', 'renderer');
     let reloadTimer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -146,6 +165,7 @@ function createWindow(): void {
       // File watching is best-effort; ignore when unavailable.
     }
   }
+  return window;
 }
 
 ipcMain.handle(
@@ -936,7 +956,7 @@ ipcMain.handle('omd:deletePackage', async (_event, source: string): Promise<void
   await rm(source, { recursive: true, force: true });
 });
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   protocol.handle('omd-audio', async (request) => {
     const requested = new URL(request.url).searchParams.get('p');
     if (!requested || !isAllowedMediaPath(requested)) {
@@ -982,10 +1002,46 @@ void app.whenReady().then(() => {
     }
   });
 
-  createWindow();
+  // Build the renderer boot config; fixtures mode seeds the library folder.
+  const boot: StudioBootConfig = {
+    dataMode: runtimeConfig.dataMode,
+    headless: runtimeConfig.headless,
+    // The harness surface is only needed when we drive the app headlessly.
+    harness: runtimeConfig.headless,
+    ...(runtimeConfig.initialView ? { initialView: runtimeConfig.initialView } : {}),
+    ...(runtimeConfig.themeId ? { themeId: runtimeConfig.themeId } : {}),
+  };
+
+  if (runtimeConfig.dataMode === 'fixtures') {
+    const root = path.join(app.getPath('userData'), 'fixtures');
+    const library = await ensureFixtureLibrary(root, runtimeConfig.resetFixtures);
+    installFixtures(library, { buildDiscInfo });
+    boot.libraryDir = library.libraryDir;
+  }
+
+  const window = createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize);
+
+  // In screenshot mode, drive the app through each view, capture, then quit.
+  if (runtimeConfig.screenshotViews.length > 0) {
+    const outDir = path.resolve(runtimeConfig.outDir);
+    try {
+      await runScreenshotHarness(window, {
+        views: runtimeConfig.screenshotViews,
+        outDir,
+        dataMode: runtimeConfig.dataMode,
+      });
+      console.log(`[omd-studio] screenshots written to ${outDir}`);
+    } catch (err) {
+      console.error('[omd-studio] screenshot harness failed:', err);
+    } finally {
+      app.quit();
+    }
+    return;
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow(boot, runtimeConfig.headless, runtimeConfig.windowSize);
     }
   });
 });

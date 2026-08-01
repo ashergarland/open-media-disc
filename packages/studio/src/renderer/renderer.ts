@@ -9,8 +9,10 @@
 
 import type {
   CatalogEntry,
+  OmdHarness,
   OmdStudioApi,
   StudioAudioCodec,
+  StudioBootConfig,
   StudioBurnResult,
   StudioDiscInfo,
   StudioDrive,
@@ -31,8 +33,15 @@ import * as player from './audioController';
 declare global {
   interface Window {
     omd: OmdStudioApi;
+    /** Boot config injected by the preload bridge (data mode, headless, etc.). */
+    omdConfig?: StudioBootConfig;
+    /** Screenshot-harness surface, installed only in headless/harness mode. */
+    __omdHarness?: OmdHarness;
   }
 }
+
+/** Boot configuration from the main process (data mode, initial view, theme). */
+const bootConfig: StudioBootConfig | undefined = window.omdConfig;
 
 type ViewId = 'home' | 'burn' | 'labels' | 'disc' | 'catalog' | 'themes' | 'settings';
 
@@ -218,10 +227,23 @@ function setCatalogDir(dir: string): void {
   }
 }
 
+/** The initial view, honoring a boot-config override when it names a real view. */
+function initialView(): ViewId {
+  const requested = bootConfig?.initialView;
+  if (requested && NAV.some((item) => item.id === requested)) return requested as ViewId;
+  return 'home';
+}
+
+/** The initial library folder: the fixtures folder in fixtures mode, else persisted. */
+function initialLibraryDir(): string | undefined {
+  if (bootConfig?.dataMode === 'fixtures' && bootConfig.libraryDir) return bootConfig.libraryDir;
+  return loadCatalogDir();
+}
+
 const state: AppState = {
-  view: 'home',
-  themeId: loadThemeId(),
-  libraryDir: loadCatalogDir(),
+  view: initialView(),
+  themeId: bootConfig?.themeId ?? loadThemeId(),
+  libraryDir: initialLibraryDir(),
   discLoading: false,
   albumLoading: false,
   catalogLoading: false,
@@ -2870,6 +2892,38 @@ function buildShell(): void {
   root.append(backdrop, shellEl);
 }
 
+/** Wait for two animation frames plus a settle delay, so a view has painted. */
+function settleFrames(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, ms)));
+  });
+}
+
+/**
+ * Install the screenshot-harness surface on `window.__omdHarness`. The main
+ * process drives it (via executeJavaScript) to switch views and populate the
+ * transport before capturing a frame. Only wired up in headless/harness mode.
+ */
+function installHarness(): void {
+  const harness: OmdHarness = {
+    ready: () => Promise.resolve(),
+    goto: async (view, settleMs = 900) => {
+      if (NAV.some((item) => item.id === view)) setView(view as ViewId);
+      await settleFrames(settleMs);
+    },
+    loadFixtureDisc: async () => {
+      const disc = state.disc ?? (await window.omd.detectDisc()) ?? undefined;
+      if (!disc) return;
+      if (!state.disc) setDisc(disc);
+      state.nowPlaying = { disc, source: 'disc' };
+      player.loadDisc(queueFor(disc), true);
+      renderNowPlayingBar();
+      await settleFrames(150);
+    },
+  };
+  window.__omdHarness = harness;
+}
+
 async function init(): Promise<void> {
   buildShell();
   applyThemeById(state.themeId);
@@ -2882,6 +2936,9 @@ async function init(): Promise<void> {
   });
   setView(state.view);
   renderNowPlayingBar();
+  // Wire the screenshot harness before the async work below, so the main process
+  // can start driving views as soon as the first frame is up.
+  if (bootConfig?.harness) installHarness();
   // Proactively detect an already-inserted disc on boot. The live watch only
   // fires on a change, and its first push can race the listener registration,
   // so a disc that was already in the drive would otherwise need a manual scan.

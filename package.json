@@ -19,7 +19,9 @@
     "format:check": "prettier --check \"**/*.{ts,json,md}\"",
     "gen:examples": "tsx scripts/make-examples.mts",
     "omd": "node packages/cli/dist/bin/omd.js",
-    "studio": "pnpm --filter @open-media-disc/studio start"
+    "studio": "pnpm --filter @open-media-disc/studio start",
+    "studio:fixtures": "pnpm --filter @open-media-disc/studio dev:fixtures",
+    "studio:screenshots": "pnpm --filter @open-media-disc/studio screenshots"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
