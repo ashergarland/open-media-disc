@@ -1,258 +1,209 @@
-# OMD Studio (alpha): player theming and ripping
+# OMD Studio
 
-This is the design note for two OMD Studio (alpha) additions locked in during
-planning: a **themeable in-app player** and **verified disc ripping** (`omd
-rip`). It complements the
+**OMD Studio** is the desktop and touch application for Open Media Disc. It wraps
+the same core modules as the `omd` CLI, with no duplicated logic: shared, testable
+logic first, then the GUI wraps it. It belongs to the
 [OMD Studio (alpha) milestone](./roadmap.md#milestone-omd-studio-alpha) in the
 roadmap.
 
-OMD Studio wraps the same core modules as the `omd` CLI, with no duplicated
-logic. Both features below follow that rule: shared, testable logic first, then
-the GUI wraps it.
+Studio is built with Electron. The main process reuses `@open-media-disc/core`
+directly; the renderer talks to it through a small, explicit `window.omd` bridge
+(context isolation on, no Node in the renderer).
 
-## Navigation and layout (locked)
+One application serves two surfaces: a desktop window and a Raspberry Pi touch
+panel. There is no separate desktop layout and no separate touch layout. The
+working brief behind the current shape is
+[the redesign plan](./redesign-plan.md).
 
-OMD Studio uses a **sidebar layout**:
+## Navigation and layout
 
-- A slim left navigation rail with icon-and-label items: Create Disc, Player,
-  Catalog, Themes, and Settings.
-- A large main content area for the active view.
-- A slim persistent **Now Playing** bar across the bottom (album thumbnail, track
-  and artist, scrubber, transport, a small VU meter, volume, and the Verified and
-  FLAC badges) so playback continues while you move through the create flow.
+Studio is **hub and spoke**, built for touch first and for a mouse just as well:
 
-Why the sidebar: it scales as the app grows (catalog, themes, settings), it reads
-as a focused publishing workstation, and it shares lineage with the VS Code-style
-token theming below. The layout stays fixed; only the theme changes.
+- **Home hub.** The landing screen: the OMD Studio brand, a catalog search box,
+  a now-playing status pill, three large job tiles (Play a Disc, Create a Disc,
+  Catalog), and a second row with a live Now Playing tile plus Themes and
+  Settings.
+- **Screens.** Every other view is a full screen with a sticky top bar whose only
+  navigation control is a Home button. There is no persistent nav rail; you go
+  Home and pick the next job.
+- **Transport dock.** A persistent bar across the bottom of every screen: cover
+  thumbnail, track and artist, transport buttons, a scrubber, volume, a live
+  spectrum driven by the real Web Audio analyser, and the Verified and codec
+  chips. Playback continues while you move between screens.
 
-Default theme: **Y2K / Frutiger Aero** (glossy aqua glass) is the default skin.
-Other skins (for example Classic Amp, Hi-Fi Silver, Cassette) ship through the
-token theme system described below.
+Everything fits the viewport. The page itself never scrolls; only bounded regions
+such as a track list or a catalog grid do, and the top bar and transport dock stay
+put while those regions scroll. See
+[Screen sizes and kiosk mode](#screen-sizes-and-kiosk-mode).
 
-### Touch-first hardware (Raspberry Pi and appliances)
+## The views
 
-The sidebar is a desktop choice. For touch-first environments, a **dashboard tile
-launcher** layout is preferred: large tap targets as glossy tiles (Play a Disc,
-Create a Disc, Catalog, Now Playing, Themes, Settings) with a live Now Playing
-tile. This is the better fit for **Raspberry Pi touchscreen devices and simple
-appliance-style OMD hardware**, and it should inform the future Pi player UI. It
-reuses the same shared components and theming contract; only the shell layout
-differs from the desktop app.
+| View | What it does |
+| --- | --- |
+| **Home** | The hub: search, job tiles, Now Playing, Themes, Settings. |
+| **Disc** | The inserted physical disc: cover, metadata, track list, capacity meter, background integrity verify, and Rip to Catalog. |
+| **Catalog** | Your library folder of OMD packages: browse, search, play, edit metadata, delete, import music, start a mixtape, and open Label sheets. |
+| **Create a Disc** | Pick a source, then burn it. |
+| **Labels** | Build a printable label sheet from catalog covers and your own images, then print or export a PDF. |
+| **Themes** | Live theme picker. |
+| **Settings** | Version information and the optical drives, with a rescan. |
+
+### Disc
+
+Studio polls the optical drives and loads an inserted OMD disc automatically, so
+the usual flow is: insert a disc and it appears. The disc loads quickly (without
+rehashing every track), then a background integrity check runs and flips the badge
+from Verifying to Verified or Not verified. The screen shows the cover, the album
+metadata, the honest codec line, a cartridge visual with a used and free capacity
+meter, and the track list. **Rip to Catalog** copies the disc back to your library
+as a verified package (see [`omd rip`](#omd-rip-verified-read-back-and-archival)).
+
+### Catalog
+
+The catalog is a plain folder of OMD packages that you choose. There is no
+database. Studio watches the folder, so a package that a rip, burn, or import
+creates appears without a manual refresh. From a catalog album you can play it,
+burn it, edit its metadata (album, artist, year, disc title, per-track titles, and
+the cover), reveal it in the file manager, or delete it.
+
+**Import music** packages a folder of audio into the catalog. Each album is
+reviewed before it is written: Studio inspects the source, prefills the metadata
+(including a suggested disc title and Various Artists handling), shows which audio
+formats are present, and lets you pick the format to store. Mixed-format sources
+are converted with the bundled ffmpeg; a folder that is already one format is
+copied as is.
+
+**New mixtape** compiles tracks picked from across the catalog into a new package.
+
+### Create a Disc
+
+Create a Disc is a source chooser, then a burn screen.
+
+The chooser offers four sources:
+
+- **From catalog:** burn an album already in your library.
+- **Import a package:** burn an existing OMD package folder.
+- **Import music:** package a folder of audio, then burn it.
+- **New mixtape:** compile tracks into a disc, then burn it.
+
+The burn screen probes the selected drive and reports the **real disc**: media
+type, capacity, whether it is blank, and whether it is rewritable or write once.
+It uses the same cartridge visual and used-and-free meter as the Disc screen.
+Burning is blocked, with the reason shown, when there is no disc in the drive, when
+a write-once disc already has data, or when the selection will not fit. The
+confirmation describes what will actually happen, so the erase warning only appears
+for a used rewritable disc.
+
+The track list allows per-track removal **for that burn only**. A trimmed package
+is compiled into a temporary folder, burned, and deleted afterwards; the catalog
+package is never modified.
+
+### Labels
+
+Labels builds a print-ready sheet from catalog covers and any extra images you
+add, using a template (a packed rectangular sheet such as mini CD jewel case, or a
+die-cut disc sheet whose geometry is measured for a specific stock). You choose
+copies per item, preview every page, and then print or export a PDF. A label
+session (template, fit, chosen packages, and embedded custom images) can be saved
+and reopened as an `.omdsession.json` file.
+
+Die-cut sheets must be printed at 100 percent or actual size. Any "fit to page"
+scaling puts the artwork out of registration with the die cut.
 
 ## The integrated player
 
 - Studio plays a mounted OMD disc **in-app**, not by launching an external
-  player. The intended moment is simple: insert a disc and it plays beautifully
-  inside OMD.
-- FLAC plays natively in Chromium (so in Electron), so no custom decoder is
-  needed for alpha. The external players (`mpv`, `ffplay`) stay a CLI fallback
-  only.
-- Scope discipline: this is an **album/disc player, not a music library
-  manager**. It plays the inserted OMD and packages you built. No streaming,
+  player. The intended moment is simple: insert a disc and it plays inside OMD.
+- Chromium (so Electron) decodes the supported audio formats natively, so no
+  custom decoder is needed. The external players (`mpv`, `ffplay`) stay a CLI
+  fallback only.
+- One player engine serves everything: the Disc screen, catalog albums, and the
+  transport dock all drive the same playback state, so starting a catalog album
+  and then walking to another screen keeps playing.
+- Scope discipline: this is an **album and disc player, not a music library
+  manager**. It plays the inserted OMD and the packages you built. No streaming,
   tagging, or large-library management in alpha.
 
-## Theming model (VS Code-style token themes)
+## Honest codec language
 
-The goal is retro, Winamp-inspired looks with modern, consistent usability. The
+Studio never claims quality it cannot prove. A package stores one audio format,
+and "lossless" is a property of the **container**, not of the audio's history: a
+FLAC transcoded from an MP3 is not lossless. So the UI shows the **real codec plus
+factual facts** instead of a quality badge:
+
+- Always the codec and the sample rate, for example `FLAC · 44.1 kHz`.
+- Bit depth only for a lossless codec, for example `FLAC · 44.1 kHz · 16-bit`.
+- Bitrate only for a lossy codec, for example `MP3 · 44.1 kHz · 320 kbps`.
+
+Bit depth is a PCM concept and is meaningless on a lossy codec; bitrate is the
+quality signal for a lossy codec and noise for a lossless one. There is no "FLAC
+lossless" badge and no fixed bit-depth claim anywhere in the app.
+
+Note that the format id `OMD-FLAC-DATA` and `omdVersion 0.1.0` are unchanged on
+purpose. The id is a legacy string kept so existing packages stay valid; it does
+not mean a package must be FLAC.
+
+## Theming
+
+The goal is a look you can change without the app becoming inconsistent. The
 lesson from old skins is that they controlled both look **and** layout, which is
-what made them confusing. OMD splits the two:
+what made them confusing. OMD Studio splits the two:
 
-- **Theme layer (swappable):** colors, typography, shape, and decoration,
-  expressed as named tokens in a JSON file.
-- **Layout and interaction layer (fixed):** transport controls, track list,
-  overall flow, and keyboard shortcuts stay consistent across every theme.
+- **Theme layer (swappable):** colors, surfaces, borders, and accents, expressed
+  as named `--omd-*` CSS custom properties.
+- **Layout and interaction layer (fixed):** the transport, track lists, screens,
+  and flow stay identical across every theme.
 
-How it works (the VS Code mechanic):
+How it works:
 
-- A theme is **data**: a JSON file that assigns values to a fixed, documented
-  vocabulary of named tokens.
-- At runtime OMD injects those tokens as **CSS variables** (for example
-  `--omd-accent`) onto the DOM. Every component reads only from those variables
-  and never hardcodes a color.
-- A `type` (`light` or `dark`) sets the base, so any token a theme omits inherits
-  a sensible default. A theme can override a few tokens or all of them.
-- Themes **cannot** ship arbitrary CSS or JS, and cannot move or restyle the
-  layout. That constraint is exactly what keeps every theme safe, portable, and
-  usable.
+- There is **one shared component stylesheet**, `components.css`. Every component
+  reads `--omd-*` variables and never hardcodes a color. `shell.css` carries
+  layout only. **There is no per-theme stylesheet.**
+- A **theme is a token map**: a block of `--omd-*` overrides scoped to a
+  `data-theme` value. Applying a theme sets `data-theme` on the document root, so
+  switching is an instant variable swap with no stylesheet fetch and therefore no
+  unstyled flash.
+- A theme overrides only the base primitives. Derived tokens (controls, focus
+  rings, slider parts) reference those primitives, so they follow automatically.
+- The choice persists in `localStorage`, and the Themes screen is a live picker:
+  each theme is a card with a swatch strip, and selecting one applies it
+  immediately.
 
-### The v1 theming contract (locked)
+### The built-in themes
 
-This is the v1 token vocabulary. Treat it as a contract: names are stable within
-v1, and new capabilities are added as new tokens rather than by renaming existing
-ones.
+| Theme | Type | Character |
+| --- | --- | --- |
+| **Midnight** | Dark | The default. Deep navy surfaces with a cyan accent. |
+| **Daylight** | Light | White surfaces, dark ink, a deeper cyan accent. |
+| **Ember** | Dark | Warm charcoal with an amber accent. |
 
-Colors:
+### Renderer constraints
 
-- `app.background`
-- `surface.background`
-- `text.primary`
-- `text.muted`
-- `accent`
-- `transport.button`
-- `transport.buttonActive`
-- `progress.track`
-- `progress.fill`
-- `vu.low`
-- `vu.high`
+These are hard rules for anyone touching the Studio UI:
 
-Typography:
+- **Strict CSP.** The renderer runs under
+  `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;
+  media-src 'self' omd-audio:; font-src 'self'`. No remote fonts, no `fetch`, no
+  inline `style=` attributes in static HTML. Dynamic styling goes through CSSOM
+  (`element.style.setProperty(...)`) or class toggles, which CSP allows.
+- **Tokens, not hardcoded values.** New components read `--omd-*`. A hardcoded
+  color is a theme bug waiting to happen.
+- **Touch targets** hold at `--omd-tap` (44px), and vertical sizing uses `vmin`
+  rather than `vw` so a short but wide panel shrinks correctly.
 
-- `typography.uiFont`
-- `typography.displayFont` (the large track title)
+### Importable themes (future)
 
-Shape:
+User and community themes are a **future milestone**, not something Studio ships
+today. The current three themes are first-party token maps in `components.css`.
 
-- `shape.radius`
-- `shape.borderStyle`
-- `shape.glow`
-
-Decoration:
-
-- `texture` (optional local background image asset)
-- `visualizer` (enum: `bars`, `oscilloscope`, or `none`)
-
-Rules (locked):
-
-- **Data only.** A theme is JSON plus optional local assets. No CSS, no JS.
-- **No layout control.** Themes cannot move, add, or remove controls, or change
-  positioning.
-- **Graceful fallback.** Omitted tokens inherit from the base `type`.
-- **Local assets only.** `texture` references a bundled or local file. Remote
-  URLs are not allowed.
-- **Stable names.** Token names do not change within v1; new capabilities add new
-  tokens.
-
-Example theme file:
-
-```jsonc
-{
-  "name": "Classic Amp",
-  "type": "dark",
-  "colors": {
-    "app.background": "#1a1a1a",
-    "surface.background": "#232323",
-    "text.primary": "#c8f7c5",
-    "text.muted": "#6a8a6a",
-    "accent": "#39ff14",
-    "transport.button": "#c8f7c5",
-    "transport.buttonActive": "#39ff14",
-    "progress.track": "#333333",
-    "progress.fill": "#39ff14",
-    "vu.low": "#39ff14",
-    "vu.high": "#ff5f56"
-  },
-  "typography": { "uiFont": "Inter", "displayFont": "VT323" },
-  "shape": { "radius": "2px", "borderStyle": "solid", "glow": "0 0 6px #39ff14" },
-  "visualizer": "bars",
-  "texture": "assets/scanlines.png"
-}
-```
-
-Each token maps to a CSS variable (for example `colors.accent` becomes
-`--omd-accent`), and components consume the variables only.
-
-Security note: because this is an Electron app, arbitrary theme CSS or JS would be
-a real risk (CSS can exfiltrate through `background-image` URLs, and JS is remote
-code execution). Keeping themes as data (tokens plus local assets) makes shared
-community themes safe by construction. Validate theme JSON against the token
-vocabulary and reject remote asset URLs.
-
-Theme packs: ship a clean modern default plus retro packs (for example Classic
-Amp, Hi-Fi Silver, Cassette, CRT). Every theme must still pass contrast and
-hit-target checks, so retro never means unusable. If community themes bundle
-fonts, mind font licensing; the safest option is a curated, bundled font set.
-
-### Implementation status: built-in stylesheets now, token imports later
-
-The token model above is the **target** for *importable* community themes. The
-current Studio implementation is a deliberate intermediate step:
-
-- **Built-in themes ship as full CSS.** The four first-party themes (Frutiger
-  Aero, DORFic, Technozen, Dark Aero) are authored as complete stylesheets in
-  `packages/studio/src/renderer/themes/<id>.css` (synced verbatim from the visual
-  showcases by `sync-themes.mjs`). They are trusted, first-party code — not the
-  data-only token contract — which is why they can render the full glassmorphism
-  (masked rims, layered highlights, per-theme decoration) that ~20 tokens cannot
-  express. `shell.css` holds layout only; components read the theme stylesheet.
-- **Switching is flash-free.** All four theme stylesheets are loaded and parsed
-  up front; the inactive ones carry `media="not all"` so they are fetched and
-  parsed but not applied. Switching a theme only flips `media` to `all`/`not all`
-  between already-parsed sheets, so there is no fetch/parse gap and no unstyled
-  flash. (A `disabled` link is *not* loaded until enabled, which is what caused
-  the earlier flash.)
-- **Importable token themes are a future milestone.** When we add user/community
-  themes, they stay **data-only** per the v1 contract above (JSON token maps →
-  `--omd-*` variables, validated, no CSS/JS, no remote URLs). To make the built-in
-  glass looks reachable from tokens, the plan is to (a) collapse the four
-  near-duplicate stylesheets into **one shared, richly-structured components
-  stylesheet** that reads every value from `--omd-*` (promoting today's per-theme
-  hardcoded values — colors, gradients, shadows, rim widths/blur — into an
-  expanded token vocabulary), and (b) express **decoration** as the `texture`
-  image token (a per-theme background image on the scene/panel) rather than
-  bespoke animated DOM. That keeps the current look, makes imported themes safe
-  by construction, and makes every switch a variable swap (inherently flash-free).
-  Until then, users pick from the four curated built-ins.
-
-### Default theme: Aqua (Y2K / Frutiger Aero)
-
-**Aqua** is the default theme shipped with OMD Studio. Its starting token values
-come from the Y2K style sheet.
-
-Palette (source swatches and their roles):
-
-| Swatch | Role |
-| --- | --- |
-| `#00D4E7` | Primary accent (bright cyan) |
-| `#55C7F2` | Secondary accent (sky blue) |
-| `#BEE9FB` | Panel and surface glass (light blue) |
-| `#F7FDFF` | App background (near white) |
-| `#C9D3DA` | Borders and inactive tracks (light gray) |
-| `#2B3A42` | Primary text (charcoal) |
-| `#36D17A` | Success and the Verified badge (green) |
-| `#B884F7` | Extra accent for highlights (purple) |
-| Iridescent | CD-rainbow accent for the disc mark and small flourishes |
-
-Starting token values for the Aqua theme:
-
-```jsonc
-{
-  "name": "Aqua",
-  "type": "light",
-  "colors": {
-    "app.background": "#F7FDFF",
-    "surface.background": "#BEE9FB",
-    "text.primary": "#2B3A42",
-    "text.muted": "#6E8794",
-    "accent": "#00D4E7",
-    "transport.button": "#55C7F2",
-    "transport.buttonActive": "#00D4E7",
-    "progress.track": "#C9D3DA",
-    "progress.fill": "#00D4E7",
-    "vu.low": "#36D17A",
-    "vu.high": "#FF5A5F"
-  },
-  "typography": { "uiFont": "Inter", "displayFont": "Poppins" },
-  "shape": { "radius": "12px", "borderStyle": "solid", "glow": "0 0 12px rgba(0, 212, 231, 0.35)" },
-  "visualizer": "bars"
-}
-```
-
-Notes:
-
-- `text.muted` and `vu.high` are derived; the style sheet has no mid-tone text
-  color or red, so these are tuned for readable secondary text and a standard red
-  VU peak. Adjust as needed.
-- The iridescent CD accent and the purple `#B884F7` are decorative extras, not
-  core tokens; use them for the disc mark, selection highlights, and small
-  flourishes.
-- Fonts are freely licensable substitutes for the style sheet's Omnes (headings)
-  and Frutiger Next (body). Swap in the licensed fonts only if you hold the
-  rights.
-
-Components the default theme defines (from the style sheet), all reading from the
-tokens above: primary and secondary buttons (normal, hover, pressed), a toggle, a
-slider, a card and panel, a sidebar nav item, a top tab, a progress bar, stereo VU
-meters, the Verified and FLAC lossless badges, and the 8cm mini DVD-RW disc icon.
+When importable themes arrive they stay **data only**: a file that assigns values
+to a documented `--omd-*` vocabulary, plus optional local assets. No CSS, no JS,
+no remote URLs, and no ability to move or restyle the layout. That constraint is
+what makes shared themes safe in an Electron app, where arbitrary CSS can
+exfiltrate through a `background-image` URL and arbitrary JS is remote code
+execution. The work needed to get there is mostly promoting the remaining
+hardcoded values in the component kit into named tokens; the shared stylesheet and
+the `data-theme` mechanism are already the right shape.
 
 ## `omd rip` (verified read-back and archival)
 
@@ -260,7 +211,7 @@ Rationale: burning writes a disc, and ripping reads it back. Ripping makes an OM
 disc a real archival medium instead of a dead end, and it closes the loop:
 download, package, label, burn, verify, play, rip.
 
-This is **not** CD-DA extraction. An OMD is FLAC files in a UDF filesystem, so
+This is **not** CD-DA extraction. An OMD is audio files in a UDF filesystem, so
 ripping is a verified file copy, not audio extraction. There are no
 track-boundary guesses and no CDDB lookups.
 
@@ -271,6 +222,10 @@ consistent with how `label`, `burn`, and `play` work):
 omd rip <drive> --out <dir> [--mode package|album]
 ```
 
+In Studio this is the **Rip to Catalog** button on the Disc screen: it rips the
+inserted disc into your catalog folder in `package` mode, reports progress, and
+the new package then appears in the Catalog.
+
 Verification: rip reads each file and checks it against the manifest
 `CHECKSUMS.sha256`. A rip can therefore **certify** a disc (for example "ripped
 6/6 tracks, all checksums matched"). A checksum mismatch is reported per file and
@@ -280,27 +235,25 @@ Output modes:
 
 - `package` (default): copy the OMD package faithfully, so the result is a
   re-burnable, byte-faithful archival clone.
-- `album`: emit a friendly album folder (FLAC tracks plus cover art) laid out for
-  use in other players.
+- `album`: emit a friendly album folder (the audio tracks plus cover art) laid
+  out for use in other players.
 
 Format impact: none. Rip reads the existing format and does not change it, so
 `omdVersion` stays `0.1.0`. This is a software feature under the OMD Studio
 (alpha) milestone.
 
-Catalog note: when the optional local catalog arrives, a rip is recorded against
-the disc (ripped, verified, output path), the same way burn and verify are.
+## Architecture
 
-## Architecture impact
-
-- Player and theming belong in a **shared UI package** (for example
-  `packages/player` or `packages/ui`), so OMD Studio and the future Raspberry Pi
-  player reuse the same components, playback state model, and theming contract.
-  Studio owns the desktop shell and the burn and label workflows; the Pi player
-  is a lean, player-first app built from the same parts. The Pi player uses a
-  touch-first dashboard layout rather than the desktop sidebar (see Navigation
-  and layout).
-- `omd rip` is a core function plus a CLI command. Studio calls the same
-  function, so no logic is duplicated in the UI.
+- Studio's main process reuses `@open-media-disc/core` in process, so packaging,
+  validation, imaging, burning, verification, and ripping run the same code paths
+  as the `omd` CLI. Label sheets come from `@open-media-disc/label` and the shared
+  player state model from `@open-media-disc/ui`. Anything that could plausibly be
+  scripted belongs in a package, not in the renderer.
+- One UI serves the desktop and the Raspberry Pi panel. The future Pi player is a
+  lean, player-first build of the same app rather than a separate design: same
+  hub, same transport, same tokens, launched in kiosk mode.
+- The renderer holds no business logic beyond view state. Everything else crosses
+  the `window.omd` bridge, which keeps context isolation intact.
 
 ## Headless mode, fixtures, and screenshots
 
@@ -328,8 +281,11 @@ Selection is controlled by `--omd-*` flags (or `OMD_STUDIO_*` environment
 variables): data mode, the views to capture, output folder, theme, and window
 size. The `omd-studio-shots` bin exposes the same options under friendlier names
 (`--views`, `--out`, `--data`, `--theme`, `--size`). The studio package README
-has the full table. Views are home, disc, catalog, burn, labels, themes, and
-settings; the fixtures library is generated once under the app's user-data
+has the full table. Views are `home`, `disc`, `catalog`, `burn`, `labels`,
+`themes`, and `settings`. There are also composed scenes that drive a multi-step
+flow before the shot: `mixtape` (the mixtape builder, prefilled) and `burn-ready`
+(a catalog package staged on the burn screen). Scenes are opt-in, so `all` never
+includes them. The fixtures library is generated once under the app's user-data
 folder.
 
 ## Screen sizes and kiosk mode
@@ -351,6 +307,6 @@ chrome. To review a layout at a given panel size, the screenshot harness takes a
 
 ## Version checkpoint
 
-These features land incrementally under the OMD Studio (alpha) milestone. Each
-increment is a patch bump; the milestone becomes a minor bump only when the
-maintainer says so. Neither feature changes the disc format.
+Studio lands incrementally under the OMD Studio (alpha) milestone. Each increment
+is a patch bump; the milestone becomes a minor bump only when the maintainer says
+so. None of it changes the disc format: `omdVersion` stays `0.1.0`.

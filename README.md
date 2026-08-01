@@ -86,10 +86,11 @@ if (!result.valid) {
 
 See the [SDK Reference](./documentation/sdk-reference.md) for the full API.
 
-## OMD Studio (desktop app)
+## OMD Studio (desktop and touch app)
 
-OMD Studio is the Electron desktop app for the same workflows with a GUI: browse a
-catalog, package and label albums, burn and verify discs, and play them. It can
+OMD Studio is the Electron app for the same workflows with a GUI: browse a
+catalog, package and label albums, burn and verify discs, and play them. It is one
+touch-first UI for both a desktop window and a Raspberry Pi panel. It can
 run on a **fixtures** library of generated, non-copyrighted demo albums and
 capture screenshots headlessly, which is handy for documentation and blog posts:
 
@@ -114,6 +115,7 @@ and screenshot options.
 | [SDK Reference](./documentation/sdk-reference.md)     | The `@open-media-disc/core` API  |
 | [Validation Guide](./documentation/validation.md)     | Error and warning codes          |
 | [Roadmap](./documentation/roadmap.md)                 | Where OMD is heading             |
+| [OMD Studio](./documentation/omd-studio.md)           | The desktop and touch app        |
 | [FAQ](./documentation/faq.md)                         | Common questions                 |
 | [Glossary](./documentation/glossary.md)               | Terminology                      |
 
@@ -141,13 +143,13 @@ open-media-disc/
 | [`@open-media-disc/label`](./packages/label)   | Printable album-art label sheets (SVG).                      |
 | [`@open-media-disc/ui`](./packages/ui)         | Shared theme engine and player model (Studio and Pi player). |
 | [`@open-media-disc/cli`](./packages/cli)       | The `omd` command-line tool.                                 |
-| [`@open-media-disc/studio`](./packages/studio) | The OMD Studio desktop app (Electron, alpha).                |
+| [`@open-media-disc/studio`](./packages/studio) | The OMD Studio desktop and touch app (Electron, alpha).      |
 
 ## Where this is going
 
 v0.1 proved the format; **v0.2 Write and Play** took it to disc and playback.
-**OMD Studio (alpha)** is now in progress: a desktop app wrapping the core, with
-printable labels and an integrated player. Beyond it: multi-language SDKs, a
+**OMD Studio (alpha)** is now in progress: a touch-first app wrapping the core,
+with printable labels and an integrated player. Beyond it: multi-language SDKs, a
 Raspberry Pi player, a writer dock, and eventually a cartridge shell. See the
 [Roadmap](./documentation/roadmap.md) for the full picture.
 

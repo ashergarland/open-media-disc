@@ -1,17 +1,17 @@
 # @open-media-disc/studio
 
-**OMD Studio**, the desktop app for [Open Media Disc](../../README.md). It wraps
-the OMD core in a guided flow: select an album, package and validate it, generate
-a printable label, burn and verify it to disc, and play a mounted disc in an
-integrated player. The GUI reuses the same core modules as the `omd` CLI.
+**OMD Studio**, the desktop and touch app for
+[Open Media Disc](../../README.md). It wraps the OMD core in one touch-first UI:
+import or pick an album, package and validate it, generate a printable label,
+burn and verify it to disc, play a mounted disc, and rip a disc back to your
+catalog. The GUI reuses the same core modules as the `omd` CLI.
 
 Built with Electron. The main process reuses `@open-media-disc/core`
 directly; the renderer calls a small, explicit `window.omd` API exposed by a
 preload bridge (context isolation on, no Node in the renderer).
 
-> Alpha and in progress. This package currently scaffolds the app: a window that
-> shows the OMD version and lists optical drives. Screens for packaging, labeling,
-> burning, and playing land in later increments.
+> Alpha and in progress. See [the design note](../../documentation/omd-studio.md)
+> for the shipped navigation, theming, and screen-size model.
 
 ## Develop
 
@@ -68,8 +68,8 @@ flags (env vars in parentheses):
 Views: `home`, `disc`, `catalog`, `burn`, `labels`, `themes`, `settings`.
 Composed scenes that drive a multi-step flow before the shot: `mixtape` (the
 mixtape builder, pre-filled) and `burn-ready` (a catalog package staged on the
-burn screen). Scenes are opt-in — `all` never includes them. The fixture library
-is generated once under the app's user-data folder.
+burn screen). Scenes are opt-in, so `all` never includes them. The fixture
+library is generated once under the app's user-data folder.
 
 ## Screen sizes and kiosk mode
 
@@ -98,7 +98,7 @@ packages/studio/
   src/main/fixtures.ts     Installs fixtures mode (backends + IPC overrides)
   src/main/harness.ts      Headless screenshot harness (drives views, captures)
   src/main/preload.ts      Context-isolated bridge exposing window.omd + omdConfig
-  src/renderer/            The UI (index.html, renderer.ts, shell.css, themes/)
+  src/renderer/            The UI (index.html, renderer.ts, shell.css, components.css)
   src/shared/types.ts      Types shared across main, preload, and renderer
 ```
 

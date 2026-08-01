@@ -7,7 +7,8 @@ and then **[Getting Started](./getting-started.md)**.
 
 > **The cartridge is the format; the DVD-RW is the storage layer.**
 > The v0.1 format is pure software: **album folder in → verified OMD package
-> out.** v0.2 adds imaging, burning to disc (Windows), and playback. No GUI yet.
+> out.** v0.2 adds imaging, burning to disc (Windows), and playback. OMD Studio,
+> the desktop and touch app, is in progress.
 
 ---
 
@@ -24,7 +25,7 @@ and then **[Getting Started](./getting-started.md)**.
 | Call the library from code | [SDK Reference](./sdk-reference.md) |
 | Understand validation results | [Validation Guide](./validation.md) |
 | See where the project is going | [Roadmap](./roadmap.md) |
-| Read the OMD Studio design (theming + ripping) | [OMD Studio Design](./omd-studio.md) |
+| Read about the OMD Studio app | [OMD Studio](./omd-studio.md) |
 | Get quick answers | [FAQ](./faq.md) |
 | Look up a term | [Glossary](./glossary.md) |
 | Contribute | [Contributing](./contributing.md) |
@@ -43,7 +44,7 @@ documentation/
   sdk-reference.md     @open-media-disc/core API reference
   validation.md        Error/warning codes and how to fix them
   roadmap.md           Milestones from software to cartridge hardware
-  omd-studio.md        OMD Studio (alpha) design: player theming + ripping
+  omd-studio.md        OMD Studio: the desktop/touch app, theming, and ripping
   faq.md               Common questions
   glossary.md          Terminology
   contributing.md      How to work on OMD and keep docs in sync
@@ -67,14 +68,17 @@ issue so we can fix the docs.
 
 | Package | What it is |
 | --- | --- |
-| [`@open-media-disc/core`](../packages/core) | Platform-independent SDK: create, validate, inspect packages. |
+| [`@open-media-disc/core`](../packages/core) | Platform-independent SDK: create, validate, inspect, image, burn, rip. |
 | [`@open-media-disc/cli`](../packages/cli) | The `omd` command-line tool. |
+| [`@open-media-disc/label`](../packages/label) | Printable label sheets. |
+| [`@open-media-disc/ui`](../packages/ui) | Shared player state model. |
+| [`@open-media-disc/studio`](../packages/studio) | OMD Studio, the Electron desktop and touch app. |
 
 ## Current status
 
 - **Format:** `OMD-FLAC-DATA` v0.1.0
-- **Milestone:** Core v0.1 done; v0.2 (Write and Play) adds imaging, burning
-  (Windows), and playback.
+- **Milestone:** Core v0.1 and v0.2 (Write and Play) are done; OMD Studio (alpha)
+  is in progress.
 - **License:** [MIT](../LICENSE)
 
 ---
