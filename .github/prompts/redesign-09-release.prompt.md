@@ -21,10 +21,11 @@ Step 09 of the OMD Studio redesign series. Run in order, one per fresh chat.
 This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
 authoritative log; read it for the full history and any newer entries.
 
-- Last commit at hand-off: `c54240f` (`docs: update OMD Studio docs for the
-  redesigned app`), plus the status-file update that follows it. Working tree
-  clean; `pnpm -r build`, `pnpm test` (157), and `pnpm lint` are green. Seven or
-  more commits ahead of `origin/main`; nothing has been pushed.
+- Last commit at hand-off: `7268cbb` (`fix(studio): keep the Create a Disc burn
+  panel's content inside its card`), on top of the step 08 docs commits `c54240f`
+  and `6f49ddc`. Working tree clean; `pnpm -r build`, `pnpm test` (157), and
+  `pnpm lint` are green. `main` is level with `origin/main`, so steps 01-08 are
+  pushed. Never push without asking.
 - Steps 01-08 are done. The redesign is code-complete for this series: the app
   renders from `shell.css` (layout) plus `components.css` (the `--omd-*` token
   contract, the component kit, and a shrinking "Legacy token bridge"). There is

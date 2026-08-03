@@ -45,6 +45,7 @@ documentation/
   validation.md        Error/warning codes and how to fix them
   roadmap.md           Milestones from software to cartridge hardware
   omd-studio.md        OMD Studio: the desktop/touch app, theming, and ripping
+  redesign-plan.md     Working brief for the Studio touch-first redesign
   faq.md               Common questions
   glossary.md          Terminology
   contributing.md      How to work on OMD and keep docs in sync

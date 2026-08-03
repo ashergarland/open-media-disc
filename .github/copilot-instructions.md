@@ -92,6 +92,7 @@ When you change one of these, update the matching docs **before finishing**:
 | If you change… | Also update… |
 | --- | --- |
 | Package format, manifest fields, disc layout | `spec/OMD_FORMAT_SPEC.md`, `spec/OMD_DISC_LAYOUT.md`, `spec/OMD_MANIFEST_SCHEMA.json`, `documentation/package-format.md`, `documentation/what-is-omd.md` |
+| Supported audio codecs | `spec/OMD_FORMAT_SPEC.md`, `spec/OMD_MANIFEST_SCHEMA.json`, `documentation/package-format.md`, `documentation/validation.md` |
 | Validation rules or codes | `spec/OMD_VALIDATION_RULES.md`, `documentation/validation.md` |
 | A CLI command or option (`packages/cli`) | `documentation/cli-reference.md`, `documentation/getting-started.md`, root `README.md`, and the CLI `HELP` text in `packages/cli/src/bin/omd.ts` |
 | Core public API (`packages/core/src`) | `documentation/sdk-reference.md`, `packages/core/README.md` |
@@ -145,6 +146,14 @@ split rules in the workflow prompts).
   and human-readable.
 - **Validation codes are a stable API:** don't rename `ValidationCode` values
   without updating `spec/OMD_VALIDATION_RULES.md` and `documentation/validation.md`.
+- **One codec per package, described honestly:** a package holds a single codec
+  (FLAC, MP3, AAC, Vorbis, Opus, or WAV). "Lossless" describes the container, not
+  the audio's history, so a FLAC transcoded from an MP3 is not lossless. In UI and
+  prose, show the real codec plus factual facts: sample rate always, bit depth only
+  for a lossless codec, bitrate only for a lossy one. Never write "FLAC lossless"
+  or claim a fixed bit depth. The format id `OMD-FLAC-DATA` is a legacy string and
+  does not mean a package must be FLAC. See
+  [`documentation/omd-studio.md`](../documentation/omd-studio.md#honest-codec-language).
 - **Fixtures:** use the synthetic, metadata-only FLAC fixtures in
   `packages/core/tests/helpers`. Never commit copyrighted audio.
 - **Versioning:** format version (`omdVersion`) and package versions move

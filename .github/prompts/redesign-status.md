@@ -168,8 +168,8 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 
 ## Current state
 
-- Last commit: `c54240f` docs: update OMD Studio docs for the redesigned app.
-  Seven commits ahead of `origin/main`, nothing pushed.
+- Last commit: `7268cbb` fix(studio): keep the Create a Disc burn panel's content
+  inside its card. `main` is level with `origin/main`: steps 01-08 are pushed.
 - Working tree: clean. Build, 157 tests, and lint are green. The user has
   confirmed step 07 and the Create a Disc rework in Electron on the desktop.
 - Docs now match the app: `documentation/omd-studio.md` describes the hub-and-spoke
