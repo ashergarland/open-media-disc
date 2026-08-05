@@ -147,10 +147,13 @@ open-media-disc/
 
 ## Where this is going
 
-v0.1 proved the format; **v0.2 Write and Play** took it to disc and playback.
-**OMD Studio (alpha)** is now in progress: a touch-first app wrapping the core,
-with printable labels and an integrated player. Beyond it: multi-language SDKs, a
-Raspberry Pi player, a writer dock, and eventually a cartridge shell. See the
+v0.1 proved the format; **v0.2 Write and Play** took it to disc and playback; and
+**OMD Studio (alpha)** shipped as a touch-first app wrapping the core, with
+printable labels and an integrated player. Next is a set of software milestones
+that grow the OMD ecosystem: cross-platform burning, a conformance suite and
+other-language SDKs, new apps and integrations, and accessibility. Hardware (a
+Raspberry Pi player, a writer dock, and eventually a cartridge shell) is parked
+until that ecosystem is established. See the
 [Roadmap](./documentation/roadmap.md) for the full picture.
 
 ## Contributing

@@ -11,8 +11,8 @@ Step 09 of the OMD Studio redesign series. Run in order, one per fresh chat.
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
    "Next" step and that steps 01-08 are done. Read the existing
-   [`release-checkpoint`](./release-checkpoint.prompt.md) prompt and
-   [`../copilot-instructions.md`](../copilot-instructions.md) for the versioning
+   [`release-checkpoint`](../../release-checkpoint.prompt.md) prompt and
+   [`../../../copilot-instructions.md`](../../../copilot-instructions.md) for the versioning
    policy.
 2. Clean tree.
 
@@ -102,7 +102,7 @@ Keep the series self-contained and self-propagating. Before you finish, prepare
 the next prompt so whoever runs it in a fresh chat has current context:
 
 1. Open the next prompt,
-   [`./redesign-10-hardware-test.prompt.md`](./redesign-10-hardware-test.prompt.md).
+   [`../../hardware/hardware-01-studio-burn-and-play-acceptance.prompt.md`](../../hardware/hardware-01-studio-burn-and-play-acceptance.prompt.md).
 2. Refresh its "## Current context (snapshot ...)" section to reflect the repo
    after your work: the last commit, the version and tag you cut, what the app
    looks like now, the files and patterns step 10 will touch, and anything you

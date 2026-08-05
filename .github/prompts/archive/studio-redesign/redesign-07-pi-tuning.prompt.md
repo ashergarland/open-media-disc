@@ -10,7 +10,7 @@ Step 07 of the OMD Studio redesign series. Run in order, one per fresh chat.
 ## Before you start
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
-   "Next" step. Read [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
+   "Next" step. Read [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md)
    section 4 (touch-first) and section 9 (open questions: portrait vs landscape,
    thin persistent nav vs pure tiles).
 2. Clean tree, green build.
@@ -73,7 +73,7 @@ width. Add kiosk/full-screen behavior suited to an appliance.
    target at small sizes. Prefer `clamp()`, `min-height: 0` flex chains, and
    content-driven `auto-fit` grids; avoid device-specific breakpoints.
 4. Kiosk/full-screen: add sensible appliance behavior in
-   [`main.ts`](../../packages/studio/src/main/main.ts). Options to consider with
+   [`main.ts`](../../../../packages/studio/src/main/main.ts). Options to consider with
    the user: launch maximized or full-screen, an optional kiosk flag/env for the
    Pi build, hide the menu bar, and ensure the window has a reasonable minimum
    size. Keep desktop windowed behavior as the default; make kiosk opt-in.

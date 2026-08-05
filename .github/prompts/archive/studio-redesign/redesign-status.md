@@ -1,5 +1,13 @@
 # OMD Studio redesign: shared status
 
+> **Archived.** This series is complete: steps 01 through 09 delivered
+> `studio-v0.2.0`, and step 10 (hardware acceptance) moved to the parked hardware
+> group at
+> [`../../hardware/`](../../hardware/README.md). This file is kept for its
+> history and its "Gotchas and durable facts" section, which still applies to the
+> Studio codebase. The **live** tracker is
+> [`../../../planning/STATUS.md`](../../../planning/STATUS.md).
+
 This is the **single source of truth** for the OMD Studio redesign work. The
 work is split into a series of ordered prompts (`redesign-01-*` through
 `redesign-10-*`). Each prompt is meant to be run in a **fresh chat**, so this
@@ -42,7 +50,7 @@ Do not skip step 4. If this file is not updated, the next chat starts blind.
 - Other packages (`core`, `cli`, `label`, `ui`) are the shared SDK and are not
   the focus of this series, though small additions there are fine when needed.
 - The living design brief for this redesign is
-  [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md).
+  [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md).
   Read section 3 (target IA), 4 (touch-first rules), 6 (theme system), and 8
   (phased plan). This status file is the execution tracker for that plan.
 
@@ -164,7 +172,7 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 07 | `redesign-07-pi-tuning` | Done bcf3355 | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Done c54240f | `documentation/omd-studio.md` rewritten for the shipped app; roadmap, project status, and the doc indexes brought in line. |
 | 09 | `redesign-09-release` | Done f6df22a | OMD Studio bumped to 0.2.0 and tagged `studio-v0.2.0` (local only, not pushed). |
-| 10 | `redesign-10-hardware-test` | Next | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
+| 10 | `redesign-10-hardware-test` | Moved to hardware | Guided manual burn-and-play acceptance on real hardware. Parked with the hardware group as [`hardware-01-studio-burn-and-play-acceptance`](../../hardware/hardware-01-studio-burn-and-play-acceptance.prompt.md). |
 
 ## Current state
 

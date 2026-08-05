@@ -66,9 +66,11 @@ Read these to load current context before starting any work:
 
 - [`../../documentation/project-status.md`](../../documentation/project-status.md): where the project is.
 - [`../../documentation/roadmap.md`](../../documentation/roadmap.md): milestones and what is next.
-- [`./redesign-status.md`](./redesign-status.md): the live OMD Studio UI redesign
-  tracker. The row marked `Next` is the next `redesign-NN` prompt to run in a
-  fresh chat.
+- [`../planning/STATUS.md`](../planning/STATUS.md): the **live tracker**. It names
+  the current milestone, the next step prompt to run in a fresh chat, active
+  blockers, and the decisions already made. Read this before starting any work.
+- [`../planning/ROADMAP.md`](../planning/ROADMAP.md): the detailed plan and the
+  objectives behind it.
 
 ## Report back
 

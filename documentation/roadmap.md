@@ -19,38 +19,56 @@ For a full breakdown of what is built versus what is left, see
 image, burn a package to 8cm DVD-RW and verify it (Windows), and play the album
 with mpv or ffplay. See [Milestone: v0.2 Write and Play](#milestone-v02-write-and-play).
 
-**OMD Studio (alpha): in progress.** A desktop and touch app (Electron) wrapping
-the core for import, package, label, burn, verify, play, and rip. See
-[Milestone: OMD Studio (alpha)](#milestone-omd-studio-alpha).
+**OMD Studio (alpha): done.** A desktop and touch app (Electron) wrapping the
+core for import, package, label, burn, verify, play, and rip, shipped as
+`studio-v0.2.0`. The touch-first redesign that followed it (design tokens,
+hub-and-spoke navigation, themes, Raspberry Pi tuning) is also delivered. See
+[Milestone: OMD Studio (alpha)](#milestone-omd-studio-alpha) and the
+[OMD Studio design note](./omd-studio.md). One acceptance item is outstanding: a
+manual burn-and-play test of the redesigned app on real hardware.
+
+**What is next: an ecosystem planning phase.** The next set of software
+milestones is being chosen. Hardware milestones (writer dock, Pi player, deck,
+portable, cartridge) are deliberately **parked** while the software ecosystem
+grows.
 
 ## Milestone ladder
 
 ```mermaid
 flowchart LR
     A[Core v0.1<br/>format + CLI] --> W[Write and Play v0.2<br/>CLI burn + play]
-    A --> C[Multi-language SDKs<br/>TypeScript / Rust]
     W --> B[OMD Studio<br/>desktop app]
-    W --> D[Writer Dock<br/>erase / burn / verify]
-    W --> E[Pi Player<br/>playback device]
+    B --> X[Ecosystem<br/>SDK / apps / interop]
+    X --> C[Multi-language SDKs<br/>TypeScript / Rust]
+    X --> D[Writer Dock<br/>erase / burn / verify]
+    X --> E[Pi Player<br/>playback device]
     D --> F[OMD Deck<br/>home audio]
     E --> F
     F --> G[Portable player]
     G --> H[Cartridge-native<br/>reader / writer]
 ```
 
+Everything to the right of "Ecosystem" is parked until the software ecosystem is
+established.
+
 ## Milestones
 
 | Milestone | Goal | Status |
 | --- | --- | --- |
-| **Core v0.1** | Stable package format: create, validate, inspect. | ✅ Done |
-| **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | ✅ Done |
-| **OMD Studio (alpha)** | Desktop and touch app wrapping the core: package, label, burn, play (themeable), and rip. | In progress |
+| **Core v0.1** | Stable package format: create, validate, inspect. | Done |
+| **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | Done |
+| **OMD Studio (alpha)** | Desktop and touch app wrapping the core: package, label, burn, play (themeable), and rip. | Done |
+| **Next software milestones** | Growing the OMD ecosystem: SDK, spec, apps, integrations, accessibility. | Being planned |
 | **Multi-language SDKs** | Shared conformance fixtures across TS (and later Rust). | Planned |
-| **Writer Dock** | Dedicated device: erase → burn → verify → eject 8cm DVD-RW. | Planned |
-| **Pi Player** | Raspberry Pi playback device reading bare OMD discs (the same touch-first Studio UI in kiosk mode). | Planned |
-| **OMD Deck** | Component-style home-audio player. | Research |
-| **Portable player** | Battery, cache-first, MiniDisc-style handheld. | Research |
-| **Cartridge-native** | Spin an 8cm DVD-RW inside a serviceable cartridge shell. | Long-term R&D |
+| **Writer Dock** | Dedicated device: erase, burn, verify, eject 8cm DVD-RW. | Parked |
+| **Pi Player** | Raspberry Pi playback device reading bare OMD discs (the same touch-first Studio UI in kiosk mode). | Parked |
+| **OMD Deck** | Component-style home-audio player. | Parked |
+| **Portable player** | Battery, cache-first, MiniDisc-style handheld. | Parked |
+| **Cartridge-native** | Spin an 8cm DVD-RW inside a serviceable cartridge shell. | Parked |
+
+Hardware milestones are parked, not cancelled: the format and the software
+ecosystem come first, and every software improvement makes the hardware cheaper
+to build later.
 
 ## Milestone: v0.2 Write and Play
 
@@ -102,7 +120,7 @@ keeps the other platforms as future backends without changing the format.
 
 ## Milestone: OMD Studio (alpha)
 
-**Status: in progress.**
+**Status: delivered as `studio-v0.2.0`.**
 
 **Goal.** A desktop and touch app (Electron) that wraps the existing OMD core in
 one surface: import or pick an album, package and validate it, generate a

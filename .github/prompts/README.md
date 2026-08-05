@@ -1,53 +1,81 @@
 # OMD prompt library
 
 Reusable workflow prompts that capture how this project is planned, built, and
-released. Run one with `/<name>` in chat (for example `/next-steps`). Every
+released. Run one with `/<name>` in chat (for example `/milestone-plan`). Every
 prompt honors the house rules in
 [`../copilot-instructions.md`](../copilot-instructions.md) and the background in
 [`../context/product-context.md`](../context/product-context.md): spec-first,
 docs-in-sync, no em dash, no emojis in Markdown headers, and careful versioning.
 
-## When to use each prompt
+Planning state lives next door in [`../planning/`](../planning/README.md).
+Prompts execute; planning files remember.
+
+## The orchestration loop
+
+Work happens as **milestones**, each delivered by an ordered **chain** of step
+prompts run one per fresh chat. State passes between chats through
+[`../planning/STATUS.md`](../planning/STATUS.md), which every step reads first
+and writes last.
+
+```text
+/brainstorm      ->  planning/ideas/       capture, never commit
+   (user selects)
+                 ->  planning/ROADMAP.md   the milestone, with exit criteria
+/milestone-plan  ->  prompts/<id>/         an ordered chain of step prompts
+   (one step per fresh chat)
+                 ->  planning/STATUS.md    updated at the end of every step
+/milestone-close ->  prompts/archive/<id>/ verified, versioned, archived
+```
+
+To pick up work cold, read [`../planning/STATUS.md`](../planning/STATUS.md) and
+run the step it says is next.
+
+## Orchestration prompts
 
 | Prompt | Use it to |
 | --- | --- |
-| [get-started](./get-started.prompt.md) | Onboard on a fresh machine or fresh chat: one-command install, build, test, and lint, then report project state and the next step. |
-| [next-steps](./next-steps.prompt.md) | Run the top-level planning session: decide direction, set goals and roadmap, pick the next stage, and drive it end to end. Start here. |
+| [brainstorm](./brainstorm.prompt.md) | Generate or triage ideas in the planning catalog. Ideas are not commitments. |
+| [milestone-plan](./milestone-plan.prompt.md) | Turn one roadmap milestone into an ordered chain of step prompts. Run once per milestone. |
+| [milestone-close](./milestone-close.prompt.md) | Verify the exit criteria, cut a version, archive the chain, promote the next milestone. |
+
+## Working prompts
+
+| Prompt | Use it to |
+| --- | --- |
+| [get-started](./get-started.prompt.md) | Onboard on a fresh machine or fresh chat: install, build, test, and lint, then report project state and the next step. |
+| [next-steps](./next-steps.prompt.md) | Top-level strategic planning: direction, goals, and which milestone comes next. Feeds the roadmap. |
 | [stage-kickoff](./stage-kickoff.prompt.md) | Plan and design one deliverable stage: scope, non-goals, exit criteria, and a task list. |
 | [spec-change](./spec-change.prompt.md) | Change the format safely, spec-first, with schema, fixtures, and docs kept in sync. |
 | [add-feature](./add-feature.prompt.md) | Add a CLI command or a core SDK API with matching tests and docs. |
 | [release-checkpoint](./release-checkpoint.prompt.md) | Verify green, bump the version, and propose a commit and tag at a demoable point. |
 | [docs-pass](./docs-pass.prompt.md) | Audit and repair documentation: drift, links, style, and spec-to-docs consistency. |
-| [promote-sources](./promote-sources.prompt.md) | Turn raw internal or source material into official public docs while respecting the public and internal split. |
+| [promote-sources](./promote-sources.prompt.md) | Turn raw internal or source material into official public docs, respecting the public and internal split. |
 
-## Typical flow
+## Active milestone chains
 
-1. `/next-steps` to choose direction and the next stage.
-2. `/stage-kickoff` to design that stage and produce a task list.
-3. `/spec-change` and/or `/add-feature` to implement in small, verifiable steps.
-4. `/docs-pass` to make sure the docs match the code.
-5. `/release-checkpoint` to cut a visible version.
+None. The project is between milestones, in an ecosystem planning phase. See
+[`../planning/ideas/README.md`](../planning/ideas/README.md) for the candidate
+work and [`../planning/ROADMAP.md`](../planning/ROADMAP.md) for what has been
+committed to.
 
-## OMD Studio redesign series (run in order)
+## Parked
 
-A finite, ordered set of prompts that finish the OMD Studio redesign, one chunk
-per prompt. They are designed to be run in **separate fresh chats**, in order,
-sharing state through a single status file:
-[`redesign-status.md`](./redesign-status.md). Each prompt reads that file first
-for context and updates it before finishing, so no context is lost between chats.
+[`hardware/`](./hardware/README.md) holds work that needs physical hardware: a
+real disc, a writer dock, a Pi panel, or a cartridge shell. It is deliberately
+not scheduled. The preserved plan is in
+[`../planning/hardware-milestones.md`](../planning/hardware-milestones.md).
 
-Start by opening [`redesign-status.md`](./redesign-status.md) to see which step
-is marked `Next`, then run that prompt.
+## Archived chains
 
-| # | Prompt | Does |
-| --- | --- | --- |
-| 01 | [redesign-01-labels-to-tokens](./redesign-01-labels-to-tokens.prompt.md) | Rebuild the Labels view on the token component kit. |
-| 02 | [redesign-02-editors-to-tokens](./redesign-02-editors-to-tokens.prompt.md) | Migrate the import review, mixtape, and album editor views to tokens. |
-| 03 | [redesign-03-token-contract](./redesign-03-token-contract.prompt.md) | Complete the `--omd-*` token contract; make styling self-contained. |
-| 04 | [redesign-04-new-themes](./redesign-04-new-themes.prompt.md) | Author token-map themes and a live Themes picker; retire the old theme CSS. |
-| 05 | [redesign-05-cleanup](./redesign-05-cleanup.prompt.md) | Sweep dead code, CSS, assets, and dev tooling. |
-| 06 | [redesign-06-home-hub](./redesign-06-home-hub.prompt.md) | Rebuild the Home hub toward the premium touch mockup. |
-| 07 | [redesign-07-pi-tuning](./redesign-07-pi-tuning.prompt.md) | Small-screen and kiosk tuning for the Raspberry Pi panel. |
-| 08 | [redesign-08-docs-pass](./redesign-08-docs-pass.prompt.md) | Bring the Studio docs in line with the redesigned app. |
-| 09 | [redesign-09-release](./redesign-09-release.prompt.md) | Verify green, bump the software version, propose commit and tag. |
-| 10 | [redesign-10-hardware-test](./redesign-10-hardware-test.prompt.md) | Guided manual burn-and-play acceptance on real hardware. |
+Completed chains are kept, never deleted. Their gotchas usually outlive the work.
+
+| Chain | Delivered |
+| --- | --- |
+| [studio-redesign](./archive/studio-redesign/README.md) | The OMD Studio touch-first redesign: token contract, hub-and-spoke navigation, themes, Pi tuning. Shipped as `studio-v0.2.0`. |
+
+## Writing a new step prompt
+
+Follow [`../planning/milestone-prompt-template.md`](../planning/milestone-prompt-template.md).
+Every step prompt needs Read first, Context snapshot, Goal, Work items, Doc
+update requirements, Verify, Handoff, and Guardrails. A step prompt that a cold
+agent cannot execute from itself plus `STATUS.md` is not finished.

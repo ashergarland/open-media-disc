@@ -10,19 +10,19 @@ Step 02 of the OMD Studio redesign series. Run in order, one per fresh chat.
 ## Before you start
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully and confirm this is
-   the "Next" step. Read [`../copilot-instructions.md`](../copilot-instructions.md).
+   the "Next" step. Read [`../../../copilot-instructions.md`](../../../copilot-instructions.md).
 2. Confirm a clean tree and a green build
    (`pnpm --filter @open-media-disc/studio build`).
 
 ## Goal
 
 Migrate the three editor surfaces in
-[`packages/studio/src/renderer/renderer.ts`](../../packages/studio/src/renderer/renderer.ts)
+[`packages/studio/src/renderer/renderer.ts`](../../../../packages/studio/src/renderer/renderer.ts)
 from the legacy field markup to the `--omd-*` token component kit, then delete
 the field/picker classes from the "Legacy token bridge" in
-[`components.css`](../../packages/studio/src/renderer/components.css) and any dead
+[`components.css`](../../../../packages/studio/src/renderer/components.css) and any dead
 `.import-picker` / `.codec-option` / `.edit-*` rules in
-[`shell.css`](../../packages/studio/src/renderer/shell.css).
+[`shell.css`](../../../../packages/studio/src/renderer/shell.css).
 
 The three surfaces:
 - Import review (`importReviewView`) - the per-album review/edit form shown when

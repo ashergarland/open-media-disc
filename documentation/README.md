@@ -6,9 +6,9 @@ developers. If you are new here, start with **[What is OMD?](./what-is-omd.md)**
 and then **[Getting Started](./getting-started.md)**.
 
 > **The cartridge is the format; the DVD-RW is the storage layer.**
-> The v0.1 format is pure software: **album folder in → verified OMD package
+> The v0.1 format is pure software: **album folder in, verified OMD package
 > out.** v0.2 adds imaging, burning to disc (Windows), and playback. OMD Studio,
-> the desktop and touch app, is in progress.
+> the desktop and touch app, has shipped.
 
 ---
 
@@ -78,8 +78,8 @@ issue so we can fix the docs.
 ## Current status
 
 - **Format:** `OMD-FLAC-DATA` v0.1.0
-- **Milestone:** Core v0.1 and v0.2 (Write and Play) are done; OMD Studio (alpha)
-  is in progress.
+- **Milestone:** Core v0.1, v0.2 (Write and Play), and OMD Studio (alpha) are
+  done. The next set of software milestones is being planned.
 - **License:** [MIT](../LICENSE)
 
 ---

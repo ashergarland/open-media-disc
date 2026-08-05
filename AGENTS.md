@@ -9,13 +9,31 @@ the tool-agnostic summary.
 
 **Open Media Disc (OMD)** is an open-source physical music format. The format
 contract is at `omdVersion` 0.1.0; the software is at v0.2 ("Write and Play":
-create, validate, burn, verify, play from the `omd` CLI). The milestone in
-progress is **OMD Studio**, an Electron desktop and Raspberry Pi touch app.
+create, validate, burn, verify, play from the `omd` CLI). **OMD Studio**, the
+Electron desktop and Raspberry Pi touch app, shipped as `studio-v0.2.0`.
 Use the names **Open Media Disc** / **OMD** (older docs' "OAC" is historical
 only).
 
 For the vision, mental model, scope, and design philosophy, read
 [`.github/context/product-context.md`](./.github/context/product-context.md).
+
+## Where the project is right now
+
+[`.github/planning/STATUS.md`](./.github/planning/STATUS.md) is the live tracker:
+the current milestone, the next step prompt to run, active blockers, and the
+decisions already made. **Read it before starting work.**
+
+Work is delivered by prompt-driven development: ideas are captured in
+[`.github/planning/ideas/`](./.github/planning/ideas/README.md), committed
+milestones live in
+[`.github/planning/ROADMAP.md`](./.github/planning/ROADMAP.md), and each
+milestone is executed as an ordered chain of step prompts, one per fresh chat,
+sharing state through `STATUS.md`. The loop is described in
+[`.github/planning/README.md`](./.github/planning/README.md).
+
+Hardware work is **parked**, preserved in
+[`.github/planning/hardware-milestones.md`](./.github/planning/hardware-milestones.md).
+Do not pick it up unless the user says hardware is the focus.
 
 ## The rule that matters most
 
@@ -46,3 +64,5 @@ contributor workflow.
 3. `pnpm lint` is clean.
 4. Format changes update `spec/` and re-run `pnpm gen:examples`.
 5. **README + `documentation/` updated to match.**
+6. If the change was part of a milestone step,
+   [`.github/planning/STATUS.md`](./.github/planning/STATUS.md) is updated last.

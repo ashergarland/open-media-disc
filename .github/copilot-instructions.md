@@ -35,15 +35,25 @@ guessing.
 - **What and why (vision, scope):** root [`README.md`](../README.md) and
   [`.github/context/product-context.md`](./context/product-context.md).
 - **Where the project is and what's next:**
-  [`documentation/project-status.md`](../documentation/project-status.md) and
+  [`.github/planning/STATUS.md`](./planning/STATUS.md) is the **live tracker**
+  (current milestone, next step, blockers, decisions). The user-facing summaries
+  are [`documentation/project-status.md`](../documentation/project-status.md) and
   [`documentation/roadmap.md`](../documentation/roadmap.md).
-- **In-progress OMD Studio UI redesign:**
-  [`.github/prompts/redesign-status.md`](./prompts/redesign-status.md) is the
-  live tracker; run the `redesign-01..10` prompts one per fresh chat.
+- **How work gets planned and delivered:**
+  [`.github/planning/README.md`](./planning/README.md) describes the
+  prompt-driven development loop: ideas to roadmap to prompt chain to status to
+  docs. [`.github/planning/ROADMAP.md`](./planning/ROADMAP.md) holds the detailed
+  plan and the objectives; [`.github/planning/ideas/`](./planning/ideas/README.md)
+  holds candidate work that is not committed.
 - **Normative format contract:** [`spec/`](../spec) (the spec wins over docs).
 - **Reusable workflow prompts:**
-  [`.github/prompts/README.md`](./prompts/README.md) (next-steps, add-feature,
-  spec-change, docs-pass, release-checkpoint, promote-sources).
+  [`.github/prompts/README.md`](./prompts/README.md) (brainstorm, milestone-plan,
+  milestone-close, next-steps, add-feature, spec-change, docs-pass,
+  release-checkpoint, promote-sources).
+- **Parked hardware work:**
+  [`.github/planning/hardware-milestones.md`](./planning/hardware-milestones.md)
+  and [`.github/prompts/hardware/`](./prompts/hardware/README.md). Not scheduled;
+  do not pick it up unless the user says hardware is the focus.
 - **Design references:** [`design/`](../design) (UI mockups, theme showcases,
   OAC-era specs; read-only history).
 - **Per-package details:** each package has a README under `packages/*`.
@@ -99,7 +109,7 @@ When you change one of these, update the matching docs **before finishing**:
 | Label tools (`packages/label`) | `packages/label/README.md` (and `documentation/` if user-facing) |
 | Shared UI (`packages/ui`) | `packages/ui/README.md` |
 | OMD Studio (`packages/studio`) | `documentation/omd-studio.md`, `packages/studio/README.md` |
-| Milestones / scope | `documentation/roadmap.md`, `documentation/project-status.md`, root `README.md` |
+| Milestones / scope | `.github/planning/ROADMAP.md`, `.github/planning/STATUS.md`, `documentation/roadmap.md`, `documentation/project-status.md`, root `README.md` |
 | Terminology | `documentation/glossary.md` |
 | Anything else user-facing | root `README.md` and `documentation/` |
 
@@ -120,7 +130,10 @@ open-media-disc/
   .github/
     copilot-instructions.md   this file
     context/                  agent-facing background (product-context.md)
-    prompts/                  reusable workflow prompts + the redesign series
+    planning/                 the planning control plane: ROADMAP, STATUS, ideas
+    prompts/                  reusable workflow prompts + milestone chains
+      archive/                completed chains, kept for their gotchas
+      hardware/               parked, needs physical hardware
     instructions/             scoped auto-instructions (keep-docs-in-sync)
   packages/core/    @open-media-disc/core: the SDK (format, validate, burn, rip, play helpers)
   packages/cli/     @open-media-disc/cli: the `omd` CLI

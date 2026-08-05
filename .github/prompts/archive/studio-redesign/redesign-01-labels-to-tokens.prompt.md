@@ -14,17 +14,17 @@ order, one per fresh chat, sharing state through a status file.
    project overview, file locations, commands, constraints, verification limits,
    and the roadmap. Confirm this prompt (01) is the "Next" one; if not, run the
    one marked Next instead.
-2. Read [`../copilot-instructions.md`](../copilot-instructions.md) and skim the
-   redesign brief [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
+2. Read [`../../../copilot-instructions.md`](../../../copilot-instructions.md) and skim the
+   redesign brief [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md)
    sections 4 (touch-first rules) and 7 (component kit).
 3. Confirm the working tree is clean (`git status`). Build once to be sure the
    baseline is green: `pnpm --filter @open-media-disc/studio build`.
 
 ## Goal
 
-Rebuild [`packages/studio/src/renderer/labelsView.ts`](../../packages/studio/src/renderer/labelsView.ts)
+Rebuild [`packages/studio/src/renderer/labelsView.ts`](../../../../packages/studio/src/renderer/labelsView.ts)
 so it composes the `--omd-*` token component kit in
-[`packages/studio/src/renderer/components.css`](../../packages/studio/src/renderer/components.css)
+[`packages/studio/src/renderer/components.css`](../../../../packages/studio/src/renderer/components.css)
 (the classes prefixed `omd-`) instead of the old Frutiger showcase classes
 (`.card`, `.btn--primary`, `.wizard-panel`, `.sheet-preview`, `.stepper`,
 `.link-btn`, `.label-picker`, and friends) that currently only look right

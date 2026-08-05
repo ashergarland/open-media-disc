@@ -10,9 +10,9 @@ Step 08 of the OMD Studio redesign series. Run in order, one per fresh chat.
 ## Before you start
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
-   "Next" step. Read [`../copilot-instructions.md`](../copilot-instructions.md)
+   "Next" step. Read [`../../../copilot-instructions.md`](../../../copilot-instructions.md)
    (docs-in-sync rule and change-to-docs mapping) and the existing
-   [`docs-pass`](./docs-pass.prompt.md) prompt for the house doc process.
+   [`docs-pass`](../../docs-pass.prompt.md) prompt for the house doc process.
 2. Clean tree, green build.
 
 ## Current context (snapshot as of step 07)
@@ -70,7 +70,7 @@ authoritative log; read it for the full history and any newer entries.
 
 Update the docs so they describe the app as it is now, not the old sidebar
 wizard. The main offender is
-[`documentation/omd-studio.md`](../../documentation/omd-studio.md), which still
+[`documentation/omd-studio.md`](../../../../documentation/omd-studio.md), which still
 describes a left sidebar (Create Disc / Player / Catalog / Themes / Settings), a
 "Frutiger Aero" default theme, a six-step Create wizard, and "FLAC" badges.
 

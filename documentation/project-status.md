@@ -4,19 +4,21 @@ A high-level snapshot of what is built today and what is left, measured against
 the goals in the [Roadmap](./roadmap.md). For the vision behind the project, see
 [What is OMD?](./what-is-omd.md).
 
-> Scope note: this page tracks the state of the **software** milestone. Media and
-> hardware milestones are described in the [Roadmap](./roadmap.md).
+> Scope note: this page tracks the state of the **software** milestones. Hardware
+> milestones are described in the [Roadmap](./roadmap.md) and are currently
+> parked.
 
 ## In one line
 
 Open Media Disc (OMD) is an open-source physical music format. The v0.1 format
 turns a folder of owned FLAC files into a verified, self-describing album package.
-The current release, **v0.2 Write and Play**, adds building a UDF disc image,
-burning a package to 8cm DVD-RW and verifying it (Windows), and playback with mpv
-or ffplay. **OMD Studio**, the desktop and touch app, is the milestone in
-progress.
+The v0.2 release, **Write and Play**, adds building a UDF disc image, burning a
+package to 8cm DVD-RW and verifying it (Windows), and playback with mpv or ffplay.
+**OMD Studio**, the desktop and touch app, shipped as `studio-v0.2.0`, including
+its touch-first redesign. The project is now choosing its next set of software
+milestones.
 
-## What is implemented (through v0.2)
+## What is implemented (through v0.2 and OMD Studio)
 
 The repository delivers a working pnpm and TypeScript monorepo in four layers:
 
@@ -44,24 +46,24 @@ and verify it on Windows, and play the album.
 
 ## What is left (per the roadmap)
 
-Core v0.1 and v0.2 Write and Play are done. Everything below builds outward from
-the proven format and media loop.
+Core v0.1, v0.2 Write and Play, and OMD Studio (alpha) are done. Everything below
+builds outward from the proven format, media loop, and app.
 
 | Milestone | Goal | Status |
 | --- | --- | --- |
-| Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | ✅ Done |
-| OMD Studio (alpha) | Desktop and touch app wrapping the core: import, package, label, burn, play, rip | In progress |
+| Write and Play (v0.2) | Burn a package to 8cm DVD-RW and play it back from the CLI | Done |
+| OMD Studio (alpha) | Desktop and touch app wrapping the core: import, package, label, burn, play, rip | Done |
+| Next software milestones | Growing the OMD ecosystem: SDK, spec, apps, integrations, accessibility | Being planned |
 | Multi-language SDKs | Shared conformance fixtures across TS (later Rust) | Planned |
-| Writer Dock | Device: erase, burn, verify, eject 8cm DVD-RW | Planned |
-| Pi Player | Raspberry Pi device that plays bare OMD discs | Planned |
-| OMD Deck | Component-style home-audio player | Research |
-| Portable player | Battery, MiniDisc-style handheld | Research |
-| Cartridge-native | 8cm DVD-RW inside a serviceable cartridge shell | Long-term R&D |
+| Writer Dock | Device: erase, burn, verify, eject 8cm DVD-RW | Parked |
+| Pi Player | Raspberry Pi device that plays bare OMD discs | Parked |
+| OMD Deck | Component-style home-audio player | Parked |
+| Portable player | Battery, MiniDisc-style handheld | Parked |
+| Cartridge-native | 8cm DVD-RW inside a serviceable cartridge shell | Parked |
 
-Still **out of scope** and deferred to those milestones: Raspberry Pi device
-services, hardware control beyond writing a disc, cartridge mechanics, mobile
-apps, cloud accounts, DRM, DVD-Audio/Blu-ray authoring, marketplace features, and
-streaming integration.
+Still **out of scope**: cartridge mechanics, cloud accounts, DRM,
+DVD-Audio/Blu-ray authoring, marketplace features, and streaming playback
+integration.
 
 ## The gap in plain terms
 
@@ -70,16 +72,18 @@ streaming integration.
 - **Done (v0.2):** the host-side media loop: building a burn-ready UDF image,
   burning a package to 8cm DVD-RW and verifying it (Windows), and playback via
   mpv/ffplay.
-- **In progress:** OMD Studio, the desktop and touch app that puts the whole loop
-  behind a UI.
-- **Not yet started:** dedicated hardware (a writer dock, a Pi player, the
-  cartridge shell) and additional-language SDKs.
+- **Done (OMD Studio):** the desktop and touch app that puts the whole loop
+  behind a UI, including labels and verified ripping.
+- **Outstanding:** a manual burn-and-play acceptance test of the redesigned app
+  on real hardware.
+- **Being planned:** the next set of software milestones, aimed at growing the
+  OMD ecosystem (cross-platform burning, conformance and other-language SDKs, new
+  apps and surfaces, integrations, and accessibility).
+- **Parked:** dedicated hardware (a writer dock, a Pi player, the cartridge
+  shell).
 
-The current milestone is **OMD Studio (alpha)**: an Electron app, one touch-first
-UI for both the desktop and a Raspberry Pi panel, that wraps the core for import,
-packaging, labeling, burning, verifying, playing, and ripping. See
-[Milestone: OMD Studio (alpha)](./roadmap.md#milestone-omd-studio-alpha) and the
-[OMD Studio design note](./omd-studio.md).
+The main known limitation today is that **burning is Windows-only**, which blocks
+Linux and macOS users and every future hardware device.
 
 ## Keep this page current
 

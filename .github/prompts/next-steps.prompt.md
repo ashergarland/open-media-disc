@@ -11,7 +11,8 @@ this prompt is to move the project forward one deliberate stage at a time by
 planning, design, documentation, environment setup, repository setup, and
 implementation. Never guess on a strategic or structural decision: ask first.
 
-Read [`.github/context/product-context.md`](../context/product-context.md) and
+Read [`.github/context/product-context.md`](../context/product-context.md),
+[`.github/planning/STATUS.md`](../planning/STATUS.md), and
 [`.github/copilot-instructions.md`](../copilot-instructions.md) before you start,
 and honor every rule there (spec-first, docs-in-sync, no em dash, no emojis in
 Markdown headers, versioning discipline).
@@ -139,12 +140,20 @@ rewriting git history, deleting or relocating files, pushing, or tagging are all
 This is the top-level driver. Hand off to the focused prompts in the
 [prompt library](./README.md) as you move through the phases:
 
+- `brainstorm` to grow or triage the idea catalog before choosing direction.
+- `milestone-plan` to turn a chosen roadmap milestone into an executable chain of
+  step prompts. This is the normal path once direction is settled.
+- `milestone-close` to verify, version, and archive a finished milestone.
 - `stage-kickoff` to plan and design a chosen stage.
 - `spec-change` for any format or spec work (spec-first).
 - `add-feature` to add a CLI command or core API with tests and docs.
 - `docs-pass` to audit and sync documentation.
 - `promote-sources` to turn raw source material into public docs.
 - `release-checkpoint` to cut a visible version at a demoable point.
+
+Decisions reached here belong in the decision log in
+[`../planning/STATUS.md`](../planning/STATUS.md), and committed milestones belong
+in [`../planning/ROADMAP.md`](../planning/ROADMAP.md).
 
 ## Operating rules
 

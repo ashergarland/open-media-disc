@@ -10,7 +10,7 @@ Step 06 of the OMD Studio redesign series. Run in order, one per fresh chat.
 ## Before you start
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
-   "Next" step. Read [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
+   "Next" step. Read [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md)
    sections 3 (target IA) and 4 (touch-first rules).
 2. Look at the reference mockup: `design/images/example4_touchScreenUi.png`
    (a glass hub with large tiles and a persistent transport). Treat it as visual
@@ -53,7 +53,7 @@ authoritative log; read it for the full history and any newer entries.
 ## Goal
 
 Elevate the Home hub (`homeView` in
-[`renderer.ts`](../../packages/studio/src/renderer/renderer.ts)) from the current
+[`renderer.ts`](../../../../packages/studio/src/renderer/renderer.ts)) from the current
 functional tile grid to a polished, touch-first hub that matches the mockup's
 feel, built entirely from the token component kit and the new themes so it looks
 right in every theme.

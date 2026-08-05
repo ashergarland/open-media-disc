@@ -12,7 +12,7 @@ Step 04 of the OMD Studio redesign series. Run in order, one per fresh chat.
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
    "Next" step. This step depends on 03 (the app must render fully from the token
    contract in `components.css`).
-2. Read [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
+2. Read [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md)
    section 6. The direction: a small set (target three) of strong original
    themes, each a compact `--omd-*` token map, switched by a variable swap
    (inherently flash-free). Names and art direction are open; propose them.
@@ -34,7 +34,7 @@ full theme stylesheet.
    `--omd-*` values, loaded after `components.css`) that overrides the base token
    values. No per-theme component CSS; the component kit stays shared.
 3. Rebuild the Themes view in
-   [`renderer.ts`](../../packages/studio/src/renderer/renderer.ts) as a real live
+   [`renderer.ts`](../../../../packages/studio/src/renderer/renderer.ts) as a real live
    picker: a card per theme with a small swatch preview (set swatch colors via
    CSSOM `setProperty`, not inline `style=`), the active theme marked, and
    clicking one applies it immediately by setting `data-theme` on the document

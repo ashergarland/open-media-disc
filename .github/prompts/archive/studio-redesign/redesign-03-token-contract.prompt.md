@@ -10,8 +10,8 @@ Step 03 of the OMD Studio redesign series. Run in order, one per fresh chat.
 ## Before you start
 
 1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
-   "Next" step. Read [`../copilot-instructions.md`](../copilot-instructions.md)
-   and [`../../documentation/redesign-plan.md`](../../documentation/redesign-plan.md)
+   "Next" step. Read [`../../../copilot-instructions.md`](../../../copilot-instructions.md)
+   and [`../../../../documentation/redesign-plan.md`](../../../../documentation/redesign-plan.md)
    section 6 (theme system) and 7 (components).
 2. This step depends on 01 and 02 being done (Labels and editors on tokens). If
    the "Legacy token bridge" still has active users, note them; the goal here is
@@ -23,7 +23,7 @@ Step 03 of the OMD Studio redesign series. Run in order, one per fresh chat.
 Make the app fully stylable from the token contract so a theme is just a token
 map, not a 1400-line stylesheet. Concretely: everything visible should get its
 look from `--omd-*` variables defined in
-[`components.css`](../../packages/studio/src/renderer/components.css), so that
+[`components.css`](../../../../packages/studio/src/renderer/components.css), so that
 removing `themes/dark-aero.css` (done in step 04) leaves the app looking correct
 because `components.css` provides sensible default token values in `:root`.
 

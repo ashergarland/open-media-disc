@@ -1,26 +1,36 @@
 ---
 mode: agent
-description: Redesign step 10 of 10. Guide a manual burn-and-play acceptance test of OMD Studio on real hardware (Windows, real writable disc), then record the results. Run in a fresh chat; read the shared status file first.
+description: Hardware milestone H1. Guide a manual burn-and-play acceptance test of OMD Studio on real hardware (Windows, real writable disc), then record the results. Run in a fresh chat; read the hardware milestone index first.
 ---
 
-# Redesign 10: Hardware acceptance test
+# Hardware 01: OMD Studio burn-and-play acceptance
 
-Step 10 of the OMD Studio redesign series, and the final one. Run in order, one
-per fresh chat.
+The first prompt in the **hardware milestone group**, deferred until dedicated
+hardware work resumes. See [`./README.md`](./README.md) for the group, and
+[`../../planning/hardware-milestones.md`](../../planning/hardware-milestones.md)
+for the preserved hardware plan.
+
+This prompt was originally step 10 of the OMD Studio redesign series; steps 01
+through 09 are delivered and archived in
+[`../archive/studio-redesign/`](../archive/studio-redesign/README.md).
 
 ## Before you start
 
-1. Read [`./redesign-status.md`](./redesign-status.md) fully; confirm this is the
-   "Next" step. Read [`../copilot-instructions.md`](../copilot-instructions.md).
+1. Read [`./README.md`](./README.md) and
+   [`../../planning/STATUS.md`](../../planning/STATUS.md) to confirm hardware
+   work is actually the current focus. Read
+   [`../../copilot-instructions.md`](../../copilot-instructions.md).
 2. This step is a **guided manual test with the user**, not an automated one.
    Burning is destructive and can only be validated on real hardware on Windows.
    You cannot run it yourself; you drive the checklist and record the outcome.
-3. Clean tree, green build. The app should be at the release checkpoint (step 09).
+3. Clean tree, green build. The app should be at a release checkpoint.
 
-## Current context (snapshot as of step 09)
+## Current context (snapshot as of the studio-v0.2.0 release)
 
-This snapshot keeps the prompt self-contained. `redesign-status.md` is still the
-authoritative log; read it for the full history and any newer entries.
+This snapshot keeps the prompt self-contained. The archived
+[`redesign-status.md`](../archive/studio-redesign/redesign-status.md) holds the
+full history of how the app got here; the live tracker is now
+[`../../planning/STATUS.md`](../../planning/STATUS.md).
 
 - Last commit at hand-off: `f6df22a` (`chore(studio): release 0.2.0`), plus the
   status/prompt commit that follows it. The annotated tag **`studio-v0.2.0`**
@@ -31,10 +41,9 @@ authoritative log; read it for the full history and any newer entries.
   (`packages/studio/src/main/main.ts`); Settings/About shows "0.2.0 (alpha)".
   `omdVersion` stays `0.1.0`, so the disc format has not changed and any disc
   burned in this test is a normal `OMD-FLAC-DATA v0.1.0` disc.
-- Steps 01-09 are done. The redesign is code-complete and demoable: the user has
-  confirmed it in Electron on the desktop. `pnpm -r build`, `pnpm test` (157),
-  and `pnpm lint` are green. This step is the only remaining one, and it is the
-  first time the redesigned app meets real hardware.
+- The redesign is code-complete and demoable: the user has confirmed it in
+  Electron on the desktop. `pnpm -r build`, `pnpm test` (157), and `pnpm lint`
+  are green. This is the first time the redesigned app meets real hardware.
 - What the app looks like now: hub-and-spoke navigation from a Home hub of tiles,
   every other view a screen with a sticky top bar whose only nav control is Home,
   and a persistent transport dock. Views: home, disc, catalog, burn ("Create a
@@ -79,7 +88,7 @@ then read and play the burned disc.
 
 ## Checklist to walk through with the user
 
-1. Launch the real app (see the status file for the command). Confirm the target
+1. Launch the real app (`pnpm studio` from the repo root). Confirm the target
    theme renders and the transport dock works.
 2. Create a Disc flow: choose a source (from catalog or import music), review the
    metadata, and confirm the package is valid.
@@ -106,14 +115,14 @@ then read and play the burned disc.
 
 ## Record and update status
 
-1. Write the results into [`./redesign-status.md`](./redesign-status.md): tick
-   row 10, mark the series complete, and add a detailed Log entry with the media
-   type used, each checklist step's outcome, and any bug found or fixed.
+1. Write the results into [`../../planning/STATUS.md`](../../planning/STATUS.md):
+   update the current milestone entry and add a decision or blocker row with the
+   media type used, each checklist step's outcome, and any bug found or fixed.
 2. Update repository memory (`/memories/repo/open-media-disc.md`) with the
    hardware result so it is retained.
-3. If the whole series is now complete, note the final state and any remaining
-   backlog (deferred items like Search, portrait mode, or importable user
-   themes) so future work has a starting point.
+3. Note any remaining backlog uncovered by the test in
+   [`../../planning/ideas/README.md`](../../planning/ideas/README.md) so future
+   work has a starting point.
 
 ## Guardrails
 
