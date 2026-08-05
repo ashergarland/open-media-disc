@@ -72,7 +72,7 @@ import type {
 } from '../shared/types';
 
 /** OMD Studio app version (independent of the disc format version). */
-const STUDIO_VERSION = '0.1.0';
+const STUDIO_VERSION = '0.2.0';
 
 /** Runtime configuration (data mode, headless capture) from flags and env. */
 const runtimeConfig = parseRuntimeConfig(process.argv, process.env);
