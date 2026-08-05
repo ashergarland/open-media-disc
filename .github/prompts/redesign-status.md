@@ -163,15 +163,22 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
 | 06 | `redesign-06-home-hub` | Done a2b8641 | Home hub rebuilt toward the premium mockup (`design/images/example4_touchScreenUi.png`). |
 | 07 | `redesign-07-pi-tuning` | Done bcf3355 | Small-screen and kiosk tuning for the 7-10 inch Pi panel; fit-to-viewport verified across widths. |
 | 08 | `redesign-08-docs-pass` | Done c54240f | `documentation/omd-studio.md` rewritten for the shipped app; roadmap, project status, and the doc indexes brought in line. |
-| 09 | `redesign-09-release` | Next | Verify green, bump the software version, propose commit and tag (confirm-first). |
-| 10 | `redesign-10-hardware-test` | Not started | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
+| 09 | `redesign-09-release` | Done f6df22a | OMD Studio bumped to 0.2.0 and tagged `studio-v0.2.0` (local only, not pushed). |
+| 10 | `redesign-10-hardware-test` | Next | Guided manual burn-and-play acceptance on real hardware (Windows, real disc). |
 
 ## Current state
 
-- Last commit: `7268cbb` fix(studio): keep the Create a Disc burn panel's content
-  inside its card. `main` is level with `origin/main`: steps 01-08 are pushed.
+- Last commit: `f6df22a` chore(studio): release 0.2.0, tagged `studio-v0.2.0`
+  (annotated, **local only**: the tag has not been pushed). `main` is ahead of
+  `origin/main` by the step 09 commits; never push without asking.
 - Working tree: clean. Build, 157 tests, and lint are green. The user has
-  confirmed step 07 and the Create a Disc rework in Electron on the desktop.
+  confirmed step 07, the Create a Disc rework, and that the redesign is at a
+  demoable point in Electron on the desktop.
+- Version: `@open-media-disc/studio` is `0.2.0` in both
+  `packages/studio/package.json` and `STUDIO_VERSION` in
+  `packages/studio/src/main/main.ts`; Settings/About renders "0.2.0 (alpha)".
+  Root, `core`, `cli`, and `label` stay at `0.2.0`; `ui` stays at `0.1.0`;
+  `omdVersion` stays `0.1.0`.
 - Docs now match the app: `documentation/omd-studio.md` describes the hub-and-spoke
   navigation, the seven screens, honest codec language, and the three token-map
   themes. There is no code change outstanding from step 08.
@@ -251,10 +258,57 @@ Each row is one prompt. Run them top to bottom, one per fresh chat.
   a staged disc are decorative CSS only.
 - ffmpeg-static is marked `external` in `build.mjs` (main config) so esbuild does
   not inline the binary; it resolves at runtime via `__dirname`.
+- The Studio version lives in **two** places that must move together:
+  `packages/studio/package.json` `version` and `STUDIO_VERSION` in
+  `packages/studio/src/main/main.ts`. The constant feeds Settings/About and the
+  `generator` field stamped into every manifest the app writes.
+- Release tags are **per package** now: `v0.1.0` and `v0.2.0` were taken by the
+  CLI milestone, so the Studio checkpoint is tagged `studio-v0.2.0`.
+- The screenshot harness writes to whatever `--omd-out` says, and
+  `packages/studio/screenshots/` is **not** gitignored. Delete the folder after a
+  capture so it does not get committed.
 
 ## Log
 
 Append newest entries at the top. One entry per completed prompt.
+
+### 09 - Release checkpoint (`f6df22a`, tag `studio-v0.2.0`)
+
+Verified green before touching anything: `pnpm -r build` compiled, `pnpm test`
+passed 157 tests in 17 files, `pnpm lint` was clean, and the tree was clean at
+`610d68d`.
+
+The user confirmed the redesign is demoable and chose a **minor bump for the
+Studio package only**: `@open-media-disc/studio` `0.1.0` to `0.2.0`. Root,
+`core`, `cli`, and `label` stay at `0.2.0` (the CLI milestone); `ui` stays at
+`0.1.0`. `omdVersion` in `packages/core/src/constants.ts` is untouched at
+`0.1.0`: this is a software checkpoint, not a format change.
+
+Two files changed, and they must always move together:
+- `packages/studio/package.json` `version`.
+- `STUDIO_VERSION` in `packages/studio/src/main/main.ts`, which feeds both
+  Settings/About (via `omd:info`) and the `generator` field written into every
+  manifest the app produces.
+
+Re-ran build, tests, and lint after the edit: still green. Verified the version
+actually renders by capturing the Settings screen with the headless harness
+(`npx electron . --omd-data=fixtures --omd-screenshots=settings --omd-out=./screenshots`
+from `packages/studio`); About reads "OMD Studio 0.2.0 (alpha)". The
+`screenshots/` output was deleted afterwards (it is not gitignored, so do not
+leave it behind).
+
+Tag name: **`studio-v0.2.0`**, not `v0.2.0`. A plain `v0.2.0` tag already exists
+for the CLI milestone, so per-package tags are needed from here on. The tag is
+annotated and **local only**; nothing was pushed.
+
+Hardware acceptance (step 10) has not run, which is fine for a software
+checkpoint: the tag marks the redesign as code-complete and demoable, not
+hardware-verified.
+
+Deliberately left alone (logged in step 08, still open, out of scope for a
+release commit): the friendly docs still describe FLAC-only packages although
+the spec and core are multi-codec, and `@open-media-disc/ui` is still described
+as a shared theme engine although Studio only uses its player model.
 
 ### 08 - Documentation pass (`c54240f`)
 
