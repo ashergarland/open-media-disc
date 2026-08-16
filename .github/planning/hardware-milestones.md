@@ -6,9 +6,9 @@ Pick it back up by moving a milestone from here into
 [`./ROADMAP.md`](./ROADMAP.md) and writing its prompt chain in
 [`../prompts/hardware/`](../prompts/hardware/README.md).
 
-The guiding rule has not changed: **the cartridge is the format; the DVD-RW is
-the storage layer.** Hardware only becomes worth building once the format, the
-media loop, and the software ecosystem around them are proven.
+The guiding rule is: **the cartridge is the flagship physical experience, not a
+gate around the open format.** Hardware only becomes worth building once the
+format, the media loop, and the software ecosystem around them are proven.
 
 ## Why parked, not cancelled
 
@@ -86,5 +86,6 @@ expensive later:
 - **A small, embeddable player surface.** The shared `@open-media-disc/ui`
   package should stay lean enough to run on a Pi.
 - **Kiosk and appliance modes** in Studio, already started, kept working.
-- **A stable, versioned format.** Any hardware built against `omdVersion` 0.1.0
-  must keep reading discs made years later.
+- **A stable, versioned format before hardware production.** Draft
+  `omdVersion` 0.1.0 carries no compatibility guarantee. Production hardware
+  targets the first stable format and keeps reading packages made under it.

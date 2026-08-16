@@ -13,6 +13,8 @@ which is user-facing and describes what **exists**. This folder describes what i
 
 | File | What it is | Who writes it |
 | --- | --- | --- |
+| [`strategy.md`](./strategy.md) | The strategic north star: users, unmet need, adoption ladder, product scope, and relationship between the open format and future hardware. | Humans; changed only when the product strategy changes. |
+| [`format-direction.md`](./format-direction.md) | Settled and open design decisions for the next format revision. It is planning, not the current normative contract. | Humans during format planning; later consumed by a spec milestone. |
 | [`ROADMAP.md`](./ROADMAP.md) | The comprehensive plan: objectives, milestone ladder, per-milestone scope and exit criteria. | Humans and `/milestone-plan`; changed deliberately. |
 | [`STATUS.md`](./STATUS.md) | The live tracker: current milestone, step-by-step progress, completed milestones, blockers, decisions. | Every milestone prompt, at the end of every step. |
 | [`ideas/`](./ideas/README.md) | The brainstorm catalog: every idea considered, with an ID, value, effort, and dependencies. | `/brainstorm`, and any prompt that discovers new work. |

@@ -130,8 +130,8 @@ tools. See [`spec/OMD_DISC_LAYOUT.md`](../spec/OMD_DISC_LAYOUT.md).
 OMD keeps the **package format**, the **software**, and the **burn/disc-image
 layer** versions separate. `omdFormat` + `omdVersion` describe the package
 contract (manifest fields, file tree, checksum rules); bump `omdVersion` only when
-that contract changes. The v0.2 burn/UDF layer is additive and backward
-compatible, so it does not change `omdVersion`, which stays `0.1.0`. Library and
+that contract changes. The v0.2 burn/UDF layer did not change the draft package
+contract, so it does not change `omdVersion`, which stays `0.1.0`. Library and
 CLI versions move independently and never imply a format change.
 
 ## Why plain files?

@@ -3,24 +3,28 @@
 **Open Media Disc (OMD)** is an open-source **physical music format**. It turns
 an album folder of FLAC files into a verified, self-describing package that can be
 burned to cheap, rewritable optical discs, a MiniDisc/UMD-style ritual for
-affordable, personal album ownership. Because a package is just files on a UDF
-disc, it is media-agnostic: the reference medium is 8cm DVD-RW, but the same
-package can be written to a CD, a standard DVD, or a Blu-ray.
+affordable, personal album ownership. The current format uses plain files on a
+UDF disc. Its reference medium is 8cm DVD-RW, but the same package can be written
+to a CD, a standard DVD, or a Blu-ray.
 
 ## The one-line idea
 
 > A recorded blank should feel like a legitimate album object, not a homemade
-> substitute. OMD gives owned digital albums a satisfying physical form using
-> commodity optical media.
+> substitute. OMD makes the digital-to-physical album experience compelling for
+> collectors and independent artists before dedicated hardware exists.
 
 ## Why it exists
 
 Streaming is convenient but intangible. Vinyl is satisfying but expensive.
-SD cards store music but have no shelf presence or ritual. OMD aims for the gap:
+MiniDisc offers the compact physical experience OMD wants to revive, but its
+players and media are increasingly rare. Generic storage has no shelf presence
+or ritual. OMD aims for the gap:
 
 - **Album-object psychology**: a labelable, collectable, finished object.
 - **Cheap and rewritable**: commodity optical media you can erase and reburn; 8cm
   DVD-RW is the reference, but any standard writable disc works.
+- **Practical for artists**: independent artists can create short runs without a
+  pressing plant or a large manufacturing minimum.
 - **Open and recoverable**: plain files (FLAC, JSON, SHA-256) readable with
   ordinary tools, never locked inside a proprietary silo.
 
@@ -37,11 +41,12 @@ flowchart TB
     E -. later .-> F[Dedicated player / writer hardware]
 ```
 
-**The cartridge is the format; the disc is the storage layer.** The format is
-media-agnostic; only the cartridge is tied specifically to 8cm DVD-RW, and there
-is no cartridge yet. v0.1 proved the software package format; v0.2 adds the media
-loop (burning to and verifying a writable optical disc, defaulting to 8cm
-DVD-RW). The cartridge shell comes later.
+**The cartridge is the eventual flagship physical experience, not a requirement
+for using the open format.** v0.1 proved the software package format; v0.2 adds
+the media loop (burning to and verifying a writable optical disc, defaulting to
+8cm DVD-RW). Commodity media and open software make OMD useful now. Grassroots
+adoption by collectors and independent artists creates the reason to build the
+protected cartridge, dedicated drives, and players later.
 
 ## Core design principles
 
@@ -51,10 +56,12 @@ DVD-RW). The cartridge shell comes later.
   from any computer drive. The format must be debuggable outside its ecosystem.
 - **Album-first, not folder-first.** A player reads the manifest and shows an
   album, never a file browser.
+- **Digital-to-physical first.** The central workflow turns a legally owned
+  digital album into a credible physical release.
 - **Deterministic and verifiable.** Every package carries checksums; the same
   input produces the same output.
 - **Don't block on the hard part.** Cartridge mechanics come only after the
-  software/media loop is proven.
+  software ecosystem proves demand.
 
 ## What OMD is _not_
 

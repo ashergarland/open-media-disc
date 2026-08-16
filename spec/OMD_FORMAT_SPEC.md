@@ -5,9 +5,11 @@ Format identifier: `OMD-FLAC-DATA`
 
 > Status: Draft. This document defines the on-disc and on-package contract for OMD. The
 > **package format is version `0.1.0`**. The disc-image and burn/verify layer (section 3)
-> was added for the v0.2 software and is backward compatible with 0.1.0 packages. The
-> contract is intentionally minimal and stable so multiple language SDKs and future
-> hardware players can implement it without ambiguity.
+> was added for the v0.2 software without changing the 0.1.0 draft package contract. The
+> contract is intentionally minimal so multiple language SDKs and future hardware
+> players can implement it without ambiguity.
+> OMD has not had a stable format release; this private draft may change without
+> backward compatibility.
 
 ## 1. What Open Media Disc Is
 
@@ -184,9 +186,12 @@ versions separate:
   changes.
 - The disc-image and burn/verify layer (section 3) and the library/CLI package versions
   are **independent of `omdVersion`**. Formalizing the UDF burn layer in the v0.2 software
-  is additive and backward compatible, so `omdVersion` stays `0.1.0`.
+  did not change the draft package contract, so `omdVersion` stays `0.1.0`.
 - Library and CLI package versions follow independent semantic versioning and MUST NOT
   imply a format change.
+
+Version 0.1.0 is a private, pre-stable draft. Producers and consumers have no
+backward-compatibility obligation until OMD declares its first stable format.
 
 Producers MUST write `omdFormat: "OMD-FLAC-DATA"` and `omdVersion: "0.1.0"`. Consumers
 SHOULD reject an unknown `omdFormat` and SHOULD warn on a newer `omdVersion` they do not

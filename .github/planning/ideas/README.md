@@ -32,7 +32,7 @@ IDs are permanent. Never renumber, never reuse, never delete a rejected idea.
 | O2 | Trivial to adopt: album to disc, or disc to library, in minutes. |
 | O3 | Everywhere the music already is: interoperate, do not demand migration. |
 | O4 | Nobody is locked out: platform, ability, and budget. |
-| O5 | Trustworthy over time: a disc burned today reads in ten years. |
+| O5 | Trustworthy over time: a package made under the first stable format reads in ten years. |
 | O6 | Worth showing people: the object and the software feel premium. |
 
 ## Categories

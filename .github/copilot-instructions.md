@@ -159,13 +159,13 @@ split rules in the workflow prompts).
   and human-readable.
 - **Validation codes are a stable API:** don't rename `ValidationCode` values
   without updating `spec/OMD_VALIDATION_RULES.md` and `documentation/validation.md`.
-- **One codec per package, described honestly:** a package holds a single codec
-  (FLAC, MP3, AAC, Vorbis, Opus, or WAV). "Lossless" describes the container, not
-  the audio's history, so a FLAC transcoded from an MP3 is not lossless. In UI and
-  prose, show the real codec plus factual facts: sample rate always, bit depth only
-  for a lossless codec, bitrate only for a lossy one. Never write "FLAC lossless"
-  or claim a fixed bit depth. The format id `OMD-FLAC-DATA` is a legacy string and
-  does not mean a package must be FLAC. See
+- **One codec per package, described factually:** the current private draft
+  accepts several codecs; the planned stable direction is tracked in
+  `.github/planning/format-direction.md`. Never label audio `lossless` or `lossy`
+  in new UI or prose and never infer its history. Show the real codec plus
+  applicable measured facts: sample rate, channel count, bit depth, bitrate, and
+  bitrate mode. The format id `OMD-FLAC-DATA` is a draft string and does not mean
+  a package must be FLAC. See
   [`documentation/omd-studio.md`](../documentation/omd-studio.md#honest-codec-language).
 - **Fixtures:** use the synthetic, metadata-only FLAC fixtures in
   `packages/core/tests/helpers`. Never commit copyrighted audio.

@@ -6,9 +6,11 @@ cheap, collectable, rewritable physical music format. A package is just files on
 UDF disc, so it is media-agnostic; the reference medium is commodity 8cm DVD-RW,
 but the same package can be burned to a CD, a standard DVD, or a Blu-ray.
 
-This repo is **OMD v0.2 Write and Play**: a TypeScript SDK and the `omd` CLI. It
-makes the format real and takes it to disc: package, validate, inspect, build a
-UDF image, burn to 8cm DVD-RW (Windows), and play back.
+This repo is the private, pre-stable **OMD v0.2 Write and Play** development
+milestone: a TypeScript SDK and the `omd` CLI. It makes the draft format real and
+takes it to disc: package, validate, inspect, build a UDF image, burn to 8cm
+DVD-RW (Windows), and play back. Compatibility guarantees begin with the first
+stable format release, not the current draft.
 
 - Status: **v0.2.0, working.** Build, tests, and lint are green.
 - Input: a folder of owned FLAC files. Output: a portable OMD package you can

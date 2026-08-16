@@ -2,13 +2,14 @@
 
 Prefix `FMT`. Changes to the normative contract in [`../../../spec/`](../../../spec).
 
-These are the highest-stakes ideas in the catalog. A format change is close to
-irreversible: discs burned under it exist forever. Every entry here should be
-read against the commitment that **a disc burned today reads in ten years**.
+These are the highest-stakes ideas in the catalog. OMD is still private and
+pre-stable, so the current draft may break without a migration or compatibility
+layer. This is the opportunity to correct the format before the first stable
+release makes long-term readability a commitment.
 
-Default assumption: `omdVersion` stays `0.1.0`. Anything that changes the package
-contract needs a deliberate bump, a migration story, and a consumer policy for
-unknown fields.
+Default assumption: draft compatibility is not a constraint. The first stable
+format needs a deliberate version, a consumer policy for unknown fields, and the
+commitment that packages created under it remain readable.
 
 ## FMT-1 Conformance suite and fixture corpus
 
@@ -28,21 +29,20 @@ metadata-only audio, never copyrighted material). Expected-results files become 
 second source of truth that can drift from `OMD_VALIDATION_RULES.md` unless they
 are generated from it.
 
-## FMT-2 Retire the `OMD-FLAC-DATA` legacy identifier
+## FMT-2 Replace the draft `OMD-FLAC-DATA` identifier
 
-**Pitch.** Introduce a codec-neutral format id (for example `OMD-AUDIO-DATA`)
-and define a compatibility window in which readers accept both.
+**Pitch.** Replace the private draft identifier with a codec-neutral format id
+before the first stable release.
 
 **Why.** The current id says FLAC while the format explicitly supports six
 codecs. Every newcomer reads it as a contradiction, and it will keep costing an
 explanation forever. Fixing it is cheap now and expensive after adoption.
 
-**Value** medium · **Effort** medium · **Serves** O1, O5 · **Depends on** FMT-11
+**Value** medium · **Effort** low · **Serves** O1, O5 · **Depends on** FMT-11
 · **Status** open
 
-**Risks.** This is a real compatibility event. Needs a written policy: producers
-keep writing the legacy id until version X, consumers accept both forever. Doing
-it badly is worse than living with the name.
+**Risks.** Every private fixture, schema, implementation, and document must move
+together. No compatibility window is needed before stability.
 
 ## FMT-3 Gapless playback metadata
 

@@ -10,8 +10,10 @@ format from being real today.
 
 ## Where we are
 
-**OMD Core v0.1: done.** Create, validate, inspect, and preview OMD packages
-with the `omd` CLI and `@open-media-disc/core` SDK. No hardware required.
+**OMD Core v0.1: done as a private draft milestone.** Create, validate, inspect,
+and preview OMD packages with the `omd` CLI and `@open-media-disc/core` SDK. No
+hardware required. OMD has not reached its first stable format release, so v0.1
+does not carry a backward-compatibility guarantee.
 For a full breakdown of what is built versus what is left, see
 [Project Status](./project-status.md).
 
@@ -55,7 +57,7 @@ established.
 
 | Milestone | Goal | Status |
 | --- | --- | --- |
-| **Core v0.1** | Stable package format: create, validate, inspect. | Done |
+| **Core v0.1** | Initial draft package format: create, validate, inspect. | Done |
 | **Write and Play (v0.2)** | Burn a package to 8cm DVD-RW and play it back from the CLI. | Done |
 | **OMD Studio (alpha)** | Desktop and touch app wrapping the core: package, label, burn, play (themeable), and rip. | Done |
 | **Next software milestones** | Growing the OMD ecosystem: SDK, spec, apps, integrations, accessibility. | Being planned |

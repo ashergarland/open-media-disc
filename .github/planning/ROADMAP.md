@@ -1,8 +1,9 @@
 # OMD roadmap
 
 The comprehensive plan: what Open Media Disc is trying to achieve, and the
-ordered milestones that get it there. This is the **agent-facing planning
-roadmap**. The public, user-facing summary is
+ordered milestones that get it there. The product thesis and adoption strategy
+are defined in [`strategy.md`](./strategy.md). This is the **agent-facing
+planning roadmap**. The public, user-facing summary is
 [`../../documentation/roadmap.md`](../../documentation/roadmap.md) and it must be
 kept consistent with this file whenever a milestone changes state.
 
@@ -15,13 +16,16 @@ Live progress is tracked in [`STATUS.md`](./STATUS.md). Unscheduled ideas live i
 
 ## The objective
 
-**Make OMD a format people actually use, by making it the easiest physical music
-format to build on.**
+**Make the digital-to-physical album experience so good that collectors and
+independent artists voluntarily adopt OMD before dedicated hardware exists.**
 
-A format does not win because its flagship app is good. It wins because it is
+OMD begins with commodity media and open software, then earns demand for the
+cartridge and dedicated hardware experience. A format does not win because its
+flagship app is good. It wins because people find it useful and because it is
 everywhere: in other people's tools, in other languages, in libraries, in
-scripts, in file managers, in players nobody on this project wrote. The strategy
-is therefore **ecosystem breadth over feature depth**.
+scripts, in file managers, and in players nobody on this project wrote. The
+strategy is therefore **grassroots utility and ecosystem breadth before
+dedicated hardware**.
 
 ### What we are optimizing for
 
@@ -31,7 +35,7 @@ is therefore **ecosystem breadth over feature depth**.
 | **O2. Trivial to adopt** | Getting an album onto a disc, or a disc into a library, takes minutes with no OMD-specific knowledge. | A first-time user completes create, burn, play without reading docs. |
 | **O3. Everywhere the music already is** | OMD interoperates with the tools people already use for their libraries rather than demanding they move. | Import and export paths exist for the common library and metadata sources. |
 | **O4. Nobody is locked out** | The format and the tools work regardless of platform, ability, or budget. | Cross-platform parity, and the apps meet a stated accessibility bar. |
-| **O5. Trustworthy over time** | A disc burned today reads in ten years, on hardware nobody has built yet. | Format stability guarantees, versioning discipline, and recoverability with ordinary tools. |
+| **O5. Trustworthy over time** | A package created under the first stable format reads in ten years, on hardware nobody has built yet. | A deliberate stable release, versioning discipline, and recoverability with ordinary tools. |
 | **O6. Worth showing people** | The physical object and the software around it feel like a real product, not a hobby project. | Labels, artwork, themes, and the app read as premium. |
 
 ### Commitments that will not change lightly
@@ -42,15 +46,21 @@ is therefore **ecosystem breadth over feature depth**.
   No proprietary container, no DRM.
 - **Format and software versions move independently.** A tool release never
   silently changes the disc format.
-- **One codec per package, described honestly.** "Lossless" describes the
-  container, not the audio's history.
-- **The cartridge is the format; the DVD-RW is the storage layer.**
+- **Pre-stable design may break.** OMD is private and has not shipped a stable
+  format. Draft compatibility is not preserved at the expense of the right
+  long-term design. Compatibility guarantees begin with the first stable format.
+- **One codec per package, described factually.** User-facing surfaces state the
+  codec and applicable measured audio facts. They never label audio `lossless`
+  or `lossy` and never infer its history.
+- **The cartridge is the flagship physical experience, not a gate.** The open
+  release format must remain useful on commodity media and implementable without
+  official hardware.
 
 ## Delivered milestones
 
 | Milestone | Goal | Version |
 | --- | --- | --- |
-| **Core v0.1** | Stable package format: create, validate, inspect. | `v0.1.0` |
+| **Core v0.1** | Initial draft package format: create, validate, inspect. | `v0.1.0` |
 | **Write and Play v0.2** | Burn a package to 8cm DVD-RW and play it back from the CLI. | `v0.2.0` |
 | **OMD Studio (alpha)** | Desktop and touch app wrapping the core: package, label, burn, play, rip. | `studio-v0.2.0` |
 | **Studio touch-first redesign** | Token-based theming, hub-and-spoke navigation, Pi and kiosk tuning. | `studio-v0.2.0` |

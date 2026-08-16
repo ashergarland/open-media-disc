@@ -10,22 +10,32 @@ aligned when the vision changes.
 ## The core idea
 
 A recorded blank should feel like a legitimate album object, not a homemade
-substitute. OMD gives owned digital albums a satisfying physical form using
-commodity 8cm DVD-RW media, in the spirit of MiniDisc or UMD.
+substitute. OMD makes the digital-to-physical album experience compelling for
+collectors and independent artists, using open software and commodity media
+today while working toward a protected cartridge experience inspired by
+MiniDisc and UMD.
+
+The strategic source of truth is
+[`../planning/strategy.md`](../planning/strategy.md).
 
 ## The mental model that guides decisions
 
-**The cartridge is the format; the DVD-RW is the storage layer.** Reason about the
-project in layers, and prove each layer before moving to the next:
+**The cartridge is the flagship physical experience, not a gate around the open
+format.** Reason about the project in layers, and prove demand before investing
+in dedicated hardware:
 
-1. The **package format** (manifest + audio + checksums). This is v0.1.
-2. The **media loop** (burning to and reading from 8cm DVD-RW).
-3. The **cartridge shell** and dedicated player/writer hardware.
+1. The **release format** (manifest + owned media + checksums), currently realized
+   as the v0.1 album package.
+2. The **commodity-media ecosystem**: create, present, write, verify, recover,
+   catalog, and play releases with accessible hardware.
+3. The **cartridge ecosystem**: the protected physical object plus dedicated
+   drives, players, writers, and certified hardware.
 
 Everything downstream (Raspberry Pi players, a writer dock, a cartridge-native
 drive, multi-language SDKs, OMD Studio) depends on the format being stable,
-inspectable, and verifiable first. When unsure, protect the format's stability
-and recoverability over convenience.
+inspectable, and verifiable first. It also depends on people wanting to create
+and collect OMD releases before dedicated hardware exists. When unsure, protect
+recoverability and favor the digital-to-physical album workflow.
 
 ## Why v0.1 is a FLAC data package (and only that)
 
@@ -52,14 +62,18 @@ integration. v0.1 makes the format real, nothing more.
 
 - **Spec first, implementation second.** Interoperability decisions live in
   `spec/` before code.
+- **Digital-to-physical first.** Optimize for collectors making owned digital
+  albums physical and independent artists producing credible short runs.
 - **The disc stays recoverable.** The format must be debuggable outside its own
   ecosystem with ordinary tools.
 - **Album-first, not folder-first.** A player reads the manifest and shows an
   album, never a file browser.
 - **Deterministic and verifiable.** Same input produces the same output; every
   package carries checksums.
+- **Open before official.** The format remains implementable without official
+  hardware. Third-party players and writers grow the ecosystem.
 - **Do not block on the hard part.** Cartridge mechanics come only after the
-  software and media loop are proven.
+  software ecosystem proves demand.
 
 ## OMD Studio (alpha) decisions (locked)
 

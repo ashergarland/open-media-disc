@@ -4,6 +4,10 @@ A high-level snapshot of what is built today and what is left, measured against
 the goals in the [Roadmap](./roadmap.md). For the vision behind the project, see
 [What is OMD?](./what-is-omd.md).
 
+> Stability note: all current format and software versions are private,
+> pre-stable development milestones. The draft format may change without
+> backward compatibility until the first stable format release.
+
 > Scope note: this page tracks the state of the **software** milestones. Hardware
 > milestones are described in the [Roadmap](./roadmap.md) and are currently
 > parked.
@@ -14,9 +18,9 @@ Open Media Disc (OMD) is an open-source physical music format. The v0.1 format
 turns a folder of owned FLAC files into a verified, self-describing album package.
 The v0.2 release, **Write and Play**, adds building a UDF disc image, burning a
 package to 8cm DVD-RW and verifying it (Windows), and playback with mpv or ffplay.
-**OMD Studio**, the desktop and touch app, shipped as `studio-v0.2.0`, including
-its touch-first redesign. The project is now choosing its next set of software
-milestones.
+**OMD Studio**, the desktop and touch app, is implemented at the internal
+`studio-v0.2.0` milestone, including its touch-first redesign. The project is now
+choosing its next set of software milestones.
 
 ## What is implemented (through v0.2 and OMD Studio)
 

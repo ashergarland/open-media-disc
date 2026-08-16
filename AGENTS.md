@@ -52,10 +52,11 @@ contributor workflow.
 - Never use the em dash character (`—`); use a colon, comma, parentheses, or a
   reworded sentence.
 - Never put emojis in Markdown headers; they break anchor slugs and in-page links.
-- A package holds **one codec** (FLAC, MP3, AAC, Vorbis, Opus, or WAV), and
-  "lossless" describes the container, not the audio's history. Show the real codec
-  plus factual facts (sample rate always, bit depth only when lossless, bitrate
-  only when lossy). Never write "FLAC lossless" or claim a fixed bit depth.
+- A package holds **one codec**. Never label audio `lossless` or `lossy` in new UI
+  or prose, and never infer its history. Show the real codec plus applicable
+  measured facts: sample rate, channel count, bit depth, bitrate, and bitrate
+  mode. The planned stable codec direction is tracked in
+  [`.github/planning/format-direction.md`](./.github/planning/format-direction.md).
 
 ## Definition of done
 
