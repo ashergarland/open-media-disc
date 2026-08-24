@@ -4,6 +4,11 @@ The `omd` command-line tool wraps [`@open-media-disc/core`](./sdk-reference.md).
 It creates, validates, inspects, images, burns, and labels OMD packages. Burning
 requires Windows (IMAPI2) with a writer attached.
 
+The current private draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV packages,
+with one codec per package. The planned first stable format narrows package
+codecs to FLAC and MP3, but that plan is not implemented. See
+[Package Format](./package-format.md#codec-status).
+
 Run commands from the repo root with `pnpm omd <command>` (after `pnpm build`),
 or invoke the installed `omd` binary directly.
 
@@ -32,7 +37,8 @@ Exit codes: `0` success, `1` failure (e.g. invalid package), `2` usage error.
 
 ## `omd create`
 
-Build a normalized OMD package from a source album folder of FLAC files.
+Build a normalized OMD package from a source album folder of recognized audio
+files.
 
 ```bash
 omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
@@ -40,7 +46,7 @@ omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `<albumFolder>` | - | Source folder containing `.flac` files (and optional cover). Required. |
+| `<albumFolder>` | - | Source folder containing FLAC, MP3, AAC/M4A, Vorbis, Opus, or WAV files (and optional cover). Required. A single-codec folder is recommended. |
 | `--out <dir>` | `./build/<disc title>` | Output package directory (the title is slugified for the path). |
 | `--disc-id <title>` | album title | Disc title stored as `discId`. Any Unicode text; defaults to the album title. |
 | `--force` | off | Overwrite the output folder if it already exists. |
@@ -48,9 +54,15 @@ omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
 | `--album <title>` | inferred from tags | Override album title. |
 | `--year <yyyy>` | inferred from tags | Override release year. |
 
-What it does: reads FLAC tags, orders tracks (by tag/filename number), normalizes
-filenames, copies audio into `AUDIO/`, detects cover art, writes
-`OMD-MANIFEST.json` and `CHECKSUMS.sha256`, then validates the result.
+What it does: reads available audio metadata, orders tracks by tag or filename
+number, normalizes filenames, copies audio into `AUDIO/`, detects cover art,
+writes `OMD-MANIFEST.json` and `CHECKSUMS.sha256`, then validates the result.
+
+The CLI does not expose target-codec selection or conversion. It chooses the
+most common codec in the source folder and packages files already in that codec;
+recognized files in other codecs are skipped. Use a single-codec source folder
+so the CLI does not omit tracks. Current OMD Studio can convert a mixed source,
+and SDK callers can opt into FFmpeg conversion directly.
 
 Sample output:
 
@@ -246,6 +258,7 @@ Labels: 4
 
 Play a package (or a mounted disc) in manifest order using an installed player:
 `mpv`, then `ffplay`. Without either, it prints the track list as a preview.
+Decoding support comes from that player, not from OMD Core.
 
 ```bash
 omd play "./build/OMD-000001"
@@ -265,8 +278,8 @@ Built-in audio decoding (no external player) is planned for the OMD Pi Player.
 
 Copy a mounted OMD disc (or any OMD package folder) back to disk, verifying every
 track against the manifest. Ripping is a verified file copy, not audio
-re-encoding: OMD stores FLAC files in a UDF filesystem, so `omd rip` reproduces
-those exact files and certifies them.
+re-encoding: `omd rip` preserves the package's audio files and certifies the
+copies.
 
 ```bash
 omd rip "D:\" --out "./rips/Blank Banshee 0"
@@ -277,7 +290,7 @@ omd rip "D:\" --out "./rips/Blank Banshee 0" --mode album
 | --- | --- |
 | `<sourceDir\|drive>` | A mounted disc mount path (e.g. `D:\`) or an OMD package directory. Required. |
 | `--out <dir>` | Destination directory. Defaults to `./build/<disc title>`. |
-| `--mode <mode>` | `package` (default) makes a re-burnable clone; `album` makes a friendly FLAC + cover folder. |
+| `--mode <mode>` | `package` (default) makes a re-burnable clone; `album` makes a friendly folder containing the package's audio tracks and cover art. |
 | `--force` | Overwrite the output folder if it already exists. |
 | `--no-validate` | Skip validating the source before ripping. |
 

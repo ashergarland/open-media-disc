@@ -5,6 +5,12 @@ creating, validating, inspecting, and imaging OMD packages. Building a UDF disc
 image uses the operating system's imaging tools (Windows IMAPI2 in v0.2); nothing
 extra needs installing.
 
+The current private draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV packages,
+one codec per package. Core recognizes those six source families and supports
+optional FFmpeg conversion among them. The planned first stable FLAC/MP3 package
+contract and broader import policy are not implemented. See
+[Package Format](./package-format.md#codec-status).
+
 ```bash
 pnpm add @open-media-disc/core
 ```
@@ -39,6 +45,10 @@ const { outDir, manifest, validation } = await createPackage({
   artist: 'Blank Banshee',
   album: 'Blank Banshee 0',
   releaseYear: 2013,
+  // Optional package codec. Defaults to the most common source codec.
+  audioCodec: 'FLAC',
+  // Optional: convert source tracks that use another recognized codec.
+  // convert: { ffmpegPath: '/path/to/ffmpeg', bitrateKbps: 320 },
   budgetBytes: 1_400_000_000,
   generator: { name: 'OMD CLI', version: '0.1.0' },
   createdAt: new Date(), // pass a fixed Date for deterministic output in tests
@@ -46,13 +56,28 @@ const { outDir, manifest, validation } = await createPackage({
 ```
 
 `CreatePackageOptions` fields: `sourceDir` (required); `outDir`, `discId`,
-`overwrite`, `artist`, `album`, `releaseYear`, `budgetBytes`, `generator`,
-`createdAt`, `onProgress` (optional). `discId` is the disc title and defaults to
-the resolved album title; `outDir` defaults to `build/<slugified title>`;
-`overwrite` replaces an existing folder (otherwise an `OutputExistsError` is
-thrown). `onProgress(p)` reports `{ phase: 'reading' | 'processing' |
-'finalizing', done, total }` as each track is packaged, for a UI progress bar.
-Returns `{ outDir, manifest, validation }`.
+`overwrite`, `artist`, `album`, `releaseYear`, `trackMeta`, `audioCodec`,
+`convert`, `budgetBytes`, `generator`, `createdAt`, `onProgress` (optional).
+`discId` is the disc title and defaults to the resolved album title; `outDir`
+defaults to `build/<slugified title>`; `overwrite` replaces an existing folder
+(otherwise an `OutputExistsError` is thrown). `onProgress(p)` reports
+`{ phase: 'reading' | 'processing' | 'finalizing', done, total }` as each track
+is packaged, for a UI progress bar. Returns
+`{ outDir, manifest, validation }`.
+
+Core recognizes `.flac`, `.mp3`, `.m4a`/`.aac`/`.mp4`, `.ogg`/`.oga`, `.opus`,
+and `.wav`/`.wave` source files. `audioCodec` defaults to the most common source
+codec. Files in that codec are copied as is. Files in another recognized codec
+are converted only when `convert.ffmpegPath` is supplied; otherwise they are
+skipped. Callers should reject an unintended mixed source or provide conversion
+settings so tracks are not silently omitted.
+
+### `inspectSourceAlbum(sourceDir): Promise<SourceAlbumDraft>`
+
+Inspect a source folder without writing a package. The result includes
+`detectedCodec`, `codecsPresent`, inferred album metadata, cover art, and each
+track's `sourceCodec`. Studio uses this preview before asking for current-draft
+metadata and package-codec choices.
 
 ### `validatePackage(packageDir, options?): Promise<PackageValidationResult>`
 
@@ -211,7 +236,7 @@ track against the manifest. This is a verified file copy, not audio re-encoding.
 const result = await ripPackage({
   sourceDir: 'D:\\',                 // a mounted disc or an OMD package folder
   outDir: './rips/Blank Banshee 0', // defaults to build/<slugified title>
-  mode: 'package',                  // 'package' (re-burnable clone) or 'album' (FLAC + cover)
+  mode: 'package',                  // 'package' clone or 'album' audio + cover
   // overwrite: true,               // replace an existing folder (else OutputExistsError)
   // validate: false,               // skip validating the source first (default validates)
 });
@@ -219,7 +244,8 @@ console.log(result.verified, `${result.filesMatched}/${result.filesTotal}`);
 ```
 
 `package` mode reproduces the whole tree and re-validates the clone
-(`result.validation`); `album` mode writes only the FLAC tracks and cover art.
+(`result.validation`); `album` mode writes the package's audio tracks and cover
+art without re-encoding them.
 `result.files` lists each track with its `sha256` and whether it `matched`. An
 optional `onProgress(p)` reports `{ phase: 'validating' | 'copying' |
 'finalizing', done, total }` as each track is copied, for a UI progress bar.
@@ -310,5 +336,8 @@ Notable exports from `constants.ts`:
 | `DEFAULT_MEDIA_TYPE` | `'8cm DVD-RW'` |
 | `DEFAULT_FILESYSTEM_TARGET` | `'UDF'` |
 
-Also exported: `AUDIO_CODEC`, `BOOKLET_FILENAME`, `COVER_ART_SOURCE_NAMES`,
-`OS_JUNK_NAMES`, `OS_JUNK_PREFIXES`, `FLAC_MAGIC`.
+Also exported: `AUDIO_CODECS` (the six current draft codecs), `AudioCodec`,
+`DEFAULT_AUDIO_CODEC`, `AUDIO_CODEC_EXTENSIONS`, `ALL_AUDIO_EXTENSIONS`,
+`codecForExtension`, `extensionForCodec`, the legacy FLAC-valued `AUDIO_CODEC`,
+`BOOKLET_FILENAME`, `COVER_ART_SOURCE_NAMES`, `OS_JUNK_NAMES`,
+`OS_JUNK_PREFIXES`, and `FLAC_MAGIC`.

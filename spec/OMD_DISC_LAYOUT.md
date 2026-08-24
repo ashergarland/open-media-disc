@@ -8,6 +8,10 @@ disc (any supported medium; 8cm DVD-RW is the reference).
 
 ## 1. Canonical Tree
 
+This example shows a FLAC package. A package may instead use any one codec
+permitted by the manifest schema, with the matching filename extension on every
+track.
+
 ```text
 /OMD-MANIFEST.json     required   Album metadata + track table (authoritative)
 /COVER.jpg             recommended  Cover art (COVER.png also accepted)
@@ -24,7 +28,11 @@ disc (any supported medium; 8cm DVD-RW is the reference).
 - **Root manifest.** `OMD-MANIFEST.json` MUST exist at the package root. There is exactly
   one manifest per package.
 - **Audio directory.** All audio MUST live under `AUDIO/`. Every manifest track
-  `filename` MUST be a relative path of the form `AUDIO/<name>.flac`.
+  `filename` MUST be a relative path of the form `AUDIO/<name>.<ext>`, where the
+  extension maps to the package's declared `audioCodec`: `.flac` for FLAC, `.mp3`
+  for MP3, `.m4a`/`.aac`/`.mp4` for AAC, `.ogg`/`.oga` for Vorbis, `.opus` for
+  Opus, or `.wav`/`.wave` for WAV. Every track in one package MUST map to the
+  same declared codec.
 - **Track ordering.** Track files SHOULD be named with a zero-padded, ordered numeric
   prefix (`01 - `, `02 - `, ...). The authoritative order is the `number` field in the
   manifest, not the filename.

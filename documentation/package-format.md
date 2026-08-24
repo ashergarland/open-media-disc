@@ -9,23 +9,63 @@ burns to an 8cm DVD-RW.
 > [`spec/OMD_DISC_LAYOUT.md`](../spec/OMD_DISC_LAYOUT.md), and
 > [`spec/OMD_MANIFEST_SCHEMA.json`](../spec/OMD_MANIFEST_SCHEMA.json).
 
+## Codec status
+
+OMD currently has a private draft format and a separate plan for its first
+stable format. Do not read the plan as shipped behavior.
+
+| Question | Current private draft (`omdVersion` 0.1.0) | Planned first stable format |
+| --- | --- | --- |
+| Package codecs | FLAC, MP3, AAC, Vorbis, Opus, or WAV | FLAC or MP3 |
+| Codecs per package | Exactly one | Exactly one |
+| Import formats | Core and current tools recognize the six draft package codec families | Uniform FLAC and MP3 are preserved; PCM WAV, AIFF, and ALAC-family input routes to FLAC; AAC/M4A, Vorbis, Opus, and applicable mixed input routes to MP3 |
+| Target choice | Core accepts an explicit package codec; Studio presents all six choices; the CLI uses the most common source codec | Studio chooses automatically from the two package codecs |
+
+The stable column is design intent from
+[`format-direction.md`](../.github/planning/format-direction.md), not the current
+normative contract or current tooling. AIFF and ALAC are planned **import**
+formats; they are not current or planned package codecs. The legacy current
+format id `OMD-FLAC-DATA` does not make a draft package FLAC-only.
+
+Current tooling differs by entry point:
+
+- `createPackage()` recognizes the six draft codec families. Files already in
+  the selected package codec are copied. Other recognized files are converted
+  only when the caller supplies the optional FFmpeg conversion settings;
+  otherwise they are skipped.
+- `omd create` does not expose a codec or conversion option. It chooses the most
+  common source codec and packages only files already in that codec. Use a
+  single-codec source folder with the CLI so tracks are not omitted.
+- OMD Studio recognizes the same six source families, lets the user select any
+  current draft package codec, and uses its bundled FFmpeg for tracks that need
+  conversion.
+- Validation accepts one of the six declared package codecs and checks that
+  every track filename extension maps to it. Validation does not establish that
+  every player can decode the audio.
+- `omd play` delegates decoding to `mpv`, `ffplay`, or the selected external
+  player. Studio delegates decoding to Electron/Chromium. Playback therefore
+  also depends on the decoder available in that environment.
+
 ## Anatomy
 
 ```text
 /OMD-MANIFEST.json     required     Album metadata + track table (authoritative)
 /COVER.jpg             recommended  Cover art (COVER.png also accepted)
 /BOOKLET.pdf           optional     Liner notes / booklet
-/AUDIO/                required     FLAC tracks, numbered in playback order
+/AUDIO/                required     Audio tracks (one codec), in playback order
   01 - Track Name.flac
   02 - Track Name.flac
   03 - Track Name.flac
 /CHECKSUMS.sha256      required     sha256sum-style integrity file for the package
 ```
 
+The tree shows a FLAC example. MP3, AAC, Vorbis, Opus, and WAV packages use
+extensions matching their declared codec.
+
 | File / folder | Required | Purpose |
 | --- | --- | --- |
 | `OMD-MANIFEST.json` | Yes | The album table of contents. Read first by any player. |
-| `AUDIO/` | Yes | FLAC audio files, in playback order. |
+| `AUDIO/` | Yes | Audio files in one declared codec, in playback order. |
 | `CHECKSUMS.sha256` | Yes | SHA-256 for every package file (integrity). |
 | `COVER.jpg` / `COVER.png` | Recommended | Cover art, referenced by the manifest. |
 | `BOOKLET.pdf` | Optional | Booklet / liner notes. |
@@ -37,7 +77,7 @@ burns to an 8cm DVD-RW.
 | Format name | Open Media Disc |
 | Data format id | `OMD-FLAC-DATA` |
 | Format version | `0.1.0` |
-| Audio codec | FLAC |
+| Audio codec | One per package: FLAC, MP3, AAC, Vorbis, Opus, or WAV |
 | Target medium | 8cm DVD-RW (~1.4 GB usable) |
 | Disc filesystem | UDF |
 | Disc volume label | best-effort rendering of the disc title |
@@ -89,7 +129,7 @@ presents an album, not a folder.
 | `filesystemTarget` | string | Disc filesystem. `UDF` is used for v0.2 burning. |
 | `artist`, `album` | string | Album identity. |
 | `releaseYear` | integer | Optional. |
-| `audioCodec` | string | Always `FLAC` in v0.1. |
+| `audioCodec` | string | One of `FLAC`, `MP3`, `AAC`, `Vorbis`, `Opus`, or `WAV`; shared by every track. |
 | `trackCount` | integer | Must equal `tracks.length`. |
 | `totalDurationSeconds` | number | Sum of track durations. |
 | `totalSizeBytes` | integer | Sum of track sizes. |
@@ -99,13 +139,15 @@ presents an album, not a folder.
 | `createdAt` | string | ISO-8601 UTC timestamp. |
 | `generator` | object | `{ name, version }` of the producing tool. |
 
-Each `tracks[]` entry has `number`, `title`, `filename` (an `AUDIO/*.flac`
-relative path), optional `durationSeconds`, `sizeBytes`, and `sha256`.
+Each `tracks[]` entry has `number`, `title`, `filename` (a relative path under
+`AUDIO/` whose extension matches `audioCodec`), optional `durationSeconds`,
+`sizeBytes`, and `sha256`.
 
 ## Path rules (summary)
 
 - Exactly one `OMD-MANIFEST.json` at the package root.
-- Every track `filename` is `AUDIO/<name>.flac`.
+- Every track `filename` is under `AUDIO/`, and its extension maps to the
+  package's declared `audioCodec`.
 - The authoritative order is the manifest `number`, not the filename.
 - Filenames must be cross-platform safe; OS junk (`.DS_Store`, `Thumbs.db`,
   `__MACOSX/`) must not be present.
@@ -136,6 +178,7 @@ CLI versions move independently and never imply a format change.
 
 ## Why plain files?
 
-Because the package is standard JSON, FLAC, JPEG/PNG, PDF, and SHA-256 text, it
-is always recoverable and inspectable with ordinary tools. Keeping the format
-debuggable outside its own ecosystem is a core design principle.
+Because the package uses standard audio formats, JSON, JPEG/PNG, PDF, and
+SHA-256 text, it is always recoverable and inspectable with ordinary tools.
+Keeping the format debuggable outside its own ecosystem is a core design
+principle.

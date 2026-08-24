@@ -1,12 +1,20 @@
 # @open-media-disc/core
 
 The platform-independent TypeScript SDK behind [Open Media Disc](../../README.md).
-It creates, validates, inspects, and images OMD FLAC data packages: album folder
-in, verified package out. Building a burn-ready UDF disc image and burning it to
-an 8cm DVD-RW are supported on Windows.
+It creates, validates, inspects, and images OMD audio packages: album folder in,
+verified package out. Building a burn-ready UDF disc image and burning it to an
+8cm DVD-RW are supported on Windows.
 
 The SDK implements the format contract in the repository's [`spec/`](../../spec)
 folder, and it powers the [`omd` CLI](../cli).
+
+The current private draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV packages,
+with one codec per package. `createPackage()` recognizes those six source
+families, copies tracks already in the selected codec, and can convert the rest
+when the caller supplies an FFmpeg path. Without conversion settings,
+nonmatching tracks are skipped. The planned first stable FLAC/MP3 package policy
+is not implemented. See the
+[codec status](../../documentation/package-format.md#codec-status).
 
 ## Install
 
@@ -23,7 +31,7 @@ import {
   inspectPackage,
 } from '@open-media-disc/core';
 
-// Build a normalized OMD package from an album folder of FLAC files.
+// Build a normalized OMD package from a single-codec album folder.
 const { manifest, validation } = await createPackage({
   sourceDir: './Albums/Blank Banshee 0',
   outDir: './build/OMD-000001',
@@ -44,6 +52,7 @@ console.log(info.artist, info.album, info.trackCount);
 | Function | Purpose |
 | --- | --- |
 | `createPackage()` | Build a full OMD package from an album folder. |
+| `inspectSourceAlbum()` | Preview recognized source codecs and inferred metadata without writing. |
 | `validatePackage()` | Validate a package directory against the OMD rules. |
 | `inspectPackage()` | Return an album and track summary from a package. |
 | `playlistPaths()` | Ordered absolute track paths for playback. |

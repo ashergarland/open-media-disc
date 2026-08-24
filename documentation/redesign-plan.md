@@ -17,8 +17,9 @@ Goals
 - One interface for both desktop (mouse/keyboard) and a 7-10 inch touch screen on
   a Raspberry Pi. No separate desktop and kiosk UIs.
 - A calm, coherent visual language with a small number of strong themes.
-- Honest product language: show the real audio codec plus a factual
-  Lossless / Lossy tag. No "FLAC lossless" or fixed bit-depth claims.
+- Honest product language: show the real audio codec plus applicable measured
+  facts. No quality-category badge, audio-history claim, or fixed bit-depth
+  assumption.
 - Reduce per-page micromanagement: agree on the system, then build to it.
 
 Hard constraints (carry over from the current app)
@@ -72,7 +73,7 @@ Now Playing dock
 Cross-cutting issues
 - Hit targets, spacing, and typography are tuned for desktop density.
 - Theme CSS and app-composition CSS are intertwined, which makes restyling risky.
-- Some copy still implies lossless or fixed bit depth.
+- Some copy still makes unsupported quality or fixed bit-depth claims.
 
 ## 3. Target information architecture
 
@@ -95,8 +96,8 @@ Primary spokes
 
 Persistent transport
 - A single bottom transport bar present on every view: art, title/artist, real
-  codec + Lossless/Lossy tag, scrubber, transport buttons, volume, and the
-  spectrum/VU. Sized for touch, collapses gracefully on small widths.
+  codec plus applicable measured facts, scrubber, transport buttons, volume,
+  and the spectrum/VU. Sized for touch, collapses gracefully on small widths.
 
 Navigation model
 - Home tiles plus a persistent Home affordance and Back. Drop the always-present
@@ -226,7 +227,7 @@ Each phase is one or more self-contained commits and is verified in the real app
 Decided
 - Single touch-first UI for desktop and Pi. Yes.
 - Scrap all current themes; design a new small set. Yes.
-- Honest codec branding (real codec + Lossless/Lossy). Yes.
+- Honest codec presentation (real codec plus applicable measured facts). Yes.
 - Import suggests "Artist - Album" disc title (editable) and Various Artists;
   per-track artist/album/year editing. Done.
 

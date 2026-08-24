@@ -22,7 +22,7 @@ expressed as a media profile (see section 2.1).
 
 The **8cm DVD-RW is the reference medium** and the default profile. It is the target for
 the future album cartridge and balances cost, physical size, and enough room (~1.4 GB) for
-a full lossless album. The long-term vision is a rewritable optical album cartridge
+many full albums, including typical FLAC releases. The long-term vision is a rewritable optical album cartridge
 inspired by MiniDisc and UMD, built on commodity 8cm DVD-RW media, standard digital audio,
 open metadata, and eventually dedicated Raspberry Pi-based player and writer hardware.
 
@@ -57,12 +57,12 @@ profile's budget (see [`OMD_VALIDATION_RULES.md`](./OMD_VALIDATION_RULES.md)).
 
 | Media profile      | Usable capacity (approx) | Notes                                   |
 | ------------------ | ------------------------ | --------------------------------------- |
-| Mini CD-R/RW (8cm) | ~210 MB                  | Smallest; short or lossy albums         |
+| Mini CD-R/RW (8cm) | ~210 MB                  | Smallest; short or lower-bitrate albums |
 | CD-R/RW (12cm)     | ~700 MB                  | Widely available                        |
 | 8cm DVD±R/RW       | ~1.4 GB                  | **Reference profile**; cartridge target |
 | DVD±R/RW (12cm)    | ~4.7 GB                  | Long or hi-res albums                   |
 | DVD±R DL (12cm)    | ~8.5 GB                  | Dual layer                              |
-| BD-R/RE (12cm)     | ~25 GB and up            | Large lossless sets                     |
+| BD-R/RE (12cm)     | ~25 GB and up            | Large or high-resolution releases       |
 
 The reference tooling defaults to the 8cm DVD-RW profile, and its burn path currently
 targets 8cm DVD-RW on Windows. Imaging, validation, inspection, and playback are
@@ -73,7 +73,7 @@ medium-independent and work regardless of the target profile.
 An **OMD package** is a plain directory tree on a normal filesystem. It is the unit that
 OMD Core creates, validates, and inspects.
 
-Because the package is a plain directory of standard file formats (JSON, FLAC, JPEG/PNG,
+Because the package is a plain directory of standard file formats (audio, JSON, JPEG/PNG,
 PDF, SHA-256 text), it is always recoverable and inspectable with ordinary tools. This is
 a core design principle: **the format must remain debuggable outside its own ecosystem.**
 
@@ -205,8 +205,8 @@ recover and tied to one disc type. OMD instead stores ordinary files, which is w
 it media-agnostic and recoverable on any computer optical drive. DVD-Audio remains an
 optional future export mode, not the native OMD format. OMD optimizes for cheap,
 repeatable, personal album writing/rewriting with directly recoverable files.
-FLAC-in-a-data-package keeps the format simple to author, validate, and parse on future
-embedded players.
+A small, explicit set of ordinary audio codecs keeps the format straightforward to author,
+validate, recover, and parse on future embedded players.
 
 ## 8. Out of Scope
 

@@ -37,21 +37,30 @@ inspectable, and verifiable first. It also depends on people wanting to create
 and collect OMD releases before dedicated hardware exists. When unsure, protect
 recoverability and favor the digital-to-physical album workflow.
 
-## Why v0.1 is a FLAC data package (and only that)
+## Current draft and planned stable codecs
 
 - A solid, verifiable album package unblocks every future tool without drift.
-- FLAC-in-a-data-package is simple to author, validate, and parse, including on
-  future embedded players.
-- Plain files (FLAC, JSON, SHA-256) stay recoverable with ordinary tools and are
-  never locked inside a proprietary silo.
+- The current private draft, `omdVersion` 0.1.0, permits FLAC, MP3, AAC, Vorbis,
+  Opus, or WAV packages, with one codec per package. The legacy
+  `OMD-FLAC-DATA` identifier does not narrow that list.
+- The non-normative first-stable direction permits FLAC and MP3 packages so
+  every conforming player can implement the full codec set reliably.
+- Producer import support is separate. The planned Studio flow preserves
+  compatible uniform FLAC or MP3, routes PCM WAV/AIFF/ALAC-family input to
+  FLAC, and routes AAC/M4A, Vorbis, Opus, and applicable mixed input to MP3.
+  That automatic policy is not implemented yet.
+- Plain audio files, JSON, and SHA-256 data stay recoverable with ordinary tools
+  and are never locked inside a proprietary silo.
 - DVD-Audio is optimized for authored audiophile releases and niche players, so
   it is not the native format. It may become an optional export mode later.
 
-## Scope boundaries for v0.1 (assume these unless told otherwise)
+## Scope boundaries for the current draft
 
-In scope: read an owned FLAC album folder, normalize track order/metadata/
-filenames, emit `OMD-MANIFEST.json` + cover art + `CHECKSUMS.sha256`, and
-validate structure, tracks, checksums, and 8cm DVD-RW capacity (~1.4 GB).
+In scope: read an owned album folder containing a recognized draft codec,
+normalize track order, metadata, and filenames, emit `OMD-MANIFEST.json` plus
+cover art and `CHECKSUMS.sha256`, and validate structure, tracks, checksums, and
+8cm DVD-RW capacity (~1.4 GB). Current Studio can convert among the six draft
+codec families; the CLI does not convert mixed source folders.
 
 Out of scope: optical burning, UDF/ISO image creation, Raspberry Pi device
 services, hardware control, cartridge mechanics, GUI/desktop/mobile apps, cloud
@@ -85,9 +94,10 @@ design note.
   Code-style token themes: a theme is data (a JSON map of named tokens plus local
   assets), injected as CSS variables. Themes never ship CSS or JS and never
   control layout. Layout and interaction stay consistent across every theme.
-- **Player scope.** It is an album/disc player, not a music library manager. FLAC
-  plays natively in Chromium, so no custom decoder is needed for alpha; the
-  external players (`mpv`, `ffplay`) stay a CLI fallback.
+- **Player scope.** It is an album/disc player, not a music library manager.
+  Studio delegates current draft audio decoding to Electron/Chromium; the CLI
+  delegates to `mpv`, `ffplay`, or a user-selected player. Codec playback
+  therefore depends on the available decoder.
 - **`omd rip`.** Verified read-back of a mounted OMD disc to disk (a re-burnable
   package or a friendly album folder), checked against the manifest checksums. It
   is a shared core function that Studio wraps, and it does not change the format

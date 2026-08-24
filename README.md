@@ -1,10 +1,10 @@
 # Open Media Disc
 
 **Give the music you own a body again.** Open Media Disc (OMD) turns a folder of
-FLAC files into a verified, self-describing album package: the first step toward a
-cheap, collectable, rewritable physical music format. A package is just files on a
-UDF disc, so it is media-agnostic; the reference medium is commodity 8cm DVD-RW,
-but the same package can be burned to a CD, a standard DVD, or a Blu-ray.
+audio files into a verified, self-describing album package: the first step toward
+a cheap, collectable, rewritable physical music format. A package is just files
+on a UDF disc, so it is media-agnostic; the reference medium is commodity 8cm
+DVD-RW, but the same package can be burned to a CD, a standard DVD, or a Blu-ray.
 
 This repo is the private, pre-stable **OMD v0.2 Write and Play** development
 milestone: a TypeScript SDK and the `omd` CLI. It makes the draft format real and
@@ -13,9 +13,17 @@ DVD-RW (Windows), and play back. Compatibility guarantees begin with the first
 stable format release, not the current draft.
 
 - Status: **v0.2.0, working.** Build, tests, and lint are green.
-- Input: a folder of owned FLAC files. Output: a portable OMD package you can
+- Input: a folder of owned audio files. Output: a portable OMD package you can
   burn to disc and play.
 - Package, validate, and inspect need no hardware; burning is Windows-only.
+
+**Codec status:** the current private draft (`omdVersion` 0.1.0) permits one
+package codec chosen from FLAC, MP3, AAC, Vorbis, Opus, or WAV. The planned
+first stable format permits FLAC and MP3 packages and adds a broader automatic
+import policy, but that plan is not implemented. Current CLI and Studio behavior
+also differs for mixed source folders. See
+[Package Format](./documentation/package-format.md#codec-status) for the exact
+contract and tooling matrix.
 
 ## See it work
 
@@ -47,17 +55,20 @@ OMD-000001/
   OMD-MANIFEST.json     Album metadata and track table (authoritative)
   COVER.jpg             Cover art (optional, recommended)
   BOOKLET.pdf           Optional liner notes
-  AUDIO/                FLAC tracks, numbered in playback order
+  AUDIO/                Audio tracks (one codec), in playback order
     01 - Opening.flac
     02 - Second Track.flac
   CHECKSUMS.sha256      Integrity file for the whole package
 ```
 
+This example package uses FLAC; the draft also permits MP3, AAC, Vorbis, Opus,
+and WAV packages.
+
 ## The `omd` CLI
 
 | Command                               | What it does                                             |
 | ------------------------------------- | -------------------------------------------------------- |
-| `omd create <album> --out <dir>`      | Build a package from a FLAC album folder.                |
+| `omd create <album> --out <dir>`      | Build a package from a single-codec audio album folder.  |
 | `omd validate <package>`              | Verify structure, tracks, checksums, and capacity.       |
 | `omd inspect <package>`               | Print the album, tracks, and disc-size usage.            |
 | `omd checksum <package>`              | Recompute and check `CHECKSUMS.sha256`.                  |

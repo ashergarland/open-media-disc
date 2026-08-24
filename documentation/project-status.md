@@ -15,12 +15,13 @@ the goals in the [Roadmap](./roadmap.md). For the vision behind the project, see
 ## In one line
 
 Open Media Disc (OMD) is an open-source physical music format. The v0.1 format
-turns a folder of owned FLAC files into a verified, self-describing album package.
-The v0.2 release, **Write and Play**, adds building a UDF disc image, burning a
-package to 8cm DVD-RW and verifying it (Windows), and playback with mpv or ffplay.
-**OMD Studio**, the desktop and touch app, is implemented at the internal
-`studio-v0.2.0` milestone, including its touch-first redesign. The project is now
-choosing its next set of software milestones.
+turns a folder of owned audio files into a verified, self-describing album
+package using one of six draft codecs. The v0.2 release, **Write and Play**, adds
+building a UDF disc image, burning a package to 8cm DVD-RW and verifying it
+(Windows), and playback with mpv or ffplay. **OMD Studio**, the desktop and touch
+app, is implemented at the internal `studio-v0.2.0` milestone, including its
+touch-first redesign. The project is now choosing its next set of software
+milestones.
 
 ## What is implemented (through v0.2 and OMD Studio)
 
@@ -29,13 +30,15 @@ The repository delivers a working pnpm and TypeScript monorepo in four layers:
 - **The normative format contract** in [`spec/`](../spec): `OMD_FORMAT_SPEC.md`,
   `OMD_DISC_LAYOUT.md`, `OMD_VALIDATION_RULES.md`, and `OMD_MANIFEST_SCHEMA.json`.
   The spec is the source of truth the code and docs follow. Format id is
-  `OMD-FLAC-DATA`, version `0.1.0`.
+  `OMD-FLAC-DATA`, version `0.1.0`; the legacy id does not make packages
+  FLAC-only. The draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV, one per
+  package.
 - **The core SDK** `@open-media-disc/core` ([`packages/core`](../packages/core))
   covering the full package lifecycle:
   - `createPackage`, `validatePackage`, `inspectPackage`.
   - Manifest create, parse, and validate (Zod plus JSON Schema), SHA-256
-    checksums, a dependency-free FLAC metadata reader, filename normalization,
-    and 8cm DVD-RW disc-size estimation (about a 1.4 GB budget).
+    checksums, audio metadata reading, optional FFmpeg conversion, filename
+    normalization, and 8cm DVD-RW disc-size estimation (about a 1.4 GB budget).
 - **The `omd` CLI** `@open-media-disc/cli` ([`packages/cli`](../packages/cli))
   with commands `create`, `validate`, `inspect`, `checksum`, `image`, `burn`, and
   `play` (real playback via mpv/ffplay), plus `--help` and `--version` and a
@@ -47,6 +50,22 @@ The repository delivers a working pnpm and TypeScript monorepo in four layers:
 End to end, you can build a package from an album folder, validate its structure,
 tracks, checksums, and capacity, inspect it, build a burn-ready UDF image, burn
 and verify it on Windows, and play the album.
+
+## Codec status
+
+- **Current contract:** private draft `omdVersion` 0.1.0 permits FLAC, MP3, AAC,
+  Vorbis, Opus, or WAV packages, with one codec shared by all tracks.
+- **Current tooling:** Core recognizes those six source families and can convert
+  between them when a caller supplies FFmpeg. OMD Studio bundles FFmpeg and
+  presents all six package targets. `omd create` does not convert: it chooses the
+  most common source codec and skips files in the others, so its source folder
+  should use one codec.
+- **Planned first stable contract:** FLAC and MP3 package codecs. The planned
+  Studio importer automatically maps additional source formats into one of
+  those two. This has not been implemented and is not part of draft v0.1.0.
+
+See [Package Format](./package-format.md#codec-status) for the full distinction
+between package codecs and import formats.
 
 ## What is left (per the roadmap)
 

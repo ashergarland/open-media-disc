@@ -1,10 +1,17 @@
 # @open-media-disc/cli
 
 `omd`, the command-line tool for [Open Media Disc](../../README.md). It turns an
-album folder of FLAC files into a verified OMD package, then validates, inspects,
-images, burns, labels, and previews it. It wraps
+album folder of audio files into a verified OMD package, then validates,
+inspects, images, burns, labels, and previews it. It wraps
 [`@open-media-disc/core`](../core). Burning requires Windows (IMAPI2) with a
 writer attached.
+
+The current private draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV packages,
+one codec per package. `omd create` chooses the most common source codec and does
+not convert; it skips recognized files in other codecs, so use a single-codec
+source folder. The planned first stable FLAC/MP3 package contract is not current
+behavior. See the
+[codec status](../../documentation/package-format.md#codec-status).
 
 ## Commands
 
@@ -23,7 +30,7 @@ omd rip <sourceDir|drive> [--out <dir>] [--mode package|album] [--force]
 
 | Command | What it does |
 | --- | --- |
-| `create` | Build a package from a FLAC album folder. |
+| `create` | Build a package from a single-codec audio album folder. |
 | `validate` | Verify structure, tracks, checksums, and capacity. |
 | `inspect` | Print the album, tracks, and disc-size usage. |
 | `checksum` | Recompute and check `CHECKSUMS.sha256` (use `--write` to save). |
@@ -41,7 +48,8 @@ omd inspect "./build/OMD-000001"
 ```
 
 `omd play` plays the album with an installed player (`mpv`, then `ffplay`), or
-prints the track order as a preview when neither is available.
+prints the track order as a preview when neither is available. Codec decoding
+depends on the selected external player.
 
 Full details are in the [CLI Reference](../../documentation/cli-reference.md).
 

@@ -80,8 +80,9 @@ Notes:
 
 - Run `pnpm build` (or `pnpm --filter @open-media-disc/studio build`) before
   `pnpm studio`; `studio` just launches Electron against the built `dist/`.
-- Importing mixed-codec music uses a bundled `ffmpeg-static` binary (an npm
-  dependency), so no separate ffmpeg install is needed for Studio.
+- Current Studio imports recognize FLAC, MP3, AAC/M4A, Vorbis, Opus, and WAV.
+  Converting mixed-codec music uses a bundled `ffmpeg-static` binary (an npm
+  dependency), so no separate FFmpeg install is needed for Studio.
 - Burning to a disc still requires Windows and an optical writer.
 
 ## Regenerate example fixtures (optional)
@@ -98,7 +99,7 @@ pnpm gen:examples
 | Symptom | Fix |
 | --- | --- |
 | `omd: command not found` / "Command 'omd' not found" | Run `pnpm build` first; the root `pnpm omd` script runs `packages/cli/dist/bin/omd.js`. |
-| `No FLAC files found in source folder` | Point `create` at a folder that directly contains `.flac` files. |
+| `No audio files found in source folder` | Point `create` at a folder that directly contains a recognized FLAC, MP3, AAC/M4A, Vorbis, Opus, or WAV file. |
 | Tests fail after editing code | Re-run `pnpm build`, then `pnpm test`; check `pnpm lint`. |
 
 Next: **[Getting Started](./getting-started.md)**.

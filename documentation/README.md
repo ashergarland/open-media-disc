@@ -77,7 +77,11 @@ issue so we can fix the docs.
 
 ## Current status
 
-- **Format:** `OMD-FLAC-DATA` v0.1.0
+- **Current format:** private draft `OMD-FLAC-DATA` v0.1.0, with one package
+  codec chosen from FLAC, MP3, AAC, Vorbis, Opus, or WAV.
+- **Planned first stable format:** FLAC and MP3 package codecs, with additional
+  source formats normalized during import. This is design intent, not current
+  behavior. See [Package Format](./package-format.md#codec-status).
 - **Milestone:** Core v0.1, v0.2 (Write and Play), and OMD Studio (alpha) are
   done. The next set of software milestones is being planned.
 - **License:** [MIT](../LICENSE)

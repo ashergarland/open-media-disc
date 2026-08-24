@@ -5,8 +5,10 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 | Term | Meaning |
 | --- | --- |
 | **OMD** | Open Media Disc, an open-source physical music format. |
-| **OMD-FLAC-DATA** | The v0.1 native data format: FLAC audio plus a manifest, artwork, and checksums, stored as a plain directory / data disc. |
-| **OMD package** | A directory tree conforming to the OMD disc layout. The unit OMD Core creates, validates, and inspects. |
+| **OMD-FLAC-DATA** | The legacy identifier required by the current private draft (`omdVersion` 0.1.0). Despite its name, the draft permits FLAC, MP3, AAC, Vorbis, Opus, or WAV packages. |
+| **OMD package** | A directory tree conforming to the OMD disc layout. It contains exactly one music release and one declared audio codec. The unit OMD Core creates, validates, and inspects. |
+| **Package codec** | The single codec shared by every audio track stored in one OMD package. Current draft package codecs are FLAC, MP3, AAC, Vorbis, Opus, and WAV; the planned first stable set is FLAC and MP3. |
+| **Import format** | A source format a producer can read before creating a package. Import support can be broader than package codecs; AIFF and ALAC are planned stable-import formats, not current package codecs. |
 | **Manifest** | `OMD-MANIFEST.json` at the package root. The authoritative album table of contents: metadata, track order, paths, sizes, and per-track checksums. |
 | **Disc ID** | The editable disc title stored as `discId` in the manifest. Full Unicode; defaults to the album title and need not be unique. Legacy `OMD-000NNN` identifiers remain valid. |
 | **Cartridge** | The long-term physical shell that holds an 8cm DVD-RW so it can spin and be read/written in place. Not part of v0.1. |
@@ -24,6 +26,6 @@ Terminology for the Open Media Disc project and OMD Core v0.1.
 | **Vorbis comment** | The FLAC tag block OMD reads for artist/album/title/track number. |
 | **OMD Core** | The SDK (`@open-media-disc/core`) implementing the format contract. |
 | **OMD CLI** | The `omd` command-line tool (`@open-media-disc/cli`). |
-| **OMD Studio** | Future desktop application that will wrap OMD Core for packaging, labeling, and burning. |
+| **OMD Studio** | The shipped Electron desktop and touch app for importing, packaging, labeling, burning, verifying, playing, and ripping OMD releases. |
 | **OMD Pi Player** | Future Raspberry Pi playback device that consumes OMD packages. |
 | **Writer Dock** | Future dedicated device that erases, burns, and verifies OMD discs. |

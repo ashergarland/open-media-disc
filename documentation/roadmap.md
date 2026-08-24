@@ -34,6 +34,14 @@ milestones is being chosen. Hardware milestones (writer dock, Pi player, deck,
 portable, cartridge) are deliberately **parked** while the software ecosystem
 grows.
 
+Format planning has selected FLAC and MP3 as the package codecs for the first
+stable contract. It also proposes automatic imports that preserve compatible
+uniform FLAC or MP3, route PCM WAV/AIFF/ALAC-family sources to FLAC, and route
+AAC/M4A, Vorbis, Opus, and applicable mixed sources to MP3. This is a
+non-normative direction, not current behavior. The current private draft remains
+`omdVersion` 0.1.0 with six package codecs. See
+[Package Format](./package-format.md#codec-status).
+
 ## Milestone ladder
 
 ```mermaid
@@ -104,7 +112,8 @@ storage layer) on top of the proven package format.
 - No cross-platform burning yet: Windows (IMAPI2) is the only backend in v0.2; the
   `BurnBackend` seam keeps Linux and macOS as future work.
 - No built-in audio decoder: playback delegates to an installed player.
-- No format expansion: still FLAC-in-a-package, no DVD-Audio or Blu-ray authoring.
+- No package-contract change: the six-codec private draft remained
+  `omdVersion` 0.1.0, with no DVD-Audio or Blu-ray authoring.
 
 ### Exit criteria
 

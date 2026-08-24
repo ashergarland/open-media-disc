@@ -10,15 +10,25 @@ If you haven't set up the project yet, do that first:
 ## What you need
 
 - A working install (see [Installation](./installation.md)).
-- A folder of **FLAC** files you own the rights to.
+- A single-codec folder of FLAC, MP3, AAC/M4A, Vorbis, Opus, or WAV files you
+  own the rights to. This walkthrough uses FLAC.
 - Optionally a cover image named `cover.jpg`, `cover.png`, `folder.jpg`, or
   `front.jpg` in that folder.
 
+Those are the six package codecs in the current private draft. The planned first
+stable format uses FLAC and MP3 packages and a broader automatic import policy,
+but it is not implemented. See [Package Format](./package-format.md#codec-status).
+
 ## 1. Create a package
 
-Point `omd create` at an album folder. The tool reads FLAC tags, orders tracks,
-normalizes filenames, copies audio into `AUDIO/`, detects cover art, and writes
-the manifest and checksums.
+Point `omd create` at an album folder. The tool reads available audio metadata,
+orders tracks, normalizes filenames, copies audio into `AUDIO/`, detects cover
+art, and writes the manifest and checksums.
+
+`omd create` chooses the most common source codec and does not convert files.
+Use a single-codec folder: in a mixed folder, recognized files using other
+codecs are skipped. OMD Studio is the current workflow for converting a mixed
+source into one draft package codec.
 
 ```bash
 pnpm omd create "./Albums/Blank Banshee 0" --out "./build/OMD-000001"
@@ -97,7 +107,8 @@ pnpm omd play "./build/OMD-000001"
 
 `omd play` plays the album in manifest order using an installed player (`mpv`,
 then `ffplay`; override with `--player` or `OMD_PLAYER`). Without either player it
-prints the track list as a preview. It also plays a mounted disc.
+prints the track list as a preview. It also plays a mounted disc. Codec decoding
+depends on the selected external player.
 
 ## 6. Build a disc image (Windows)
 
@@ -158,15 +169,16 @@ pnpm omd rip "D:\" --out "./rips/Blank Banshee 0" --mode album
 ```
 
 `package` mode (default) makes a re-burnable clone that re-validates on its own;
-`album` mode makes a friendly folder of FLAC tracks and cover art.
+`album` mode makes a friendly folder containing the package's audio tracks and
+cover art without re-encoding them.
 
 ## Package size and 8cm DVD-RW
 
 OMD targets 8cm DVD-RW media with a usable budget of ~1.4 GB
-(`1,400,000,000` bytes). Most FLAC albums fit easily. If a package is larger,
-`inspect` shows it as over budget and `validate` warns (or errors with
-`--strict`). Options for oversized albums (downsampled FLAC, multi-disc sets)
-are future work.
+(`1,400,000,000` bytes). If a package is larger, `inspect` shows it as over
+budget and `validate` warns (or errors with `--strict`). Prepare smaller files
+or choose a medium profile with sufficient capacity; multi-disc sets are future
+work.
 
 ## Using the library instead of the CLI
 

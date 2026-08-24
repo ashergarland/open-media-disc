@@ -69,9 +69,14 @@ the cover), reveal it in the file manager, or delete it.
 **Import music** packages a folder of audio into the catalog. Each album is
 reviewed before it is written: Studio inspects the source, prefills the metadata
 (including a suggested disc title and Various Artists handling), shows which audio
-formats are present, and lets you pick the format to store. Mixed-format sources
-are converted with the bundled ffmpeg; a folder that is already one format is
-copied as is.
+formats are present, and lets you pick FLAC, MP3, AAC, Vorbis, Opus, or WAV as
+the current draft package codec. Mixed-format sources are converted with the
+bundled FFmpeg; tracks already in the selected format are copied as is.
+
+This six-choice flow describes Studio v0.2 and private draft `omdVersion` 0.1.0.
+The first-stable plan is different: FLAC and MP3 are the package codecs, Studio
+chooses between them automatically, and AIFF/ALAC join the import formats. That
+plan is not implemented. See [Package Format](./package-format.md#codec-status).
 
 **New mixtape** compiles tracks picked from across the catalog into a new package.
 
@@ -114,9 +119,11 @@ scaling puts the artwork out of registration with the die cut.
 
 - Studio plays a mounted OMD disc **in-app**, not by launching an external
   player. The intended moment is simple: insert a disc and it plays inside OMD.
-- Chromium (so Electron) decodes the supported audio formats natively, so no
-  custom decoder is needed. The external players (`mpv`, `ffplay`) stay a CLI
-  fallback only.
+- Studio sends the current draft's six package codec families to
+  Electron/Chromium through its local media protocol. Actual decoding support
+  comes from that Electron/Chromium runtime; the repository does not yet carry
+  end-to-end playback fixtures for every codec. The external players (`mpv`,
+  `ffplay`) stay a CLI path only.
 - One player engine serves everything: the Disc screen, catalog albums, and the
   transport dock all drive the same playback state, so starting a catalog album
   and then walking to another screen keeps playing.
@@ -126,22 +133,22 @@ scaling puts the artwork out of registration with the die cut.
 
 ## Honest codec language
 
-Studio never claims quality it cannot prove. A package stores one audio format,
-and "lossless" is a property of the **container**, not of the audio's history: a
-FLAC transcoded from an MP3 is not lossless. So the UI shows the **real codec plus
-factual facts** instead of a quality badge:
+Studio never claims audio quality or history it cannot prove. The UI reports the
+packaged codec and the measured facts that apply, without a quality-category
+badge:
 
-- Always the codec and the sample rate, for example `FLAC · 44.1 kHz`.
-- Bit depth only for a lossless codec, for example `FLAC · 44.1 kHz · 16-bit`.
-- Bitrate only for a lossy codec, for example `MP3 · 44.1 kHz · 320 kbps`.
+- The packaged codec, for example `FLAC` or `MP3`.
+- Sample rate and channel count when measured.
+- Bit depth when the packaged stream reports a meaningful PCM bit depth.
+- Bitrate and bitrate mode when measured for the packaged stream.
 
-Bit depth is a PCM concept and is meaningless on a lossy codec; bitrate is the
-quality signal for a lossy codec and noise for a lossless one. There is no "FLAC
-lossless" badge and no fixed bit-depth claim anywhere in the app.
+These values describe the packaged file. They do not certify its source or
+conversion history, and bitrate is not presented as a quality score.
 
 Note that the format id `OMD-FLAC-DATA` and `omdVersion 0.1.0` are unchanged on
 purpose. The id is a legacy string kept so existing packages stay valid; it does
-not mean a package must be FLAC.
+not mean a package must be FLAC. Current draft packages may instead use MP3,
+AAC, Vorbis, Opus, or WAV, with one codec per package.
 
 ## Theming
 

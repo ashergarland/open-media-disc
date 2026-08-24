@@ -16,7 +16,7 @@ export const DEFAULT_MEDIA_TYPE = '8cm DVD-RW' as const;
 /** Default intended optical filesystem for a future burn step. */
 export const DEFAULT_FILESYSTEM_TARGET = 'UDF' as const;
 
-/** The only audio codec supported in v0.1. */
+/** Legacy FLAC constant retained for API compatibility. */
 export const AUDIO_CODEC = 'FLAC' as const;
 
 /** All audio codecs an OMD package may use (one codec per package). */
@@ -72,7 +72,7 @@ export const MANIFEST_FILENAME = 'OMD-MANIFEST.json' as const;
 /** Required package file: sha256sum-style integrity list. */
 export const CHECKSUMS_FILENAME = 'CHECKSUMS.sha256' as const;
 
-/** Required package directory holding FLAC tracks. */
+/** Required package directory holding tracks in the package's declared codec. */
 export const AUDIO_DIR = 'AUDIO' as const;
 
 /** Optional booklet file at the package root. */

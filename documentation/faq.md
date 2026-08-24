@@ -2,9 +2,9 @@
 
 ## What is Open Media Disc in one sentence?
 
-An open-source physical music format that turns owned FLAC albums into verified,
-self-describing packages meant for cheap, rewritable optical media (8cm DVD-RW is
-the reference medium).
+An open-source physical music format that turns owned digital albums into
+verified, self-describing packages meant for cheap, rewritable optical media
+(8cm DVD-RW is the reference medium).
 
 ## Is this a backup tool?
 
@@ -17,18 +17,36 @@ The v0.1 format is pure software: **album folder in → verified package out**. 
 v0.2 tools add imaging and burning to 8cm DVD-RW on Windows (IMAPI2), plus
 playback. See the [Roadmap](./roadmap.md).
 
-## Why FLAC and not MP3 or DVD-Audio?
+## Which audio codecs does OMD use?
 
-FLAC is lossless, open, and easy to tag and verify. DVD-Audio is optimized for
-authored audiophile releases and niche players; OMD optimizes for cheap,
-repeatable personal writing with directly recoverable files. DVD-Audio may
-become an optional export mode later.
+There are two contracts to keep separate:
+
+- The current private draft (`omdVersion` 0.1.0) permits FLAC, MP3, AAC,
+  Vorbis, Opus, or WAV, with exactly one codec in each package.
+- The planned first stable format permits FLAC and MP3 packages. Its producer
+  plan preserves compatible uniform FLAC or MP3, routes PCM WAV, AIFF, and
+  ALAC-family sources to FLAC, and routes AAC/M4A, Vorbis, Opus, and applicable
+  mixed sources to MP3.
+
+The stable plan is non-normative and not implemented. AIFF and ALAC are planned
+import formats, not package codecs. See
+[Package Format](./package-format.md#codec-status) for current tool behavior.
+
+DVD-Audio is optimized for authored disc releases and niche players; OMD uses
+ordinary recoverable files and may add DVD-Audio only as a future export mode.
+
+## Can current OMD tools play every draft codec?
+
+They pass audio to the available playback environment. `omd play` uses `mpv`,
+`ffplay`, or a player selected by the user. OMD Studio uses Electron/Chromium.
+Whether a track decodes therefore depends on that player. The repository does
+not currently provide end-to-end playback fixtures for all six draft codecs.
 
 ## Why 8cm DVD-RW?
 
 It's the **reference medium**: a cheap, rewritable, commodity optical disc with a
-satisfying small-disc/cartridge feel (~1.4 GB usable), which fits most FLAC
-albums, and it is the target for the future cartridge.
+satisfying small-disc/cartridge feel (~1.4 GB usable), which fits many albums,
+and it is the target for the future cartridge.
 
 ## Can OMD use other discs, like a CD or Blu-ray?
 
@@ -41,8 +59,8 @@ the future cartridge is tied specifically to 8cm DVD-RW.
 ## My album is larger than 1.4 GB. What happens?
 
 `inspect` shows it as over budget and `validate` warns (an error with
-`--strict`). The package is still created. Downsampled FLAC and multi-disc sets
-are future options.
+`--strict`). The package is still created. Prepare smaller files or choose a
+medium profile with sufficient capacity; multi-disc sets are future work.
 
 ## Can I use the library without the CLI?
 
@@ -52,9 +70,10 @@ Yes. Everything the CLI does is available in
 ## What does "VALID" actually guarantee?
 
 Zero `error`-severity findings: required files present, manifest schema-valid,
-every listed track exists and is FLAC, track numbers unique, counts match, and
-all checksums verify. Warnings (like missing cover art) don't affect validity.
-See the [Validation Guide](./validation.md).
+every listed track exists and its extension matches the package's declared
+codec, track numbers are unique, counts match, and all checksums verify.
+Warnings (like missing cover art) don't affect validity. See the
+[Validation Guide](./validation.md).
 
 ## Where's the authoritative format definition?
 

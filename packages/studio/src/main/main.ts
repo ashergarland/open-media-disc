@@ -77,7 +77,7 @@ const STUDIO_VERSION = '0.2.0';
 /** Runtime configuration (data mode, headless capture) from flags and env. */
 const runtimeConfig = parseRuntimeConfig(process.argv, process.env);
 
-// A privileged custom scheme lets the renderer stream local FLAC files through
+// A privileged custom scheme lets the renderer stream local audio files through
 // the strict CSP (media-src 'self' omd-audio:), with range support for seeking.
 protocol.registerSchemesAsPrivileged([
   {
@@ -314,7 +314,7 @@ async function buildDiscInfo(source: string, quick = false): Promise<StudioDiscI
     return null;
   }
   allowMediaBase(source);
-  // Full validation rehashes every FLAC, which is slow on a spinning optical
+  // Full validation rehashes every track, which is slow on a spinning optical
   // disc. In quick mode (live detection) we skip it and let the renderer verify
   // in the background so the disc appears immediately.
   const valid = quick ? false : (await validatePackage(source)).valid;

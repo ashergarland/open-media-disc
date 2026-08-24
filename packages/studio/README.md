@@ -10,6 +10,14 @@ Built with Electron. The main process reuses `@open-media-disc/core`
 directly; the renderer calls a small, explicit `window.omd` API exposed by a
 preload bridge (context isolation on, no Node in the renderer).
 
+Current Studio imports recognize FLAC, MP3, AAC/M4A, Vorbis, Opus, and WAV. The
+review screen lets the user choose any of those six private-draft package
+codecs, and bundled FFmpeg converts tracks that do not match. Studio playback
+uses Electron/Chromium's decoder. The planned first stable flow, which uses only
+FLAC and MP3 packages and chooses automatically from a broader import set, is
+not implemented. See the
+[codec status](../../documentation/package-format.md#codec-status).
+
 > Alpha and in progress. See [the design note](../../documentation/omd-studio.md)
 > for the shipped navigation, theming, and screen-size model.
 

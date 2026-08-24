@@ -31,7 +31,7 @@ Options:
   --version, -v    Show version.
 
 OMD builds, validates, inspects, images, burns, labels, plays, and rips OMD
-FLAC data packages. Burning requires Windows (IMAPI2) with a writer attached.
+audio packages. Burning requires Windows (IMAPI2) with a writer attached.
 See the spec/ folder for the format contract.
 `;
 

@@ -43,7 +43,7 @@ import type {
 
 /** Options for {@link createPackage}. */
 export interface CreatePackageOptions {
-  /** Source album folder containing FLAC files (and optional cover art). */
+  /** Source album folder containing recognized audio files and optional cover art. */
   sourceDir: string;
   /**
    * Destination package folder. Created if missing. Defaults to
@@ -180,9 +180,9 @@ function dominantCodec(names: string[]): AudioCodec {
 /**
  * Create a normalized OMD package from a source album folder.
  *
- * Reads FLAC files, infers track order and metadata, copies audio into
- * `AUDIO/`, detects cover art, writes `OMD-MANIFEST.json` and
- * `CHECKSUMS.sha256`, then validates the result.
+ * Reads recognized audio files, infers track order and metadata, copies or
+ * converts audio into `AUDIO/`, detects cover art, writes `OMD-MANIFEST.json`
+ * and `CHECKSUMS.sha256`, then validates the result.
  */
 /** Image file extensions the packager will accept as cover art. */
 const COVER_IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png']);
@@ -198,7 +198,7 @@ function coverExt(name: string): string {
  * Find the album cover in a source folder, resiliently.
  *
  * Priority: (1) exact well-known names (`cover`/`folder`/`front`.jpg|png), then
- * (2) any image whose filename hints at cover art, then (3) any image at all —
+ * (2) any image whose filename hints at cover art, then (3) any image at all,
  * choosing the largest file, since album covers are typically the biggest image
  * (small icons/thumbnails lose). Returns the source filename to copy, or
  * `undefined` when the folder holds no images.
@@ -600,7 +600,7 @@ export interface CreateMixtapeOptions {
 
 /**
  * Build an OMD package from a curated, ordered list of tracks pulled from
- * anywhere (e.g. several catalog albums) — a mixtape. Tracks are renumbered
+ * anywhere (e.g. several catalog albums), a mixtape. Tracks are renumbered
  * 1..N, copied (or transcoded to a single codec) into `AUDIO/`, and a fresh
  * manifest + checksums are written.
  */
@@ -1042,7 +1042,7 @@ export async function updatePackageMetadata(
     manifest.coverArt = newCover;
   }
 
-  // Validate first (throws on invalid input) — before any filesystem mutation.
+  // Validate first (throws on invalid input), before any filesystem mutation.
   const validated = manifestSchema.parse(manifest);
 
   if (options.coverSourcePath && newCover) {

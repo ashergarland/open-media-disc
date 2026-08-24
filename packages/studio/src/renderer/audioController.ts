@@ -4,7 +4,7 @@
  * It owns one `<audio>` element and the shared UI-kit player state, applying
  * state transitions to the element and reflecting element events back into the
  * state. Both the global Now Playing bar and the Player view drive and observe
- * this controller, so playback continues seamlessly across views. FLAC is
+ * this controller, so playback continues seamlessly across views. Audio is
  * streamed through the `omd-audio://` protocol registered in the main process.
  */
 

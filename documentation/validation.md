@@ -4,6 +4,10 @@
 rules and report findings with a **severity** and a stable **code**. This page
 explains each result and how to fix it.
 
+The current private draft permits one package codec chosen from FLAC, MP3, AAC,
+Vorbis, Opus, or WAV. See [Package Format](./package-format.md#codec-status) for
+the separate first-stable plan.
+
 > The normative source is [`spec/OMD_VALIDATION_RULES.md`](../spec/OMD_VALIDATION_RULES.md).
 
 ## Severities
@@ -28,7 +32,7 @@ A package is **VALID** when it has zero `error` results. `--strict` (or
 | `MISSING_CHECKSUMS_FILE` | No `CHECKSUMS.sha256`. | Run `omd checksum <dir> --write`. |
 | `MISSING_AUDIO_DIR` | No `AUDIO/` directory. | Ensure tracks live under `AUDIO/`. |
 | `MISSING_TRACK_FILE` | A manifest track file doesn't exist. | Restore the file or fix the manifest path. |
-| `TRACK_NOT_FLAC` | A listed track isn't a FLAC file. | Replace with a valid FLAC (must start with `fLaC`). |
+| `TRACK_CODEC_MISMATCH` | A listed track's extension does not map to the package's declared `audioCodec`. | Replace the file with one in the declared codec, or correct the manifest and every track so the package uses one codec. |
 | `DUPLICATE_TRACK_NUMBER` | Two tracks share a `number`. | Give each track a unique number. |
 | `TRACK_COUNT_MISMATCH` | `trackCount` ≠ `tracks.length`. | Regenerate the manifest so counts match. |
 | `CHECKSUM_MISMATCH` | A file's SHA-256 differs from the recorded value. | The file changed after checksums were written; re-run `omd checksum --write` or restore the file. |
@@ -40,7 +44,7 @@ A package is **VALID** when it has zero `error` results. `--strict` (or
 | --- | --- | --- |
 | `MISSING_COVER_ART` | No cover art referenced. | Add `cover.jpg`/`cover.png` to the source and recreate. |
 | `COVER_ART_NOT_FOUND` | `coverArt` set but file missing. | Add the file or clear the field. |
-| `CAPACITY_WARNING` | Package exceeds the ~1.4 GB 8cm DVD-RW budget. | Reduce size (e.g. downsample FLAC) or plan a multi-disc set. Becomes an error in strict mode. |
+| `CAPACITY_WARNING` | Package exceeds the ~1.4 GB 8cm DVD-RW budget. | Reduce the encoded size or target a medium with sufficient capacity. Becomes an error in strict mode. |
 | `NON_PORTABLE_FILENAME` | A filename isn't cross-platform safe. | Rename to remove illegal characters. |
 | `OS_JUNK_FILE` | An OS artifact is present (`.DS_Store`, `Thumbs.db`, `__MACOSX/`). | Remove it before packaging. |
 | `UNKNOWN_OMD_VERSION` | Manifest `omdVersion` is newer than this tool. | Update your OMD tooling. |
@@ -52,11 +56,16 @@ Checks run in this order and short-circuit on fatal structural problems:
 1. **Structure**: manifest present, parseable, schema-valid; `CHECKSUMS.sha256`
    present; `AUDIO/` present.
 2. **Format**: `omdFormat` supported, `omdVersion` known.
-3. **Tracks**: files exist, are FLAC, unique numbers, count matches.
+3. **Tracks**: files exist, extensions match the declared package codec,
+   numbers are unique, and the count matches.
 4. **Integrity**: recompute SHA-256 and compare to the manifest and
    `CHECKSUMS.sha256`.
 5. **Metadata & portability**: cover art, filenames, OS junk.
 6. **Capacity**: total size versus the media budget.
+
+Codec matching in draft v0.1 is based on the declared codec and filename
+extension. Validation does not fully decode every audio frame and does not prove
+that a particular playback environment has a decoder for the package codec.
 
 ## Example: an intentionally invalid package
 

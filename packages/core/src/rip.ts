@@ -19,7 +19,7 @@ export interface RipOptions {
   outDir?: string;
   /**
    * `package` (default): a byte-faithful, re-burnable clone of the whole tree.
-   * `album`: a friendly listening folder (FLAC tracks and cover art only).
+    * `album`: a friendly listening folder (audio tracks and cover art only).
    */
   mode?: RipMode;
   /** Overwrite the output folder if it already exists. Defaults to `false`. */
@@ -78,11 +78,11 @@ async function pathExists(p: string): Promise<boolean> {
  * Copy a mounted OMD disc (or any OMD package folder) to disk, verifying every
  * track against the manifest so the result is a certified copy.
  *
- * This is a verified file copy, not audio re-encoding: OMD stores FLAC files in
- * a UDF filesystem, so ripping reproduces those exact files. `package` mode
- * reproduces the whole tree (manifest, audio, checksums, art) as a re-burnable
- * clone and re-validates it; `album` mode writes only the FLAC tracks and cover
- * art as a friendly listening folder.
+ * This is a verified file copy, not audio re-encoding: ripping reproduces the
+ * package's audio files exactly. `package` mode reproduces the whole tree
+ * (manifest, audio, checksums, art) as a re-burnable clone and re-validates it;
+ * `album` mode writes only the audio tracks and cover art as a friendly
+ * listening folder.
  */
 export async function ripPackage(options: RipOptions): Promise<RipResult> {
   const { sourceDir } = options;

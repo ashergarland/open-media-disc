@@ -1,7 +1,7 @@
 /**
  * Open Media Disc (OMD) Core
  *
- * Platform-independent SDK to create, validate, inspect, and image OMD FLAC data
+ * Platform-independent SDK to create, validate, inspect, and image OMD audio
  * packages. Building a burn-ready UDF disc image is supported; writing that image
  * to a physical disc is a separate step. See the `spec/` folder for the format
  * contract this library implements.
