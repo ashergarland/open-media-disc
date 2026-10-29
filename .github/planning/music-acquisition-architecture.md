@@ -130,6 +130,7 @@ different edition or stereo stream for a specific requested multichannel file.
 | Spotify | OAuth user library/playlists and permitted catalog, subject to developer access limits | No general portable music-download store | No subscription audio export |
 | YouTube Music | Discovery goal, but native library/favorites API is not confirmed; YouTube Data API can cover some standard YouTube playlists | No general portable audio purchase flow | No subscription audio export |
 | Bandcamp | Artist/album links and permissible discovery; general consumer API is restricted | Official album product pages | User-downloaded files initially; authorized partner flow if secured later |
+| Bleep | Independent electronic and experimental catalog; permissible product-page discovery | Official release/download listings (MP3, FLAC/WAV, selected 24-bit WAV) | User-purchased local downloads initially; direct API or account integration not verified |
 | Qobuz | Catalog/interest discovery subject to approved API access | Official digital album store pages | Official downloads supplied by user initially; approved API if granted |
 | Immersive Audio Album | Product discovery where available/authorized | Physical or digital immersive product links | User downloads initially; partner API to investigate |
 | Future OMD Store | Native catalog | Native purchase offers | Authorized OMD-package delivery and optional redownload |
@@ -166,6 +167,17 @@ connectors are already implemented**.
   Do not reverse-engineer client credentials or treat a streaming integration
   as permission to access purchased downloads.
   - https://static.qobuz.com/apps/api/QobuzAPI-TermsofUse.pdf
+- **Bleep:** Founded by Warp Records; current official store documentation
+  advertises MP3, FLAC/WAV, and selected 24-bit WAV downloads. Covers
+  Warp, Ninja Tune, Hyperdub, Planet Mu, Mute and other independent labels.
+  Digital purchases are delivered as downloadable products. Initial connector
+  can surface verified official product URLs and import files after the user
+  purchases/downloads them. No general public catalog, purchase or account-
+  download API has been established. Treat available digital formats as
+  **release-specific**, not a claim every listing includes 24-bit WAV or FLAC.
+  - https://bleep.com/about-us
+  - https://bleep.com/downloads
+  - https://bleep.com/terms-and-conditions-of-supply
 
 ### Plugin isolation and lifecycle
 
