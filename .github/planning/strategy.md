@@ -8,10 +8,26 @@ It guides decisions in [`ROADMAP.md`](./ROADMAP.md), the idea catalog, and futur
 format work. It is not a normative format contract. The current contract remains
 in [`../../spec/`](../../spec/) until a deliberate spec milestone changes it.
 
-## The strategy in one sentence
+## Mission and strategic positioning
 
-**Make the digital-to-physical album experience so good that collectors and
-independent artists voluntarily adopt OMD before dedicated hardware exists.**
+**Mission:** To restore genuine music ownership by empowering artists to
+publish their recordings in the highest quality available and giving listeners
+the freedom to discover, purchase, experience, and preserve music permanently.
+
+**Positioning:** Music Ownership Without Compromise.
+
+**Business priority:** Music Ownership Reimagined and Music Without Compromise
+are the two primary pillars. The Open Music Standard and The Future of Physical
+Music are the complementary technical and product foundations.
+
+**Near-term adoption strategy:** Make the digital-to-physical album experience
+so good that collectors and independent artists voluntarily adopt OMD before
+dedicated hardware exists.
+
+The founding principles and canonical public product definition are proposed in
+[mission-and-principles.md](../../documentation/mission-and-principles.md).
+They place DRM-free, permanent, offline ownership and honest high-fidelity
+audio above any future store dependency or restriction on burning/ripping.
 
 ## The gap
 
