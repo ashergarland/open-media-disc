@@ -26,6 +26,166 @@ Apple Music likes, saved library items and playlists are **music discovery
 signals**, not owned sound recordings. Streaming downloads are not valid audio
 assets for OMD conversion.
 
+## Connector architecture: independent discovery, acquisition and delivery
+
+OMD should define small, versioned connector contracts rather than one
+integration per store with a hard-coded all-in-one interface.
+
+**A provider may implement any subset of the three connector roles:**
+
+1. **`MusicDiscoveryConnector`:** read-only user interests or permitted
+   catalog metadata. Import saved/favorite albums, tracks, artists, playlists,
+   and optionally catalog search. Never treat subscription media as owned files.
+2. **`MusicStoreConnector`:** retrieve real product/edition offers and
+   documented purchase links, with region and advertised formats. A store
+   connector does not need to perform checkout or file download. Even an
+   unauthenticated link-only catalog is useful when grounded and permitted.
+3. **`MusicAcquisitionConnector`:** ingest user-selected local downloads, or
+   retrieve purchased assets only through an authorized delivery API. It hands
+   verified local assets to the common OMD importer. This must never scrape
+   private account data or automate restricted checkout/download mechanisms.
+
+**Shared services, not connectors:** `ReleaseResolver` matches a streaming
+catalog album to recording/release/edition identifiers; `OfferAggregator`
+queries enabled store providers; `AudioInspector` probes the actual local
+files; `OMDPublisher` packages files into the standardized OMD release.
+No provider-specific identifier, account token, URL, or purchase entitlement
+is required by the OMD manifest.
+
+A single provider can register multiple connector roles. For example,
+Bandcamp may provide discovery or product links and a separately authorized
+download workflow; Spotify is a discovery provider, not an OMD-download source.
+The future first-party OMD store can offer catalog search, purchasing,
+authorized OMD-package delivery, and artist publishing without forcing the
+other connectors to adopt those interfaces.
+
+### Conceptual SDK shape (not implemented)
+
+```ts
+type Capability =
+  | "catalog.search"
+  | "library.read"
+  | "favorites.read"
+  | "playlists.read"
+  | "offers.search"
+  | "offers.openPurchaseLink"
+  | "purchases.authorizedDownload"
+  | "files.import";
+
+interface ConnectorDescriptor {
+  id: string;
+  displayName: string;
+  apiVersion: string;
+  roles: Array<"discovery" | "store" | "acquisition">;
+  capabilities: Capability[];
+  requiredPermissions: string[];
+}
+
+interface MusicDiscoveryConnector {
+  descriptor: ConnectorDescriptor;
+  searchCatalog?(query: string): Promise<MusicCandidate[]>;
+  getSavedMusic?(cursor?: string): Promise<Page<MusicInterest>>;
+  getFavorites?(cursor?: string): Promise<Page<MusicInterest>>;
+  getPlaylists?(cursor?: string): Promise<Page<PlaylistSummary>>;
+}
+
+interface MusicStoreConnector {
+  descriptor: ConnectorDescriptor;
+  findOffers(release: ResolvedRelease, region: string):
+    Promise<PurchaseOffer[]>;
+}
+
+interface MusicAcquisitionConnector {
+  descriptor: ConnectorDescriptor;
+  importLocal?(input: SelectedFiles): Promise<OwnedAssetImport>;
+  downloadPurchased?(entitlement: AuthorizedEntitlement):
+    Promise<OwnedAssetImport>;
+}
+```
+
+Types shown above are architectural examples only. Exact data contracts,
+promise APIs, auth adapters, pagination, schema versions, packaging and plugin
+execution model require design and security review. OMD should not advertise
+a connector capability when the provider's permitted APIs cannot satisfy it.
+
+### Capability negotiation, not provider assumptions
+
+A discovery connector may expose only a public catalog search, or only the
+playlists an authorized user's account can read. An offer provider may expose
+only a deep link rather than price and available audio format. A download
+connector may be unavailable even when the same provider offers FLAC purchases.
+The UI must differentiate `supported`, `not offered by provider`,
+`authorization required`, `temporarily unavailable`, and `unknown`.
+
+Match distinct editions, then show *evidence-backed* offers. Prefer UPC/EAN,
+ISRC and release identifiers where valid, with artist/title/year/track-list
+verification. Never silently substitute a remix, remaster, deluxe, regionally
+different edition or stereo stream for a specific requested multichannel file.
+
+### Provider matrix: target roles, not available implementations
+
+| Provider | Discovery | Store offers | Purchased asset delivery |
+| --- | --- | --- | --- |
+| Apple Music | Authorized MusicKit library/favorites and catalog | No general portable audio purchase flow from subscription metadata | No subscription audio export |
+| Spotify | OAuth user library/playlists and permitted catalog, subject to developer access limits | No general portable music-download store | No subscription audio export |
+| YouTube Music | Discovery goal, but native library/favorites API is not confirmed; YouTube Data API can cover some standard YouTube playlists | No general portable audio purchase flow | No subscription audio export |
+| Bandcamp | Artist/album links and permissible discovery; general consumer API is restricted | Official album product pages | User-downloaded files initially; authorized partner flow if secured later |
+| Qobuz | Catalog/interest discovery subject to approved API access | Official digital album store pages | Official downloads supplied by user initially; approved API if granted |
+| Immersive Audio Album | Product discovery where available/authorized | Physical or digital immersive product links | User downloads initially; partner API to investigate |
+| Future OMD Store | Native catalog | Native purchase offers | Authorized OMD-package delivery and optional redownload |
+| Local folders/ZIP | Existing owned files' metadata | Not a store | `files.import`, fully local |
+
+This matrix is **a proposed integration landscape, not a statement that these
+connectors are already implemented**.
+
+### Official API realities (checked October 2026)
+
+- **Apple Music:** MusicKit/Apple Music API supports authorized personal music
+  library, favorites, playlists and catalog functionality; developer and
+  user authentication are required.
+  - https://developer.apple.com/musickit/
+- **Spotify:** OAuth and library scopes provide saved-items and playlist data,
+  but Spotify tightened **Development Mode** for new apps in February 2026,
+  including a five-user cap, an app-owner Premium requirement and changes to
+  library endpoints. Commercial distribution/expanded access needs a separate
+  eligibility and approval review.
+  - https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
+  - https://developer.spotify.com/documentation/web-api/concepts/scopes
+- **YouTube Music:** Google documents the *YouTube Data API* for video channels,
+  playlists and playlist items. Do not assume it exposes all YouTube Music
+  saved albums, liked songs or music-specific library functionality. Native
+  YouTube Music account sync must be separately verified; begin with
+  user-supplied playlists/exports and verified public links.
+  - https://developers.google.com/youtube/data/guides/implementation/playlists
+  - https://developers.google.com/youtube/documentation
+- **Bandcamp:** Its official developer API states access is designed for labels
+  and fulfillment partners and requires a request. No unrestricted fan purchase
+  or account downloader is assumed.
+  - https://bandcamp.com/developer
+- **Qobuz:** The published API terms require an app ID/secret granted by Qobuz.
+  Do not reverse-engineer client credentials or treat a streaming integration
+  as permission to access purchased downloads.
+  - https://static.qobuz.com/apps/api/QobuzAPI-TermsofUse.pdf
+
+### Plugin isolation and lifecycle
+
+- Begin with **built-in first-party adapters behind stable interfaces**; an
+  externally installable plugin marketplace is not required for version one.
+- Give each connector a unique namespace and explicit, versioned capability
+  metadata. Consent and auth scope are per connector; failure in one provider
+  must not prevent the others from returning results.
+- Implement per-provider rate limits, retries/backoff, request timeouts,
+  pagination and cached results. Show source and last-checked timestamps.
+- Prefer a controlled host API rather than giving third-party plugin code
+  filesystem or authentication-token access by default. Review sandboxing,
+  signing, secrets storage, updates, and revocation before accepting untrusted
+  plugins.
+- Downloaded files and account data must never be exposed to discovery/store
+  connectors without an explicit need and user authorization. No connector
+  may place secrets into an OMD package.
+- Each connector should be independently testable with mock fixtures and a
+  contract suite; unsupported methods do not become fabricated empty results.
+
 ## Proposed module boundaries
 
 | Module | Input | Output | Design constraints |
