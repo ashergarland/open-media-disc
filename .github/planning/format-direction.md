@@ -102,6 +102,12 @@ generated UUID assigned when the release is first created:
 - Independently rebuilding from a source album creates a new ID unless the
   producer explicitly supplies and preserves an existing one.
 
+**Multi-presentation revision:** stripping an optional mix changes package
+contents without necessarily changing the authored music-release identity.
+The rules for retained release ID, package identity, derivative provenance,
+and checksums are an explicit design question, not yet a settled extension
+of the current identity policy.
+
 The human-facing title is separate and replaces the display purpose currently
 overloaded onto `discId`. Existing private draft packages may be regenerated; no
 `discId` compatibility layer is required.
@@ -119,19 +125,60 @@ Release date, label, catalog number, genre, copyright, UPC/EAN, and ISRC belong
 in an official release-metadata extension because they are useful but not
 universally available.
 
-### One uniform audio profile
+### Multiple audio presentations (revised direction, 2026-10-28)
 
-Every track in a release must share one mandatory album-level audio profile:
+**This revision supersedes the prior one-uniform-audio-profile-per-release
+design for the next OMD format.** A publisher may include multiple distinct
+stereo, multichannel or immersive mixes in one verifiable music-release package.
+The publisher chooses which mixes to ship; there is no requirement to store a
+separate precomputed file for every output device.
 
-- Codec.
-- Sample rate.
-- Channel count.
-- Bit depth when defined for the packaged codec.
+Audio facts are uniform *within a single presentation* where that is useful for
+interoperability, but presentations within a release may differ in codec,
+container, sample rate, bit depth, channel layout, mix and mastering.
 
-Creation must normalize incompatible input tracks to the selected profile or
-reject them. Per-track fidelity overrides and a `mixed` profile are not allowed.
-This lets every player display one honest album-level description without
-parsing each audio file.
+Treat the package, the artist-authored audio presentations, and runtime output
+rendering as separate concepts. A calculated stereo downmix or a binaural
+headphone rendering is not automatically an artist-authored stereo master.
+
+**Preferred packaging and playback model, subject to feasibility testing:**
+
+- A versioned official audio-presentations extension declares included mixes,
+  audio facts, file mappings, optional publisher preferences and the decoder or
+  output capabilities they require.
+- OMD Studio can remove selected optional presentations to produce a smaller,
+  separately verified package for CD, DVD, Blu-ray or other media, with explicit
+  warnings about lost playback options. Retained originals are not silently
+  re-encoded.
+- OMD Player may select a compatible presentation and perform explicitly
+  supported runtime output adaptation (stereo downmix, 5.1/7.1 mapping,
+  binaural headphone rendering, or immersive passthrough).
+- The player must distinguish an original artist mix from generated output and
+  give a clear compatibility error if no playable path exists.
+- The format's universal-playback promise needs a deliberate revision:
+  evaluate requiring a core stereo presentation versus allowing a declared
+  surround-only/immersive-only package with capability-negotiated playback.
+  The choice remains open; the format should not quietly hardcode either.
+
+The current private v0.1.0 draft and the next-stable **core decoder baseline**
+remain distinct from this proposed package architecture; they must not be
+mistaken for the final multi-presentation specification.
+
+The draft change proposal and retained alternatives are documented in
+[`spec/proposals/OMD_AUDIO_PRESENTATIONS_VNEXT.md`](../../spec/proposals/OMD_AUDIO_PRESENTATIONS_VNEXT.md).
+See also [Issue #1](https://github.com/ashergarland/open-media-disc/issues/1).
+
+### Uniform codec facts within individual presentations
+
+Each presentation must declare a coherent, verifiable audio profile and track
+mapping. Codec, sample rate, channel count/layout, bit depth where applicable,
+and measured bitrate fields must describe the actual stored files. The
+mechanism for continuous mixes, per-track variations, and gapless alignment
+remains under investigation.
+
+The earlier one-codec-per-**release** invariant is not a constraint on the
+new format. Its implementation must be revised together with the manifest
+schema, validator, SDK, CLI, Studio and reference player.
 
 MP3 bitrate has one deliberate exception because preserving an existing VBR
 album is more important than forcing a metadata shape that requires re-encoding:
@@ -151,9 +198,11 @@ codec-by-codec. No album-average bitrate is stored.
 
 ### Player codec interoperability
 
-An unqualified conforming OMD Player must play every codec permitted by the
-stable core format. A player may not claim general OMD Player conformance while
-supporting only a subset.
+An unqualified conforming OMD Player must implement every decoder required by
+the stable core decoder profile. This does not itself imply that every advanced
+multi-presentation package, especially one with no core-compatible mix, will be
+playable. Conformance rules for advanced-only packages, optional rendering and
+graceful failure must be defined before the revised format becomes normative.
 
 The first stable core permits:
 
@@ -169,14 +218,17 @@ The stable FLAC profile is:
 - Sample rates of 44.1, 48, 88.2, 96, 176.4, or 192 kHz.
 - Bit depths of 16 or 24 bits.
 - Mono or stereo.
-- One sample rate, bit depth, and channel count across every track in the
-  release.
+- One sample rate, bit depth, and channel count across every track in an
+  individual core FLAC presentation, pending the multichannel spec revision.
 - Full compliance with the RFC 9639 FLAC streamable subset.
 - Fixed, common block sizes within the subset limits.
 - Complete STREAMINFO with a known total sample count and non-zero decoded-audio
   MD5.
 - No custom channel masks, uncommon bit depths, multichannel layouts, escaped
-  Rice partitions, forbidden bit patterns, or other non-subset constructs.
+  Rice partitions, forbidden bit patterns, or other non-subset constructs in
+  the proposed **core stereo FLAC decoder profile**. This limitation does
+  **not** prohibit optional multichannel FLAC presentations in the revised
+  package format; the multichannel extension rules remain under investigation.
 
 Every OMD Player decodes the complete stable FLAC profile through 24-bit/192 kHz.
 This intentionally requires more capable hardware than the cheapest embedded
@@ -205,9 +257,10 @@ Existing uniform compatible MP3 releases are preserved. Normalization uses
 44.1 kHz stereo at 320 kbps CBR, or 44.1 kHz mono at 160 kbps CBR.
 
 The stable list is deliberately small enough for desktop, embedded, portable,
-and future cartridge players to implement reliably. Additional package codecs
-require a future format decision rather than an optional player capability that
-makes physical releases unpredictable.
+and future cartridge players to implement reliably. Additional codecs in the basic decoder profile
+require a future format decision. Optional advanced presentation codecs can
+be introduced through versioned capabilities once the revised negotiation and
+conformance contracts are settled.
 
 ### Import codecs and package codecs
 
@@ -385,6 +438,13 @@ The exact major/minor compatibility rules and extension schema-discovery
 mechanism remain to be designed. Validators must not require network access to
 interpret a package.
 
+The proposed audio-presentations extension is different from optional artwork:
+whether it may contain the only playable mix determines whether a reader can
+ignore it and still play audio. Distinguish *safe to parse and skip unknown
+metadata* from *guaranteed playable on a particular device*. This is an
+intentional revision of earlier universal-playback expectations, not an
+implementation detail to assume away.
+
 ## Open design questions
 
 The discussion must still settle:
@@ -396,3 +456,12 @@ The discussion must still settle:
 4. Replacement of the draft `OMD-FLAC-DATA` identifier throughout the private
    implementation and fixtures.
 5. The version number and compatibility contract for the first stable format.
+6. Multi-presentation manifest schema, file layout, track mapping, gapless
+   behavior and package identity after optional-mix removal.
+7. Whether conforming releases must include a core-compatible presentation or
+   can be advanced-only with explicit device-capability requirements.
+8. Runtime playback selection, channel mapping, headphone binaural rendering,
+   immersive bitstream passthrough, and negotiation/failure behavior.
+9. Storage, decoder, platform, licensing and conformance tests for the
+   preferred model versus bundled, single-master, scalable and pre-rendered
+   alternatives.
