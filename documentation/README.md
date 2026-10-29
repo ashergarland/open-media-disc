@@ -17,6 +17,7 @@ and then **[Getting Started](./getting-started.md)**.
 | I want to… | Read |
 | --- | --- |
 | Understand what OMD is and why it exists | [What is OMD?](./what-is-omd.md) |
+| Read the mission and founding principles | [Mission & Principles](./mission-and-principles.md) |
 | Understand the open business model and future store | [Business Model](./business-model.md) |
 | See what is built and what is left | [Project Status](./project-status.md) |
 | Install the tools | [Installation](./installation.md) |
@@ -37,6 +38,7 @@ and then **[Getting Started](./getting-started.md)**.
 documentation/
   README.md            You are here (public landing + index)
   what-is-omd.md       Vision, motivation, and design principles
+  mission-and-principles.md  Long-term mission, business pillars, DRM-free commitments
   business-model.md    Open-source boundaries and future commerce strategy
   project-status.md    What is built today and what is left
   installation.md      Prerequisites, install, build, verify
