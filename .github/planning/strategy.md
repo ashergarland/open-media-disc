@@ -128,10 +128,21 @@ promising frictionless store integrations or dedicated hardware.
 
 ### Medium term: music discovery and purchase handoff
 
-Connect listening discovery with ownership:
+Connect listening discovery with ownership via **modular provider
+connectors**, not a monolithic retailer integration. A music provider may
+implement discovery, purchase-offer search, authorized acquired-file
+delivery, or some combination; the actual OMD package format remains
+independent of all provider accounts and services.
 
-- With user permission, import Apple Music library albums, favorites and
-  selected playlists as *metadata*, not subscription audio files.
+- With user permission, import music-library albums, favorites and
+  selected playlists from Apple Music, Spotify, or other authorized
+  discovery connectors as *metadata*, not subscription audio files.
+- Support other provider-specific discovery options, including Bandcamp,
+  Qobuz and YouTube Music when their permitted APIs or supported
+  import/export paths can supply the requested information.
+- Normalize those separate provider identities through a shared release
+  resolver, without claiming a streaming badge establishes that a
+  corresponding purchasable high-fidelity master exists.
 - Normalize album/release identities, using MusicBrainz identifiers and
   recording-level ISRC, album UPC, artist/title/year and track lists as
   appropriate. Distinguish editions, remasters, single tracks and full albums.
@@ -182,6 +193,11 @@ The starting feature should validate one real end-to-end vertical slice:
 *discover an album, find a legitimate purchase offer, acquire/download it,
 import, verify, play, and burn*. Discovery-to-purchase can use a manual
 retailer handoff until sanctioned API integration is practical.
+
+Connector architecture: [music-acquisition-architecture.md](./music-acquisition-architecture.md).
+Discovery, store offers, and acquired-asset import are independently versioned
+roles. The future OMD Store may implement all roles without making its account
+mandatory for ordinary offline music packages.
 
 Related design: [multi-presentation audio proposal in draft PR #2](https://github.com/ashergarland/open-media-disc/pull/2).
 The preferred implementation is subject to feasibility validation, and a
