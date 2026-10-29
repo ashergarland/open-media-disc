@@ -238,7 +238,7 @@ Use privacy-minded local caching and token management.
 ## INT-15 Purchase availability and edition matching
 
 **Pitch.** Match a desired album to legal purchasable digital editions on
-Bandcamp, Qobuz, Immersive Audio Album and other cooperating stores. Show
+Bandcamp, Bleep, Qobuz, Immersive Audio Album and other cooperating stores. Show
 verified editions, format/layout, actual purchase links, advertised prices
 when available and trustworthy matching confidence.
 
