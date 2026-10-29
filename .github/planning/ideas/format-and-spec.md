@@ -229,3 +229,39 @@ show different things today, which is a spec bug.
 
 **Risks.** Mostly a documentation and display-rules problem, so the temptation is
 to skip it. Display ambiguity is exactly what makes formats feel inconsistent.
+
+## FMT-15 Multiple audio presentations and adaptive playback
+
+**Pitch.** Allow an OMD music release to contain publisher-selected stereo,
+surround and immersive mixes; let Studio safely omit unwanted optional mixes
+when fitting a target disc, and let capable players select, downmix or binaurally
+render a suitable presentation at runtime.
+
+**Why.** A single-codec, uniform-profile release cannot express a stereo
+master alongside an independently authored 5.1 or Atmos mix. Forcing complete
+pre-rendered outputs for every listening setup wastes physical-disc capacity.
+A manifest-driven presentation model keeps artist choice and source preservation
+separate from playback compatibility and storage optimization.
+
+**Preferred design.** Multiple source presentations within one package, declared
+by versioned manifest capabilities, with optional verified trimming and
+capability-negotiated playback. This **revises the next-format direction**
+and supersedes the old one-profile-per-release design, but the precise
+conformance policy is unresolved. Retain bundled mixes, a single multichannel
+master, an immersive master (IAMF), scalable audio and pre-rendered output
+variants as alternatives until benchmarks and decoder prototypes are reviewed.
+
+**Value** high · **Effort** high · **Serves** O1, O2, O3, O4, O5, O6
+· **Depends on** FMT-1, FMT-11, FMT-3
+· **Status** open
+
+**Risks.** Universal-playback conformance versus advanced-only packages,
+separate album/package identity after mix removal, synchronized track
+boundaries, gapless behavior, channel-order mistakes, downmix clipping,
+double binaural rendering, proprietary codec licensing, and larger decoder
+requirements on embedded players.
+
+**Design records:** [vNext audio presentation spec
+proposal](../../../spec/proposals/OMD_AUDIO_PRESENTATIONS_VNEXT.md),
+[format direction](../format-direction.md),
+[issue #1](https://github.com/ashergarland/open-media-disc/issues/1).

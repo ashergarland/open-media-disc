@@ -39,7 +39,7 @@ IDs are permanent. Never renumber, never reuse, never delete a rejected idea.
 
 | File | Prefix | Ideas | What it covers |
 | --- | --- | --- | --- |
-| [format-and-spec.md](./format-and-spec.md) | `FMT` | 14 | The normative contract: manifest, layout, validation, versioning. |
+| [format-and-spec.md](./format-and-spec.md) | `FMT` | 15 | The normative contract: manifest, layout, validation, versioning. |
 | [core-sdk.md](./core-sdk.md) | `SDK` | 13 | `@open-media-disc/core`: the library everything else is built on. |
 | [cli.md](./cli.md) | `CLI` | 10 | The `omd` command line and automation. |
 | [omd-studio.md](./omd-studio.md) | `STU` | 15 | The desktop and touch app. |
@@ -49,7 +49,7 @@ IDs are permanent. Never renumber, never reuse, never delete a rejected idea.
 | [community-and-adoption.md](./community-and-adoption.md) | `COM` | 10 | Docs, spec process, second-language SDKs, brand, outreach. |
 | [infrastructure.md](./infrastructure.md) | `INF` | 10 | CI, releases, testing, performance, developer ergonomics. |
 
-Total: 106 ideas.
+Total: 107 ideas.
 
 ## Reading the catalog quickly
 
