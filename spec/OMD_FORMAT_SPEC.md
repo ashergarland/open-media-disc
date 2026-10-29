@@ -11,6 +11,14 @@ Format identifier: `OMD-FLAC-DATA`
 > OMD has not had a stable format release; this private draft may change without
 > backward compatibility.
 
+> **Planned revision:** The future multi-presentation OMD format is being
+> redesigned to support publisher-selected stereo, surround and immersive
+> audio masters in one release. See the
+> [audio presentations vNext proposal](./proposals/OMD_AUDIO_PRESENTATIONS_VNEXT.md).
+> That proposal is not normative for `omdVersion` 0.1.0, and the current
+> schema, validation and tools retain their documented one-codec behavior
+> until a versioned migration is implemented.
+
 ## 1. What Open Media Disc Is
 
 Open Media Disc is an open-source **physical music format**. An OMD package is a UDF
