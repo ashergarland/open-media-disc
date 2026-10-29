@@ -6,9 +6,11 @@ This category serves objective **O3**. The premise: nobody is going to reorganiz
 their music library to try a new format. Every integration here removes a reason
 to say no, and most of them are small compared to their effect on adoption.
 
-Hard boundary, from the project's scope rules: reading metadata **from** a
-service to enrich a package is fine. Playing music **from** a service is not what
-OMD is, and no idea in this catalog should cross that line.
+Scope boundary: importing authorized metadata **from** a streaming library
+is distinct from downloading that service's subscription audio. OMD focuses on
+independently acquired files and owned packages, not bypassing a streaming
+service's content restrictions. Future official OMD commerce is a separate,
+optional service that must not gate local offline playback.
 
 ## INT-1 MusicBrainz and Discogs metadata lookup
 
@@ -213,3 +215,62 @@ works with any phone.
 **Risks.** The code must encode identity and metadata only, never a URL to a
 service that might not exist later. That constraint keeps it consistent with the
 recoverability commitment.
+
+## INT-14 Apple Music library, favorites and playlist discovery
+
+**Pitch.** With permission, connect Apple Music MusicKit or an offline playlist
+export and import saved albums, favorite songs/albums and selected playlists as
+music discovery metadata. Offer a clear matching/review UI.
+
+**Why.** A listener has already curated the music they want. Showing which
+albums are available as portable paid downloads is an immediate path from
+subscription discovery to personal ownership.
+
+**Value** high · **Effort** medium · **Serves** O2, O3 · **Depends on**
+INT-1, SDK-7 · **Status** open
+
+**Risks.** Requires Apple's developer credentials and consent-based MusicKit
+authorization for account data. Favorites are not identical to library contents;
+not all favored tracks identify an unambiguous album. Catalog IDs can be
+different from library IDs; do not assume subscription audio is exportable.
+Use privacy-minded local caching and token management.
+
+## INT-15 Purchase availability and edition matching
+
+**Pitch.** Match a desired album to legal purchasable digital editions on
+Bandcamp, Qobuz, Immersive Audio Album and other cooperating stores. Show
+verified editions, format/layout, actual purchase links, advertised prices
+when available and trustworthy matching confidence.
+
+**Why.** An Apple Music Atmos badge does not mean a TrueHD Atmos download can
+be purchased; an artist's catalog can also contain different remasters and
+editions. Format-specific discovery is a useful differentiator for OMD.
+
+**Value** high · **Effort** high · **Serves** O2, O3 · **Depends on**
+INT-1, INT-14 · **Status** open
+
+**Risks.** Many retailers do not expose a general public API for third-party
+catalog, purchase or download access. Prefer sanctioned partner APIs, public
+product links and documented metadata. No unsupported store automation,
+credentials extraction, checkout scraping, or invented availability. Normalize
+UPC/ISRC/MusicBrainz identities, track counts and release variants; report
+uncertain matches instead of guessing.
+
+## INT-16 Purchased download handoff and automatic packaging
+
+**Pitch.** After a customer checks out at an existing retailer and downloads
+owned audio, import a selected folder/ZIP or an opted-in download directory,
+inspect metadata, build a verified OMD package, and offer play/burn actions.
+
+**Why.** A single purchase-to-disc workflow is valuable even without store
+download APIs. It gives immediate utility to independent artists and
+collectors while reserving seamless partner delivery for later.
+
+**Value** high · **Effort** medium · **Serves** O2, O3, O5 · **Depends on**
+INT-5, SDK-7 · **Status** open
+
+**Risks.** Downloads differ in layout and tags; avoid assuming DRM-free files
+are guaranteed by a store match. Import only files the user has legitimately
+accessed. Do not request retailer passwords or silently watch folders. Preserve
+original mastering where supported, and validate channel layout, package
+checksums, available disc capacity and playback capabilities.

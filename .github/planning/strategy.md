@@ -91,6 +91,102 @@ physical ecosystem.
 The cartridge is not required for the format to be useful. Grassroots software
 and commodity-media adoption must create a reason to manufacture it.
 
+## Ownership, purchasing and discovery ecosystem (2026-10-28)
+
+The long-term product goal is an integrated OMD music ecosystem where:
+
+1. Artists publish a native OMD release with publisher-selected high-quality audio
+   presentations, including independently authored stereo, surround and
+   immersive mixes when available.
+2. Customers discover and purchase an OMD release through a first-party OMD
+   website and retain a recoverable, independently playable copy.
+3. OMD Player and Studio can browse purchased releases, download and verify
+   them, play on compatible equipment, and optionally create CD/DVD/Blu-ray
+   or flash-based physical copies without a permanently required cloud account.
+
+A marketplace is a long-term *product* direction, not a core-format dependency.
+Third-party implementations, local files and self-authored discs must continue
+to work independently of the first-party website.
+
+### Near term: purchased files to OMD
+
+The first customer experience targets people who already buy ordinary
+downloadable audio from other sources:
+
+- Import files or purchased download folders, including FLAC, PCM, and other
+  supported owned recordings, from sources such as Bandcamp and Qobuz.
+- Detect metadata and album structure, verify actual codec, sample rate,
+  bit depth and channel layout, and preserve compatible source audio.
+- Include optional distinct artist-authored stereo, multichannel, and
+  immersive presentations as the future format revision permits.
+- Package, validate, play and burn to a selected supported medium.
+- Give actionable incompatibility or capacity information; never imply that
+  lossy transcoding or surround rendering was part of the original master.
+
+Prioritize an excellent source-to-package-to-player-to-disc experience before
+promising frictionless store integrations or dedicated hardware.
+
+### Medium term: music discovery and purchase handoff
+
+Connect listening discovery with ownership:
+
+- With user permission, import Apple Music library albums, favorites and
+  selected playlists as *metadata*, not subscription audio files.
+- Normalize album/release identities, using MusicBrainz identifiers and
+  recording-level ISRC, album UPC, artist/title/year and track lists as
+  appropriate. Distinguish editions, remasters, single tracks and full albums.
+- Search cooperating retailers or legally accessible catalogs for purchasable
+  editions, show source, advertised codec/channel layout, price when verified,
+  region and match confidence. Never infer purchasable Atmos just from an
+  Apple Music immersive badge.
+- Prefer official store APIs or authorized partnerships. Where unavailable,
+  provide genuine product links and an explicit manual purchase/download/import
+  flow, rather than unofficial account automation or breaking store access
+  restrictions.
+- After the buyer legitimately downloads files, recognize the download,
+  let them review the match, and package it into OMD.
+
+Storefront, login, and account connections must be opt-in, scoped and revocable.
+Discovery must function without transferring Apple Music playback rights.
+Do not put retailer account credentials into the OMD manifest.
+
+### Long term: first-party artist publishing and OMD commerce
+
+An official site can support artist accounts, verified album assets, signed or
+checksum-verifiable downloads, presentation choices, album metadata, purchase
+entitlements, and repeat downloads. OMD Studio can serve as the artist's
+publisher/uploader as well as the customer's importer. OMD Player can offer
+the user's owned library and secure download/cache/play/burn flows.
+
+Payment processing, tax compliance, rights and licensing, fraud controls,
+royalty reporting, and account recovery belong to the *store service*, not
+the open OMD file format. Artists must have rights to distribute the
+presentations they publish. Preserve purchase receipts and authentication
+separately from playable packages; no online activation is required for
+already-acquired unprotected files.
+
+### Separation of concerns
+
+- **Discovery data:** what a user likes or wants; does not establish ownership.
+- **Purchase offers:** what retailers currently claim to sell; must be verified
+  and may change by country, date, format or edition.
+- **Acquired assets:** files the user downloaded or an artist published.
+- **OMD packages:** portable and verifiable music releases and their included
+  mixes.
+- **Playback:** local/owned OMD audio with capability-aware output, including
+  headphone, multichannel PCM, or optional immersive formats.
+- **Commerce services:** optional remote accounts, purchases, downloads and
+  artist publishing, independent of offline OMD playback.
+
+The starting feature should validate one real end-to-end vertical slice:
+*discover an album, find a legitimate purchase offer, acquire/download it,
+import, verify, play, and burn*. Discovery-to-purchase can use a manual
+retailer handoff until sanctioned API integration is practical.
+
+Related design: [multi-presentation audio proposal in draft PR #2](https://github.com/ashergarland/open-media-disc/pull/2).
+The preferred implementation is subject to feasibility validation, and a
+marketplace must not become a blocker for the near-term album workflow.
+
 ## Format and hardware relationship
 
 The OMD release format should remain open, inspectable, and implementable without

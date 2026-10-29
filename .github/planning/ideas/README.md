@@ -44,12 +44,12 @@ IDs are permanent. Never renumber, never reuse, never delete a rejected idea.
 | [cli.md](./cli.md) | `CLI` | 10 | The `omd` command line and automation. |
 | [omd-studio.md](./omd-studio.md) | `STU` | 15 | The desktop and touch app. |
 | [accessibility.md](./accessibility.md) | `A11Y` | 10 | Accessibility, internationalization, and inclusion. |
-| [new-apps.md](./new-apps.md) | `APP` | 11 | New surfaces: web, mobile, server, editor, shell. |
-| [integrations.md](./integrations.md) | `INT` | 13 | Interop with the tools and services people already use. |
+| [new-apps.md](./new-apps.md) | `APP` | 12 | New surfaces: web, mobile, server, editor, shell. |
+| [integrations.md](./integrations.md) | `INT` | 16 | Interop with the tools and services people already use. |
 | [community-and-adoption.md](./community-and-adoption.md) | `COM` | 10 | Docs, spec process, second-language SDKs, brand, outreach. |
 | [infrastructure.md](./infrastructure.md) | `INF` | 10 | CI, releases, testing, performance, developer ergonomics. |
 
-Total: 106 ideas.
+Total: 110 ideas.
 
 ## Reading the catalog quickly
 
