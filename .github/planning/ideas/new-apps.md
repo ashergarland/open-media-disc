@@ -185,3 +185,28 @@ APP-10, SDK-11 · **Status** open
 **Risks.** The renderer assumes `window.omd` from the Electron preload bridge, so
 this needs a credible mock API layer. Risks becoming a second app to maintain if
 the mock drifts from the real IPC surface.
+
+## APP-12 Artist-published OMD music storefront
+
+**Pitch.** Build a first-party website where artists upload and publish
+verifiable OMD releases with their chosen stereo, multichannel and immersive
+mixes, and customers purchase, re-download, play, and burn them through
+supported OMD software.
+
+**Why.** Independent artists can offer audiophile physical-ready albums without
+a manufacturing minimum or a proprietary playback service. The store gives
+artists a first-class distribution channel while growing an open ecosystem of
+players, writers and personal archives.
+
+**Value** high · **Effort** very high · **Serves** O2, O3, O5, O6
+· **Depends on** a stable release format, verified packaging/playback,
+download transport, account/fulfillment planning, and artist-rights workflow
+· **Status** open
+
+**Risks.** Rights validation and artist agreements, payment and tax compliance,
+fraud prevention, account and entitlement recovery, secure asset hosting,
+large bandwidth costs for multichannel masters, licenses for proprietary audio,
+chargebacks, and indefinite redownload promises. The online storefront must
+never become a requirement for locally owned OMD playback or physical copies.
+Initial releases can be served as downloadable packages; streaming/cached
+preview and deeper Player integration can come later.
