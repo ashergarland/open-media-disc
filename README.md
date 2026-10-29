@@ -115,11 +115,23 @@ node packages/studio/bin/omd-studio-shots.mjs --out ./screenshots
 See the [studio README](./packages/studio/README.md) for all data-mode, headless,
 and screenshot options.
 
+## Long-term ecosystem and business direction
+
+OMD's format, reference authoring and playback tools, and interoperability
+contracts are intended to remain open. A future independent commercial
+store can help artists sell rights-cleared OMD albums and give customers
+convenient access to purchased music without requiring store accounts for
+ordinary offline playback. See the
+[open platform and commercial services business model](./documentation/business-model.md).
+This is a product direction, not a shipped marketplace or a change to the
+current MIT license.
+
 ## Documentation
 
 | Guide                                                 | For                              |
 | ----------------------------------------------------- | -------------------------------- |
 | [What is OMD?](./documentation/what-is-omd.md)        | The vision and design principles |
+| [Business Model](./documentation/business-model.md)         | Open-source platform and future marketplace strategy |
 | [Project Status](./documentation/project-status.md)   | What is built and what is left   |
 | [Installation](./documentation/installation.md)       | Setup and prerequisites          |
 | [Getting Started](./documentation/getting-started.md) | Your first package, step by step |

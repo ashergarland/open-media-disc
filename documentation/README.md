@@ -17,6 +17,7 @@ and then **[Getting Started](./getting-started.md)**.
 | I want to… | Read |
 | --- | --- |
 | Understand what OMD is and why it exists | [What is OMD?](./what-is-omd.md) |
+| Understand the open business model and future store | [Business Model](./business-model.md) |
 | See what is built and what is left | [Project Status](./project-status.md) |
 | Install the tools | [Installation](./installation.md) |
 | Make my first package | [Getting Started](./getting-started.md) |
@@ -36,6 +37,7 @@ and then **[Getting Started](./getting-started.md)**.
 documentation/
   README.md            You are here (public landing + index)
   what-is-omd.md       Vision, motivation, and design principles
+  business-model.md    Open-source boundaries and future commerce strategy
   project-status.md    What is built today and what is left
   installation.md      Prerequisites, install, build, verify
   getting-started.md   First package walkthrough (create → validate → inspect)

@@ -14,6 +14,7 @@ which is user-facing and describes what **exists**. This folder describes what i
 | File | What it is | Who writes it |
 | --- | --- | --- |
 | [`strategy.md`](./strategy.md) | The strategic north star: users, unmet need, adoption ladder, product scope, and relationship between the open format and future hardware. | Humans; changed only when the product strategy changes. |
+| [`open-business-model.md`](./open-business-model.md) | Accepted direction for open-source platform boundaries, proprietary commercial services, revenue hypotheses and future implementation gates. | Humans during business planning; later consumed by commerce milestone design. |
 | [`format-direction.md`](./format-direction.md) | Settled and open design decisions for the next format revision. It is planning, not the current normative contract. | Humans during format planning; later consumed by a spec milestone. |
 | [`ROADMAP.md`](./ROADMAP.md) | The comprehensive plan: objectives, milestone ladder, per-milestone scope and exit criteria. | Humans and `/milestone-plan`; changed deliberately. |
 | [`STATUS.md`](./STATUS.md) | The live tracker: current milestone, step-by-step progress, completed milestones, blockers, decisions. | Every milestone prompt, at the end of every step. |
