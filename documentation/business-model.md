@@ -4,6 +4,15 @@
 currently available commercial services. The product and licensing details
 below are subject to implementation, contract and legal review.
 
+## Mission alignment
+
+The [proposed OMD mission and founding principles](./mission-and-principles.md)
+place **genuine music ownership** and **faithful high-quality audio** at the
+center of the business. Open standards and distinctive physical albums support
+those aims. Revenue must come from optional music, publishing, hosted services
+and hardware—not from imposing artificial restrictions on local playback,
+copying, ripping or disc writing.
+
 ## The idea
 
 Open Media Disc (OMD) should be a widely usable, open music format and software
