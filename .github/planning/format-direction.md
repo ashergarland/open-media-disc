@@ -61,6 +61,11 @@ may use a future profile if a distinct need justifies one.
 
 ### Minimum core manifest
 
+The following example describes a simple core-compatible presentation, not a
+final constraint that every enhanced release must contain this exact
+top-level stereo audio object. The format revision must settle how the
+canonical album track list relates to declared presentations.
+
 The working core baseline contains only standardized identity, attribution,
 playback, and factual audio data:
 
@@ -247,13 +252,13 @@ The stable MP3 profile is MPEG-1 Audio Layer III in `.mp3` files:
 - Mono, stereo, or joint stereo.
 - Legal MPEG-1 Layer III CBR rates from 32 through 320 kbps.
 - VBR using legal MPEG-1 Layer III per-frame rates.
-- One sample rate and channel count across every track in the release.
-- One album-level bitrate mode. CBR tracks share one album bitrate; VBR tracks
+- One sample rate and channel count across every track in an individual MP3 presentation.
+- One presentation-level bitrate mode. CBR tracks share one bitrate; VBR tracks
   carry measured per-track bitrate and players may derive a displayed range.
 - MPEG-2, MPEG-2.5, Layer I/II, dual-channel, free-format, invalid or reserved
   frame headers, and codec-extension mismatches are rejected.
 
-Existing uniform compatible MP3 releases are preserved. Normalization uses
+Existing uniform compatible MP3 presentations are preserved. Normalization uses
 44.1 kHz stereo at 320 kbps CBR, or 44.1 kHz mono at 160 kbps CBR.
 
 The stable list is deliberately small enough for desktop, embedded, portable,
@@ -264,9 +269,13 @@ conformance contracts are settled.
 
 ### Import codecs and package codecs
 
-Producer import support may grow independently from the stable package codec
-list. OMD Studio applies one automatic whole-release normalization policy rather
-than presenting codec choices:
+Producer import support may grow independently from the stable core codec list.
+The following automatic normalization policy remains a candidate for
+single-presentation releases. The revised multi-presentation authoring workflow
+must **not** apply it indiscriminately across intentionally distinct artist
+masters, collapsing their codecs or layouts.
+
+For ordinary single-presentation releases, the current plan is:
 
 1. A release that is already uniform FLAC is preserved.
 2. A release that is already uniform MP3 is preserved, including compatible VBR.
