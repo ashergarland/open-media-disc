@@ -1,5 +1,14 @@
 # Open Media Disc
 
+**Mission — Music Ownership Without Compromise.** Give listeners lasting
+ownership of the music they purchase, while enabling artists to publish
+original recordings in the highest quality available. The open format and
+reference tools support independent, DRM-free preservation and playback;
+physical album creation is the flagship experience. See the proposed
+[mission and founding principles](./documentation/mission-and-principles.md).
+Future multichannel, immersive and store integrations are design goals,
+not claims about the current release.
+
 **Give the music you own a body again.** Open Media Disc (OMD) turns a folder of
 audio files into a verified, self-describing album package: the first step toward
 a cheap, collectable, rewritable physical music format. A package is just files
@@ -131,6 +140,7 @@ current MIT license.
 | Guide                                                 | For                              |
 | ----------------------------------------------------- | -------------------------------- |
 | [What is OMD?](./documentation/what-is-omd.md)        | The vision and design principles |
+| [Mission & Principles](./documentation/mission-and-principles.md) | Product positioning and foundational commitments |
 | [Business Model](./documentation/business-model.md)         | Open-source platform and future marketplace strategy |
 | [Project Status](./documentation/project-status.md)   | What is built and what is left   |
 | [Installation](./documentation/installation.md)       | Setup and prerequisites          |
